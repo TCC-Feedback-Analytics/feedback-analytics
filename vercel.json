@@ -7,27 +7,12 @@
       "config": {
         "maxDuration": 300
       }
-    },
-    {
-      "src": "apps/web/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
     }
   ],
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/backends/api-gateway/index.ts"
-    },
-    {
-      "source": "/assets/(.*)",
-      "destination": "/apps/web/assets/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/apps/web/index.html"
     }
   ]
 }

@@ -8,13 +8,12 @@ on:
 
 jobs:
   # ----------------------------------------------------------------------------
-  # Job 1: lint + typecheck dos 3 pacotes + build do web.
-  # Roda em PR -> homolog E PR -> main (e nos pushes pos-merge).
-  # O typecheck usa tsconfig.ci.json por pacote (exclui testes); o codigo de
-  # producao dos 3 pacotes compila limpo via `tsc --noEmit`.
+  # Job 1: lint + typecheck dos pacotes de backend (api-gateway + ia-analyze).
+  # O frontend foi extraído para o repo feedback-analytics-web (CI própria).
+  # O typecheck usa tsconfig.ci.json por pacote (exclui testes).
   # ----------------------------------------------------------------------------
   quality:
-    name: lint-typecheck-build
+    name: lint-typecheck
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +26,6 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: |
-            apps/web/package-lock.json
             backends/api-gateway/package-lock.json
             services/ia-analyze/package-lock.json
             shared/package-lock.json
@@ -36,31 +34,19 @@ jobs:
         run: |
           npm ci --prefix shared
           npm ci --prefix backends/api-gateway
-          npm ci --prefix apps/web
           npm ci --prefix services/ia-analyze
 
-      - name: Run linter (3 pacotes)
+      - name: Run linter (2 pacotes)
         run: npm run lint
 
-      - name: Typecheck (3 pacotes, sem testes)
+      - name: Typecheck (2 pacotes, sem testes)
         run: |
-          ./apps/web/node_modules/.bin/tsc -p apps/web/tsconfig.ci.json --noEmit
           ./backends/api-gateway/node_modules/.bin/tsc -p backends/api-gateway/tsconfig.ci.json --noEmit
           ./services/ia-analyze/node_modules/.bin/tsc -p services/ia-analyze/tsconfig.ci.json --noEmit
 
-      - name: Build web
-        run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-
   # ----------------------------------------------------------------------------
-  # Job 2: unit + integracao (vitest) dos 3 pacotes, em paralelo via matriz.
-  # Roda em PR -> homolog E PR -> main. 100% mockado, nenhum secret necessario.
-  #
-  # CUIDADO: o script "test" de apps/web e `vitest` SEM `run` (modo watch, que
-  # travaria o CI). Resolvido com `-- run` (repassa `run` ao vitest atraves do
-  # npm --prefix). api-gateway e ia-analyze ja usam `vitest run` (CI-safe).
+  # Job 2: unit + integracao (vitest) dos pacotes de backend, em paralelo via
+  # matriz. 100% mockado, nenhum secret necessario.
   # ----------------------------------------------------------------------------
   unit-tests:
     name: unit-tests (${{ matrix.package }})
@@ -69,9 +55,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - package: web
-            prefix: apps/web
-            test_cmd: npm run test --prefix apps/web -- run
           - package: api-gateway
             prefix: backends/api-gateway
             test_cmd: npm run test --prefix backends/api-gateway
@@ -89,7 +72,6 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: |
-            apps/web/package-lock.json
             backends/api-gateway/package-lock.json
             services/ia-analyze/package-lock.json
             shared/package-lock.json
