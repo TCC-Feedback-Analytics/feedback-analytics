@@ -156,7 +156,7 @@ Além do resumo situacional e das recomendações geradas pela IA, o relatório 
 
 ## Aba de Estatísticas — métricas estatísticas consagradas
 
-A aba **Estatísticas** deixou de ser uma contagem simples: ela é alimentada pelo módulo `backends/api-gateway/src/libs/statistics/index.ts` — um conjunto de **funções puras** com métodos de referência de mercado. A regra de ouro: **a matemática vive no backend; o frontend apenas apresenta**. As estatísticas combinam duas lentes complementares.
+A aba **Estatísticas** deixou de ser uma contagem simples: ela é alimentada pelo módulo `feedback-analytics-api-gateway/src/libs/statistics/index.ts` — um conjunto de **funções puras** com métodos de referência de mercado. A regra de ouro: **a matemática vive no backend; o frontend apenas apresenta**. As estatísticas combinam duas lentes complementares.
 
 ### Lente SATISFAÇÃO (as estrelas — não dependem da IA)
 

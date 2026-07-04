@@ -10,7 +10,7 @@ hide:
 
 A voz dos seus clientes ajudando a decidir — com apoio de IA. Colete por QR Code, deixe a IA analisar e receba insights no painel, sem precisar de equipe de dados.
 
-[Começar :material-arrow-right-thin:](visao-geral.md){ .md-button .md-button--primary }
+[Ver a arquitetura :material-arrow-right-thin:](arquitetura/visao-geral.md){ .md-button .md-button--primary }
 [Ver no GitHub :material-github:](https://github.com/TCC-Feedback-Analytics/feedback-analytics){ .md-button }
 
 </div>
@@ -45,17 +45,28 @@ O **Feedback Analytics** transforma a opinião dos seus clientes em decisões es
 
 O Feedback Analytics é feito para quem atende o cliente **presencialmente** e quer ouvi-lo ali, no ponto de atendimento: **pequenas e médias empresas**, **profissionais autônomos** e o **pequeno comerciante** — restaurantes, salões, lojas de bairro e prestadores de serviço. A coleta acontece por QR Code no balcão, na mesa ou na recepção, logo após o atendimento, enquanto a experiência ainda está fresca. É para quem precisa de informação estruturada para decidir melhor, mas não tem orçamento para ferramentas complexas, nem equipe de dados, nem tempo de ler feedback por feedback.
 
+## Estrutura do sistema
+
+A plataforma é **serverless** (Vercel Functions + CDN) e distribuída em **repositórios independentes**, todos compartilhando o mesmo banco (Supabase):
+
+- **feedback-analytics-web** — frontend React: formulário público de coleta e dashboard protegido da empresa.
+- **feedback-analytics-api-gateway** — API REST e ponto único de entrada: centraliza autenticação, regras de negócio e orquestra Supabase + as chamadas de IA.
+- **feedback-analytics-ia-analyze** — serviço isolado de análise por IA (provedor LLM externo); só o Gateway o acessa.
+- **feedback-analytics-contracts** — pacote `@feedback/lib-shared` com os tipos e contratos compartilhados entre os serviços.
+
+[Ver como os serviços se conectam → Arquitetura](arquitetura/visao-geral.md)
+
 ## Explore a documentação
 
 <div class="grid cards" markdown>
 
-- :material-rocket: __Visão geral__
+- :material-clipboard-list: __Requisitos & Casos de uso__
 
     ---
 
-    Entenda o problema, a solução e como o produto funciona de ponta a ponta.
+    O que o sistema faz — requisitos funcionais, regras de negócio e os fluxos de uso.
 
-    [:octicons-arrow-right-24: Começar](visao-geral.md)
+    [:octicons-arrow-right-24: Ver requisitos](concepcao/requisitos-e-funcionalidades.md)
 
 - :material-chart-line: __Métricas e estatísticas__
 

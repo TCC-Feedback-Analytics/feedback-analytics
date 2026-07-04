@@ -60,7 +60,7 @@ A coluna `type` da tabela `collection_points` já é **texto livre** (`"type" te
 
 **Os três pontos que hoje chumbam `'QR_CODE'` (todos precisam aceitar o novo canal):**
 
-1. **A query do backend** em `backends/api-gateway/src/controllers/public/qrcode.controller.ts:63`:
+1. **A query do backend** em `feedback-analytics-api-gateway/src/controllers/public/qrcode.controller.ts:63`:
    ```ts
    .eq('type', 'QR_CODE')
    ```
@@ -74,7 +74,7 @@ A coluna `type` da tabela `collection_points` já é **texto livre** (`"type" te
 
 **Atribuição de canal nas métricas.** A `collection_point_id` já é gravada em cada `feedback` (`qrcode.controller.ts:277`), e dela se chega ao `type`. Para os relatórios, basta um `JOIN feedback → collection_points` agrupando por `cp.type`. Isso alimenta o eixo "por canal" da [etapa 02](./02-metricas-por-periodo-e-comparacao.md). Vale criar um índice em `collection_points (enterprise_id, type)` para a agregação.
 
-**Frontend — tela de "gravar etiqueta".** Nova tela no painel (`apps/web`) que:
+**Frontend — tela de "gravar etiqueta".** Nova tela no painel (`feedback-analytics-web`) que:
 - monta a mesma URL pública do formulário (`/feedback/qrcode?enterprise=:id`, opcionalmente com o ponto/escopo) que o QR já usa;
 - detecta suporte a **Web NFC** (`'NDEFReader' in window`); se houver (Chrome/Android), oferece botão "Gravar etiqueta" que chama `new NDEFReader().write({ records: [{ recordType: 'url', data: url }] })`;
 - se **não** houver suporte (iOS/desktop), esconde o botão e mostra o **fallback**: exibe a URL com botão "copiar" e instruções de usar um app NFC writer.

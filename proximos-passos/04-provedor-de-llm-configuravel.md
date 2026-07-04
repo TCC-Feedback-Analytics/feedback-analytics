@@ -59,23 +59,23 @@ A escolha do provedor e do modelo será feita por **variáveis de configuração
 
 O ponto-chave: a **porta** (interface) já está definida e o motor **só depende dela**, não da implementação concreta.
 
-- Contrato: `services/ia-analyze/types/iaApiClient.types.ts` define o tipo `IaApiClient` — basicamente `analyzeBatch(params) => Promise<ParsedIaResponse>`. Também define o shape **neutro** de saída (`ParsedIaResponse` com `feedbacks[]` + `global_insights`) e os códigos de erro padronizados (`'failed_ia_request' | 'invalid_ai_response'`).
-- Implementação atual: `services/ia-analyze/src/providers/gemini.provider.ts` — a função `createIaApiClient(apiKey)` devolve um objeto que **implementa** `IaApiClient`. É o único provedor existente.
-- Consumo: `services/ia-analyze/src/services/iaAnalyze.service.ts` importa `createIaApiClient` **diretamente do arquivo do Gemini** (linha 1) e o instancia na linha 118 com `process.env.GEMINI_API_KEY`. Esse import fixo é o único acoplamento concreto que sobra.
+- Contrato: `feedback-analytics-ia-analyze/types/iaApiClient.types.ts` define o tipo `IaApiClient` — basicamente `analyzeBatch(params) => Promise<ParsedIaResponse>`. Também define o shape **neutro** de saída (`ParsedIaResponse` com `feedbacks[]` + `global_insights`) e os códigos de erro padronizados (`'failed_ia_request' | 'invalid_ai_response'`).
+- Implementação atual: `feedback-analytics-ia-analyze/src/providers/gemini.provider.ts` — a função `createIaApiClient(apiKey)` devolve um objeto que **implementa** `IaApiClient`. É o único provedor existente.
+- Consumo: `feedback-analytics-ia-analyze/src/services/iaAnalyze.service.ts` importa `createIaApiClient` **diretamente do arquivo do Gemini** (linha 1) e o instancia na linha 118 com `process.env.GEMINI_API_KEY`. Esse import fixo é o único acoplamento concreto que sobra.
 
 Ou seja: a "estratégia" (Strategy) já está abstraída; falta apenas **fabricar um segundo adaptador** (Adapter) para o OpenRouter e **inverter a escolha** do provedor para uma fábrica configurável.
 
 ### Tarefas concretas
 
-1. **Criar `services/ia-analyze/src/providers/openrouter.provider.ts`** implementando `IaApiClient`. O OpenRouter expõe uma API **compatível com o formato OpenAI** (`/chat/completions`), então o adaptador:
-   - **Reusa o builder de prompt** `buildIaPromptByScope` (`services/ia-analyze/src/lib/iaAnalyzePromptBuilders.ts`) — ele já devolve uma `string` neutra (cabeçalho + instruções de escopo + esquema esperado + payload JSON), sem nada específico do Gemini.
-   - **Reusa o parser** `extractJsonFromText` (`services/ia-analyze/src/utils/extractJsonFromText.ts`) + `JSON.parse` — também já é genérico (tolera cercas markdown e texto ao redor do JSON).
+1. **Criar `feedback-analytics-ia-analyze/src/providers/openrouter.provider.ts`** implementando `IaApiClient`. O OpenRouter expõe uma API **compatível com o formato OpenAI** (`/chat/completions`), então o adaptador:
+   - **Reusa o builder de prompt** `buildIaPromptByScope` (`feedback-analytics-ia-analyze/src/lib/iaAnalyzePromptBuilders.ts`) — ele já devolve uma `string` neutra (cabeçalho + instruções de escopo + esquema esperado + payload JSON), sem nada específico do Gemini.
+   - **Reusa o parser** `extractJsonFromText` (`feedback-analytics-ia-analyze/src/utils/extractJsonFromText.ts`) + `JSON.parse` — também já é genérico (tolera cercas markdown e texto ao redor do JSON).
    - **Embrulha o prompt em `messages[]`:** onde o Gemini envia `contents: prompt`, o OpenRouter envia `messages: [{ role: 'user', content: prompt }]` (ou um `system` curto + `user`). Pode-se pedir `response_format: { type: 'json_object' }` nos modelos que suportam, reforçando a saída em JSON.
    - **Trava de saída:** equivalente ao `MAX_OUTPUT_TOKENS` (16.384) via `max_tokens`, e detecção de truncamento via `finish_reason === 'length'` (espelhando o tratamento de `finishReason === 'MAX_TOKENS'` do Gemini → lançar `IaApiClientError('...', 'invalid_ai_response')`).
 
 2. **Mapear erros para o contrato já existente.** O `gemini.provider.ts` já tem uma boa base reaproveitável: `getErrorStatus`, `isRetryableError`, `RETRYABLE_STATUS` (429/500/502/503/504), backoff com jitter e `parseSuggestedDelayMs`. Para o OpenRouter, ler o header **`Retry-After`** (HTTP padrão) em vez do `retryDelay` embutido na mensagem do Gemini. **Sugestão de refatoração:** extrair essas funções de retry/erro para um módulo compartilhado (`providers/shared/retry.ts`) para os dois adaptadores usarem.
 
-3. **Seletor de provedor por env (inverter o import fixo).** Criar uma fábrica — por exemplo `services/ia-analyze/src/providers/createProvider.ts` — que lê `LLM_PROVIDER` (`'gemini' | 'openrouter'`) e devolve o `IaApiClient` certo. Em `iaAnalyze.service.ts`, trocar o import direto de `createIaApiClient` por essa fábrica. Documentar as novas variáveis em `services/ia-analyze/.env.example`:
+3. **Seletor de provedor por env (inverter o import fixo).** Criar uma fábrica — por exemplo `feedback-analytics-ia-analyze/src/providers/createProvider.ts` — que lê `LLM_PROVIDER` (`'gemini' | 'openrouter'`) e devolve o `IaApiClient` certo. Em `iaAnalyze.service.ts`, trocar o import direto de `createIaApiClient` por essa fábrica. Documentar as novas variáveis em `feedback-analytics-ia-analyze/.env.example`:
    - `LLM_PROVIDER=openrouter` (default sugerido)
    - `LLM_MODEL=<id-do-modelo>` (ex.: um modelo `:free` do OpenRouter)
    - `OPENROUTER_API_KEY=...` (ao lado da `GEMINI_API_KEY` já existente)
@@ -97,8 +97,8 @@ A primeira fase (OpenRouter + seletor por env) é estimada em **~1–2 dias**; B
 
 O projeto **já tem** um avaliador de classificador pronto para isso:
 
-- `backends/api-gateway/src/libs/eval/classifierEval.ts` — funções **puras** que calculam **Cohen's kappa** (concordância além do acaso, com faixas de Landis & Koch), **matriz de confusão** e **precision/recall/F1 por classe + macro-F1**.
-- `backends/api-gateway/scripts/eval-classifier.ts` — script de linha de comando que recebe um *gold set* (pares `{ human, model }`) e imprime kappa, acurácia, macro-F1 e a matriz de confusão. O próprio cabeçalho recomenda ≥150–300 itens rotulados (≥50 por classe) e **meta de kappa ≥ 0,6**.
+- `feedback-analytics-api-gateway/src/libs/eval/classifierEval.ts` — funções **puras** que calculam **Cohen's kappa** (concordância além do acaso, com faixas de Landis & Koch), **matriz de confusão** e **precision/recall/F1 por classe + macro-F1**.
+- `feedback-analytics-api-gateway/scripts/eval-classifier.ts` — script de linha de comando que recebe um *gold set* (pares `{ human, model }`) e imprime kappa, acurácia, macro-F1 e a matriz de confusão. O próprio cabeçalho recomenda ≥150–300 itens rotulados (≥50 por classe) e **meta de kappa ≥ 0,6**.
 
 Com o modelo agora configurável (`LLM_MODEL`) e múltiplos provedores, dá para rodar o **mesmo gold set** contra Gemini e contra dois ou três modelos do OpenRouter e **medir, com número, qual classifica melhor o sentimento** — em vez de "achismo". Isso transforma a escolha do provedor numa **decisão baseada em evidência** e rende um capítulo inteiro de avaliação experimental no TCC.
 

@@ -1,6 +1,9 @@
-# Monorepo Serverless vs. Monolito: por que separamos os serviços
+# Serverless, Monorepo e a evolução para Multi-repo
 
-O projeto tem dois serviços com perfis de carga radicalmente diferentes. A arquitetura Serverless em Monorepo resolve isso; o monolito não consegue tratar recursos distintos para cada um.
+!!! note "Status (jul/2026)"
+    Este registro documenta duas decisões: **(1)** adotar uma arquitetura **Serverless** (em vez de monolito) — que **permanece válida** — e **(2)** organizar o código inicialmente em **Monorepo**. A decisão (2) **evoluiu**: o projeto foi separado em **repositórios independentes** (multi-repo). O raciocínio Serverless abaixo continua atual; apenas a co-localização do código foi superada — veja [Evolução: de Monorepo para Multi-repo](#evolução-de-monorepo-para-multi-repo) no final.
+
+O projeto tem dois serviços com perfis de carga radicalmente diferentes. A arquitetura Serverless resolve isso; o monolito não consegue tratar recursos distintos para cada um.
 
 ## Por que o monolito falha para nosso projeto
 | Serviço | Tipo de carga | Latência esperada | Recursos necessários |
@@ -141,4 +144,29 @@ No modelo Serverless, escalar não é uma decisão manual. Quando várias empres
 Isso significa que o `ia-analyze` consegue atender 1 ou 100 análises simultâneas sem nenhuma configuração adicional. O que o projeto controla é o `maxDuration` (quanto tempo cada instância pode rodar) e o plano da Vercel (que define o limite de execuções simultâneas). O "quantas instâncias subir" é uma decisão da própria plataforma.
 
 No monolito, esse cenário seria crítico: 10 análises simultâneas significariam 10 requisições competindo pelo mesmo processo Node.js, bloqueando umas às outras. Na arquitetura Serverless, cada análise tem sua própria instância — sem concorrência, sem bloqueio.
+
+---
+
+## Evolução: de Monorepo para Multi-repo
+
+**Decisão de jul/2026.** O código, antes co-localizado em um monorepo (npm Workspaces), foi separado em **repositórios independentes** — um por serviço, mais um repositório para os contratos e este para a documentação. A motivação foi **organizacional**, não técnica: permitir **isolamento de acesso por repositório** (contribuidores com menos experiência atuam só no frontend, sem acesso ao restante) e **históricos + CI independentes** por serviço.
+
+### O que permaneceu e o que mudou
+
+- **Permaneceu:** toda a decisão **Serverless** acima — funções independentes, `maxDuration` por serviço, isolamento de falhas, deploy e escala independentes. A separação em repositórios **reforça** esse isolamento.
+- **Mudou:** o benefício de sincronização de contratos que o monorepo dava pela pasta `shared/` passou a ser entregue por um **pacote versionado** — [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts) —, consumido pelos serviços via dependência. Uma mudança de contrato publica uma nova versão do pacote; o TypeScript continua acusando quebras nos consumidores.
+
+### Trade-off aceito
+
+Com repositórios separados, sincronizar um contrato pode exigir **mais de um pull request** (publicar o pacote e depois atualizá-lo em cada consumidor) — justamente o custo que o monorepo evitava. Aceitamos esse custo em troca do **isolamento de acesso** e da **autonomia por serviço**, que se tornaram prioridade com a entrada de novos contribuidores.
+
+### Topologia atual
+
+| Repositório | Papel |
+|---|---|
+| `feedback-analytics-web` | Frontend React |
+| `feedback-analytics-api-gateway` | API Gateway / BFF |
+| `feedback-analytics-ia-analyze` | Serviço de análise por IA |
+| `feedback-analytics-contracts` | Pacote `@feedback/lib-shared` (contratos) |
+| `feedback-analytics` | Documentação central + schema do banco |
 

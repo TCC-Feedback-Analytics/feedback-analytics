@@ -4,35 +4,35 @@
 
 A infraestrutura do projeto roda integralmente na **Vercel**, sem servidores dedicados. Cada serviço é uma unidade independente que dorme até receber uma requisição — o modelo **Serverless Functions** da Vercel.
 
-| Domínio | Builder | Tipo de Deploy | `maxDuration` |
+| Serviço (repositório) | Builder | Tipo de Deploy | `maxDuration` |
 |---|---|---|---|
-| `apps/web` | `@vercel/static-build` | Site estático via CDN | — |
-| `backends/api-gateway` | `@vercel/node` | Serverless Function | 300s |
-| `services/ia-analyze` | `@vercel/node` | Serverless Function | 300s |
+| `feedback-analytics-web` | `@vercel/static-build` | Site estático via CDN | — |
+| `feedback-analytics-api-gateway` | `@vercel/node` | Serverless Function | 300s |
+| `feedback-analytics-ia-analyze` | `@vercel/node` | Serverless Function | 300s |
 
-- **Frontend (`apps/web`):** arquivos estáticos (HTML, CSS, JS) gerados no build e servidos diretamente pela CDN da Vercel. Não há servidor — o React roda no navegador do usuário.
+- **Frontend (web):** arquivos estáticos (HTML, CSS, JS) gerados no build e servidos diretamente pela CDN da Vercel. Não há servidor — o React roda no navegador do usuário.
 - **API-Gateway:** função Node.js que acorda a cada requisição, consulta o banco (Supabase) e encerra. O timeout de 300s cobre com folga as operações de I/O e a orquestração das chamadas à IA — que, em lotes grandes, encadeia várias chamadas ao LLM por requisição.
 - **IA-Analyze:** função Node.js de longa duração — recebe feedbacks, chama o LLM externo (pode levar 30–60s) e processa o resultado. Precisa de 300s de timeout, inviável de rodar no mesmo projeto do Gateway.
 
-> **Nota — bundle do Gateway:** antes do deploy, o `deploy-api.yml` roda uma etapa de esbuild que empacota `backends/api-gateway/index.ts` em `backends/api-gateway/_bundle.cjs`. É esse bundle que o `vercel.json` do Gateway aponta como `src`.
+> **Nota — bundle do Gateway:** antes do deploy, o workflow de deploy do repo `feedback-analytics-api-gateway` roda uma etapa de esbuild que empacota o entrypoint em um `_bundle.cjs`. É esse bundle que o `vercel.json` do Gateway aponta como `src`.
 
 A escalabilidade é automática: quando várias empresas disparam análises simultaneamente, a Vercel sobe múltiplas instâncias do `ia-analyze` em paralelo. Quando a demanda cai, as instâncias encerram e param de consumir recursos.
 
 ---
 
-## Monorepo — Organização Interna (Micro)
+## Multi-repo — Organização (Micro)
 
-Todo o código vive em um único repositório, gerenciado com **npm Workspaces**. Cada serviço tem escopo, responsabilidade e ciclo de deploy independentes, mas compartilham versionamento único e dependências cruzadas via pacote `shared`.
+Cada serviço vive em seu **próprio repositório**, com escopo, responsabilidade e ciclo de deploy independentes. Os tipos e contratos compartilhados são publicados como um pacote versionado (`@feedback/lib-shared`), consumido por todos os serviços. O projeto começou como monorepo e foi separado — veja [Arquitetura distribuída (evolução do monorepo)](historico-de-decisoes/decisao-monorepo-vs-monolito.md).
 
-| Domínio | Tipo | Descrição |
+| Repositório | Tipo | Descrição |
 |---|---|---|
-| `frontend` | React SPA | Interface do usuário — área pública (QR Code) e painel da empresa |
-| `gateway` | API Gateway / BFF | Hub central — autenticação, regras de negócio, orquestração |
-| `shared` | Cross-Package | Tipos, interfaces e contratos compartilhados entre domínios |
-| `services/ia-analyze` | Serviço Externo | Processamento de IA com escopo e volume próprios |
-| `services/*` | Serviços Externos | Integrações menores agrupadas em um único domínio de serviços |
+| `feedback-analytics-web` | React SPA | Interface do usuário — área pública (QR Code) e painel da empresa |
+| `feedback-analytics-api-gateway` | API Gateway / BFF | Hub central — autenticação, regras de negócio, orquestração |
+| `feedback-analytics-contracts` | Pacote compartilhado | `@feedback/lib-shared` — tipos, interfaces e contratos entre serviços |
+| `feedback-analytics-ia-analyze` | Serviço serverless | Processamento de IA com escopo e volume próprios |
+| `feedback-analytics` (este) | Documentação | Concepção, decisões, requisitos e schema do banco |
 
-O Monorepo resolve o problema de sincronização de contratos: quando o formato de comunicação entre Gateway e IA-Analyze muda, um único commit afeta os dois serviços e o TypeScript avisa imediatamente se algum lado quebrou.
+O pacote de contratos resolve a sincronização de tipos: quando o formato de comunicação entre Gateway e IA-Analyze muda, uma nova versão do `@feedback/lib-shared` propaga o contrato e o TypeScript avisa imediatamente se algum lado quebrou.
 
 A partir daqui, cada serviço tem sua própria arquitetura interna — veja os links em **Veja Também**.
 
@@ -46,11 +46,11 @@ Responsável pela experiência do usuário, navegação via React Router (loader
 **API Gateway (padrão BFF)**
 Ponto único de entrada para o frontend. Concentra autenticação (JWT via Supabase Auth), orquestração das regras de negócio, integração com o banco de dados (Supabase com RLS) e coordenação das chamadas aos serviços externos.
 
-**Shared Cross-Package**
-Pacote interno importado por múltiplos domínios. Evita duplicação de tipos TypeScript — contratos de API, interfaces de entidades e tipos de integração vivem aqui e são a fonte de verdade para todos os serviços.
+**Contratos Compartilhados (`@feedback/lib-shared`)**
+Pacote versionado importado por múltiplos serviços. Evita duplicação de tipos TypeScript — contratos de API, interfaces de entidades e tipos de integração vivem aqui e são a fonte de verdade para todos os serviços.
 
-**Serviços Externos (Serverless)**
-Divididos em dois perfis: integrações de menor impacto são agrupadas em um único domínio `services/`; serviços de grande volume ou complexidade (como o IA Analyze) ganham domínio próprio para escalar e evoluir de forma independente.
+**Serviços Serverless**
+Cada serviço de grande volume ou complexidade (como o IA Analyze) tem repositório e deploy próprios, para escalar e evoluir de forma independente sem afetar os demais.
 
 ---
 
@@ -84,7 +84,7 @@ O sistema tem uma topologia **hub-and-spoke**: o API Gateway é o hub central. O
 
 ## Contratos Compartilhados
 
-Os tipos TypeScript que transitam entre Gateway e IA Analyze **não são duplicados**. Vivem em `shared/interfaces/contracts/ia-analyze/` e são importados pelos dois serviços:
+Os tipos TypeScript que transitam entre Gateway e IA Analyze **não são duplicados**. Vivem no pacote [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts) (em `interfaces/contracts/ia-analyze/`) e são importados pelos dois serviços:
 
 | Arquivo | Propósito |
 |---|---|
@@ -111,7 +111,7 @@ Os tipos TypeScript que transitam entre Gateway e IA Analyze **não são duplica
 | Banco de Dados | Supabase (PostgreSQL) | — |
 | IA | Provedor LLM externo — atualmente Google Gemini (`@google/genai`, modelo `gemini-2.5-flash`), configurável via `GEMINI_API_KEY`; trocar de provedor exige alteração de código | — |
 | Testes | Vitest + Testing Library | — |
-| Monorepo | npm Workspaces + concurrently | — |
+| Distribuição | Multi-repo + pacote `@feedback/lib-shared` | — |
 
 ---
 

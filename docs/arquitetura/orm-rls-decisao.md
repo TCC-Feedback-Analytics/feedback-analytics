@@ -6,9 +6,9 @@ Este documento responde, de frente, à crítica da banca *"usar Supabase não ex
 
 Artefatos relacionados:
 
-- Schema Drizzle **canônico** (introspectado do banco real via `db:pull`): [`backends/api-gateway/drizzle/schema.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle/schema.ts) · tipos inferidos estáveis em [`src/db/types.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/types.ts)
-- Cliente Drizzle (lazy, pooler): [`backends/api-gateway/src/db/client.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/client.ts)
-- Config do drizzle-kit: [`backends/api-gateway/drizzle.config.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle.config.ts)
+- Schema Drizzle **canônico** (introspectado do banco real via `db:pull`): [`drizzle/schema.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle/schema.ts) · tipos inferidos estáveis em [`src/db/types.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/types.ts)
+- Cliente Drizzle (lazy, pooler): [`src/db/client.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/client.ts)
+- Config do drizzle-kit: [`drizzle.config.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle.config.ts)
 - Convenção de migrations: [Migrations com Drizzle](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/migrations-drizzle.md)
 - Caminho migrado (stats via Drizzle, tenant-scoped): [`src/db/tenantScope.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/tenantScope.ts) + [`src/repositories/feedbackStats.repository.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/repositories/feedbackStats.repository.ts)
 - Modelagem existente: [Modelo Conceitual (MER)](modelo-conceitual-mer.md) · [Diagrama de Entidade e Relacionamento (DER)](modelagem-de-dados.md) · [Visão Geral do Banco](../referencia/banco-de-dados/visao-geral.md)

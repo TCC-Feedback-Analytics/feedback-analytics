@@ -207,6 +207,6 @@ CLIENTE DESCOBRE          →   Trial 4 meses    →   Converte (R$80/mês)
 
 ## Veja Também
 
-- [Visão Geral do Sistema](../visao-geral.md)
+- [Visão Geral do Sistema](../index.md)
 - [Requisitos e Funcionalidades](./requisitos-e-funcionalidades.md)
 - [Arquitetura](../arquitetura/visao-geral.md)

@@ -62,27 +62,27 @@ O caminho de uma análise fica assim: o gestor clica em "analisar" → o site en
 
 Os dois serviços de backend **já detectam que não estão na Vercel e sobem como Express comum**:
 
-- `services/ia-analyze/src/index.ts` (linhas 12–18): `if (process.env.VERCEL !== '1') { app.listen(port ?? 4100) }`.
-- `backends/api-gateway/src/index.ts` (linhas 269–272): mesmo padrão, `app.listen(port ?? 3000)`.
+- `feedback-analytics-ia-analyze/src/index.ts` (linhas 12–18): `if (process.env.VERCEL !== '1') { app.listen(port ?? 4100) }`.
+- `feedback-analytics-api-gateway/src/index.ts` (linhas 269–272): mesmo padrão, `app.listen(port ?? 3000)`.
 
 Ou seja, fora da Vercel o `export default app` continua sendo um app Express normal. **Não precisamos extrair o handler nem trocar de framework** — só empacotar e dar `start`.
 
 ### O que de fato muda
 
-**1. Empacotamento (Dockerfile / script de start).** Hoje não há `Dockerfile` no repo; o deploy é 100% Vercel. Criar um `Dockerfile` por serviço (ou um multi-stage com build do TypeScript) e um `docker-compose.yml` para a VM, levantando ao menos o **worker do ia-analyze** sempre ligado. Como é monorepo, o build precisa respeitar os `package.json` por pacote.
+**1. Empacotamento (Dockerfile / script de start).** Hoje não há `Dockerfile` nos repos; o deploy é 100% Vercel. Criar um `Dockerfile` por serviço (ou um multi-stage com build do TypeScript) e um `docker-compose.yml` para a VM, levantando ao menos o **worker do ia-analyze** sempre ligado. Como cada serviço é um repositório próprio, o build de cada um respeita o seu `package.json` e consome o pacote de contratos (`@feedback/lib-shared`).
 
 **2. Reescrever os deploys.** Hoje existem três workflows que publicam na Vercel:
 - `.github/workflows/deploy-web.yml`
 - `.github/workflows/deploy-api.yml`
 - `.github/workflows/deploy-ia-analyze.yml`
 
-E quatro `vercel.json` (raiz, `apps/web`, `backends/api-gateway`, `services/ia-analyze`), todos com `maxDuration: 300` — **valor que o plano free ignora e corta em ~60s** (causa provável do timeout). No destino: o worker passa a ser publicado via build/push de imagem Docker para a VM (ou `git pull` + `docker compose up -d` na VM); o front continua estático (`npm run build --prefix apps/web` → publicar `dist/` no Cloudflare Pages). O `maxDuration` deixa de ser limitação porque o worker não roda mais como função serverless.
+E três `vercel.json` (um por serviço: `feedback-analytics-web`, `feedback-analytics-api-gateway`, `feedback-analytics-ia-analyze`), todos com `maxDuration: 300` — **valor que o plano free ignora e corta em ~60s** (causa provável do timeout). No destino: o worker passa a ser publicado via build/push de imagem Docker para a VM (ou `git pull` + `docker compose up -d` na VM); o front continua estático (`npm run build --prefix feedback-analytics-web` → publicar `dist/` no Cloudflare Pages). O `maxDuration` deixa de ser limitação porque o worker não roda mais como função serverless.
 
 **3. Trocar a descoberta automática de URL/CORS por variáveis de ambiente explícitas.** Esse é o ponto mais delicado, porque há lógica **chumbada em domínios `.vercel.app`**:
 
-- `backends/api-gateway/src/index.ts` (linhas 45–157): `extractVercelProjectSuffix`, `isVercelProjectHostname`, `readVercelPairConfig`, `isAllowedByVercelProjectPair` — todo um mecanismo de **pareamento automático web/api por sufixo `.vercel.app`** e por `VERCEL_ENV=preview`. **Fora da Vercel isso vira código morto**: precisamos garantir que o CORS funcione apenas pela allowlist explícita.
+- `feedback-analytics-api-gateway/src/index.ts` (linhas 45–157): `extractVercelProjectSuffix`, `isVercelProjectHostname`, `readVercelPairConfig`, `isAllowedByVercelProjectPair` — todo um mecanismo de **pareamento automático web/api por sufixo `.vercel.app`** e por `VERCEL_ENV=preview`. **Fora da Vercel isso vira código morto**: precisamos garantir que o CORS funcione apenas pela allowlist explícita.
 - O caminho explícito **já existe e basta usar**: `readAllowedOrigins()` (linhas 98–117) lê `CORS_ALLOWED_ORIGINS` e `PUBLIC_SITE_URL`. Configurando essas vars com os domínios novos (ex.: o domínio do Cloudflare Pages e o do worker), o CORS funciona **sem depender de nada da Vercel**.
-- `services/ia-analyze` é alcançado pela URL resolvida em `backends/api-gateway/src/libs/iaAnalyze/resolvePrimaryBaseUrl.ts`: com `IA_ANALYZE_EXECUTION_MODE=remote` + `IA_ANALYZE_REMOTE_URL` apontando para o **novo host always-on**, o gateway fala com o worker certo. As vars já estão documentadas em `backends/api-gateway/.env.example` (`IA_ANALYZE_REMOTE_URL`, `IA_ANALYZE_REMOTE_TOKEN`, `IA_ANALYZE_REMOTE_TIMEOUT_MS=280000`). Note que o timeout de 280s só faz sentido **quando o host destino aceita execuções longas** — exatamente o ganho desta etapa.
+- `feedback-analytics-ia-analyze` é alcançado pela URL resolvida em `feedback-analytics-api-gateway/src/libs/iaAnalyze/resolvePrimaryBaseUrl.ts`: com `IA_ANALYZE_EXECUTION_MODE=remote` + `IA_ANALYZE_REMOTE_URL` apontando para o **novo host always-on**, o gateway fala com o worker certo. As vars já estão documentadas em `feedback-analytics-api-gateway/.env.example` (`IA_ANALYZE_REMOTE_URL`, `IA_ANALYZE_REMOTE_TOKEN`, `IA_ANALYZE_REMOTE_TIMEOUT_MS=280000`). Note que o timeout de 280s só faz sentido **quando o host destino aceita execuções longas** — exatamente o ganho desta etapa.
 - Limpeza recomendada: marcar o pareamento `.vercel.app` como caminho legado (atrás de `CORS_ALLOW_VERCEL_PROJECT_PAIR`, que por padrão só liga em `VERCEL_ENV=preview`) e tratar a allowlist explícita como fonte da verdade no novo ambiente.
 
 ### Esboço de topologia alvo
@@ -122,9 +122,9 @@ Cliente/Gestor → Cloudflare Pages (frontend estático, grátis)
 
 ## Etapas de entrega
 
-1. **Dockerizar o worker:** `Dockerfile` para `services/ia-analyze` + build do monorepo funcionando localmente (`docker run` responde no `/internal/health`).
+1. **Dockerizar o worker:** `Dockerfile` para o repositório `feedback-analytics-ia-analyze` + build funcionando localmente (`docker run` responde no `/internal/health`).
 2. **Provisionar o host always-on:** criar a VM (Oracle Always Free), instalar Docker, subir o worker com `docker compose`, configurar firewall e TLS.
-3. **Migrar o frontend para CDN:** publicar `apps/web/dist` no Cloudflare Pages; ajustar a URL pública.
+3. **Migrar o frontend para CDN:** publicar `feedback-analytics-web/dist` no Cloudflare Pages; ajustar a URL pública.
 4. **Trocar descoberta por env explícito:** definir `CORS_ALLOWED_ORIGINS`, `PUBLIC_SITE_URL`, `IA_ANALYZE_EXECUTION_MODE=remote` e `IA_ANALYZE_REMOTE_URL`; validar CORS e a chamada gateway→worker fora da Vercel.
 5. **Reescrever os deploys:** substituir/adaptar os workflows `deploy-*.yml` para publicar front na CDN e worker na VM (build+push de imagem ou `pull`+`compose up`).
 6. **Documentar custo e portabilidade:** tabela de custo mensal + runbook curto de "como replicar noutro provedor".

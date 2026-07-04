@@ -57,7 +57,7 @@ O ponto-chave da Fase 2 é *onde* a transcrição acontece. Transcrever um minut
 Esta funcionalidade é a demonstração prática de duas etapas anteriores juntas:
 
 - **Worker/fila (etapa 03):** transcrição de áudio é o caso de uso perfeito de processamento assíncrono. Não dá para transcrever dentro da requisição HTTP do formulário (mesma armadilha de timeout serverless da análise síncrona). Ela vira um **job** enfileirado e processado pelo worker.
-- **Porta de provedor de LLM (etapa 04):** o `gemini-2.5-flash` que já usamos (`services/ia-analyze/src/providers/gemini.provider.ts`, modelo hardcoded na linha 134) é **multimodal** — o SDK `@google/genai` aceita áudio via partes `inlineData`/`fileData`. Ou seja, dá para transcrever (e até analisar direto) reusando a interface `IaApiClient` (`services/ia-analyze/types/iaApiClient.types.ts`), sem fornecedor novo. A transcrição passa a ser mais uma operação por trás da mesma "porta".
+- **Porta de provedor de LLM (etapa 04):** o `gemini-2.5-flash` que já usamos (`feedback-analytics-ia-analyze/src/providers/gemini.provider.ts`, modelo hardcoded na linha 134) é **multimodal** — o SDK `@google/genai` aceita áudio via partes `inlineData`/`fileData`. Ou seja, dá para transcrever (e até analisar direto) reusando a interface `IaApiClient` (`feedback-analytics-ia-analyze/types/iaApiClient.types.ts`), sem fornecedor novo. A transcrição passa a ser mais uma operação por trás da mesma "porta".
 
 ### Pré-requisito: Supabase Storage (infra nova)
 
@@ -96,12 +96,12 @@ Hoje `feedbackBaseSchema` exige `message: z.string().min(3).max(5000)`. Tornar a
 
 ### Frontend público
 
-- Novo campo `fieldAudioMessage.tsx` em `apps/web/components/public/forms/fields/fieldsQRCode/`: gravar / regravar / ouvir antes de enviar, usando a **API MediaRecorder** do navegador.
+- Novo campo `fieldAudioMessage.tsx` em `feedback-analytics-web/components/public/forms/fields/fieldsQRCode/`: gravar / regravar / ouvir antes de enviar, usando a **API MediaRecorder** do navegador.
 - O `formQRCodeFeedback.tsx` passa a renderizar `FieldMessage` **ou** `FieldAudioMessage` (ou ambos, no modo "cliente escolhe") conforme a config recebida.
 - **Fallback obrigatório:** se `MediaRecorder` não estiver disponível ou o usuário negar o microfone, cair de volta para o textarea — ninguém pode ficar travado.
-- Ajustar o controller `apps/web/pages/public/qrcode/useQrCodeFeedbackController.ts`: pedir a URL assinada ao Gateway, fazer o upload do blob, então enviar o feedback com `audio_path`.
+- Ajustar o controller `feedback-analytics-web/pages/public/qrcode/useQrCodeFeedbackController.ts`: pedir a URL assinada ao Gateway, fazer o upload do blob, então enviar o feedback com `audio_path`.
 
-### Backend (`backends/api-gateway/src/controllers/public/qrcode.controller.ts`)
+### Backend (`feedback-analytics-api-gateway/src/controllers/public/qrcode.controller.ts`)
 
 - Novo endpoint para emitir a **URL assinada de upload** (valida que o ponto de coleta é válido/ativo antes de assinar).
 - No insert do feedback: validar `message_type`, tamanho/duração e a existência do `audio_path`; gravar as novas colunas.
