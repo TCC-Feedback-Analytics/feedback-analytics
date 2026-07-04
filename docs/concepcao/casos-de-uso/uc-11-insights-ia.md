@@ -56,7 +56,7 @@
 
 ## Base para Teste E2E
 
-> Os testes E2E estão implementados no Playwright ([uc-11-insights-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-11-insights-ia.spec.ts)). O spec contém dois smokes de carregamento da página de relatório e um teste do botão de regenerar (condicional, com `test.skip()` quando o botão não está visível e com a chamada à API de IA mockada para não consumir créditos). Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+> Os testes E2E estão implementados no Playwright ([uc-11-insights-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-11-insights-ia.spec.ts)). O spec contém dois smokes de carregamento da página de relatório e um teste do botão de regenerar (condicional, com `test.skip()` quando o botão não está visível e com a chamada à API de IA mockada para não consumir créditos). Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
 
 **Cenários a cobrir:**
 

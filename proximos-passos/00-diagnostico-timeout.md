@@ -28,9 +28,9 @@ Este documento **não conserta** isso (a cura é estrutural, nas etapas 03 e 08)
 
 O controller só responde **depois** que a última chamada ao Gemini volta. São **duas funções serverless empilhadas** (o gateway e o serviço `ia-analyze`), e **cada uma** tem o próprio teto de duração.
 
-**2. O teto configurado é ignorado no plano free.** Os quatro `vercel.json` pedem `maxDuration: 300` (300s):
+**2. O teto configurado é ignorado no plano free.** Os `vercel.json` (um por serviço) pedem `maxDuration: 300` (300s):
 
-- [`vercel.json`](../vercel.json) (raiz) · [`backends/api-gateway/vercel.json`](../backends/api-gateway/vercel.json) · [`apps/web/vercel.json`](../apps/web/vercel.json) · [`services/ia-analyze/vercel.json`](../services/ia-analyze/vercel.json)
+- [`feedback-analytics-api-gateway/vercel.json`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/vercel.json) · [`feedback-analytics-web/vercel.json`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/vercel.json) · [`feedback-analytics-ia-analyze/vercel.json`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/vercel.json)
 
 Porém, no **plano Hobby (free) da Vercel**, o teto real de duração de função é **muito menor** (da ordem de **~60s**; confirmar o limite vigente do plano na documentação atual da Vercel). Ou seja: `maxDuration: 300` **excede o permitido pelo plano e é limitado/ignorado** pela plataforma — a função é cortada bem antes dos 300s.
 
@@ -38,16 +38,16 @@ Porém, no **plano Hobby (free) da Vercel**, o teto real de duração de funçã
 
 | Fator | Onde | Valor | Efeito no tempo |
 |---|---|---|---|
-| Feedbacks por execução | [`iaAnalyze.service.ts`](../backends/api-gateway/src/services/iaAnalyze.service.ts) (`analyzeRawFeedbacks`) | default **50** (máx. 100) | mais feedbacks → mais lotes |
-| Tamanho do lote | [`libs/iaAnalyze/build.ts`](../backends/api-gateway/src/libs/iaAnalyze/build.ts) (`DEFAULT_MAX_FEEDBACKS_PER_BATCH`) | **20** por lote | N feedbacks ⇒ ⌈N/20⌉ chamadas ao Gemini |
-| Concorrência | [`services/ia-analyze/src/services/iaAnalyze.service.ts`](../services/ia-analyze/src/services/iaAnalyze.service.ts) (`DEFAULT_GEMINI_CONCURRENCY`) | **3** em paralelo | os lotes correm de 3 em 3, em ondas |
-| Retry/backoff | [`gemini.provider.ts`](../services/ia-analyze/src/providers/gemini.provider.ts) (`MAX_ATTEMPTS`) | até **4** tentativas, backoff até 20s | cada falha transitória **soma `sleep`** ao tempo decorrido |
+| Feedbacks por execução | [`iaAnalyze.service.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/services/iaAnalyze.service.ts) (`analyzeRawFeedbacks`) | default **50** (máx. 100) | mais feedbacks → mais lotes |
+| Tamanho do lote | [`libs/iaAnalyze/build.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/libs/iaAnalyze/build.ts) (`DEFAULT_MAX_FEEDBACKS_PER_BATCH`) | **20** por lote | N feedbacks ⇒ ⌈N/20⌉ chamadas ao Gemini |
+| Concorrência | [`feedback-analytics-ia-analyze/src/services/iaAnalyze.service.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/services/iaAnalyze.service.ts) (`DEFAULT_GEMINI_CONCURRENCY`) | **3** em paralelo | os lotes correm de 3 em 3, em ondas |
+| Retry/backoff | [`gemini.provider.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/providers/gemini.provider.ts) (`MAX_ATTEMPTS`) | até **4** tentativas, backoff até 20s | cada falha transitória **soma `sleep`** ao tempo decorrido |
 
-> A latência típica de uma chamada ao Gemini fica em ~20–30s ([comentário em `readEnvs.ts:14`](../backends/api-gateway/src/libs/iaAnalyze/readEnvs.ts)). Com vários lotes em ondas de 3, mais qualquer retry com backoff, é fácil ultrapassar 60s — e aí a função é cortada.
+> A latência típica de uma chamada ao Gemini fica em ~20–30s ([comentário em `readEnvs.ts:14`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/libs/iaAnalyze/readEnvs.ts)). Com vários lotes em ondas de 3, mais qualquer retry com backoff, é fácil ultrapassar 60s — e aí a função é cortada.
 
-**4. O timeout interno do gateway (280s) só dispara DEPOIS do corte da Vercel.** O gateway aborta a chamada remota em `DEFAULT_REMOTE_TIMEOUT_MS = 280_000` ([`readEnvs.ts:16`](../backends/api-gateway/src/libs/iaAnalyze/readEnvs.ts)) — pensado para ficar abaixo do `maxDuration: 300`. Mas como o teto **real** do plano é ~60s, **a Vercel mata a função muito antes** de o abort de 280s acontecer. Por isso o erro chega como um corte opaco de infraestrutura (502/504), não como o "demorou demais" tipado que o código tentaria devolver.
+**4. O timeout interno do gateway (280s) só dispara DEPOIS do corte da Vercel.** O gateway aborta a chamada remota em `DEFAULT_REMOTE_TIMEOUT_MS = 280_000` ([`readEnvs.ts:16`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/libs/iaAnalyze/readEnvs.ts)) — pensado para ficar abaixo do `maxDuration: 300`. Mas como o teto **real** do plano é ~60s, **a Vercel mata a função muito antes** de o abort de 280s acontecer. Por isso o erro chega como um corte opaco de infraestrutura (502/504), não como o "demorou demais" tipado que o código tentaria devolver.
 
-**5. O instrumento de medição já existe.** O gateway já loga o tempo decorrido de cada execução de IA em `logIaAnalyzeFailure` ([`iaAnalyze.controller.ts`](../backends/api-gateway/src/controllers/protected/iaAnalyze.controller.ts)):
+**5. O instrumento de medição já existe.** O gateway já loga o tempo decorrido de cada execução de IA em `logIaAnalyzeFailure` ([`iaAnalyze.controller.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/controllers/protected/iaAnalyze.controller.ts)):
 
 ```
 [ia-analyze:analyze-raw] code=... status=... mode=... baseUrl=... elapsedMs=<N>
@@ -88,8 +88,8 @@ Basta correlacionar o `elapsedMs` registrado (e a **duração da função** most
 
 Enquanto a etapa 03 não chega, dá para **reduzir o nº default de feedbacks por execução** para caber na janela de ~60s:
 
-- `analyzeRawFeedbacks` — default `limit = 50` ([`iaAnalyze.service.ts`](../backends/api-gateway/src/services/iaAnalyze.service.ts)).
-- `fetchAlreadyAnalyzedFeedbacks` — default `limit = 100` ([`iaAnalyze.repository.ts`](../backends/api-gateway/src/repositories/iaAnalyze.repository.ts)).
+- `analyzeRawFeedbacks` — default `limit = 50` ([`iaAnalyze.service.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/services/iaAnalyze.service.ts)).
+- `fetchAlreadyAnalyzedFeedbacks` — default `limit = 100` ([`iaAnalyze.repository.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/repositories/iaAnalyze.repository.ts)).
 
 > ⚠️ **É paliativo — mascara o sintoma, não resolve.** Reduz a cobertura da análise (menos feedbacks por rodada) e só é aceitável **como ponte** até a etapa 03. Não aplicar sem necessidade; se aplicar, registrar o valor escolhido e o motivo.
 

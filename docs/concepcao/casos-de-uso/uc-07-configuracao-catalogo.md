@@ -57,7 +57,7 @@ A tela dedicada do item tem **três blocos independentes**, cada um com seu pró
 
 ## Base para Teste E2E
 
-> **O E2E atual deste UC é apenas um smoke test de carregamento de página** ([uc-07-configuracao-catalogo.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-07-configuracao-catalogo.spec.ts)): o smoke continua na **lista** `/user/edit/feedback-products`, verificando que a página carrega (ou exibe o bloqueio de tipo não ativado). Os fluxos de **ação** **não estão cobertos por E2E** — e configurar perguntas e QR Code agora vive na **tela dedicada por item** (`/user/edit/feedback/:kind/:itemId`), não mais na lista. Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+> **O E2E atual deste UC é apenas um smoke test de carregamento de página** ([uc-07-configuracao-catalogo.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-07-configuracao-catalogo.spec.ts)): o smoke continua na **lista** `/user/edit/feedback-products`, verificando que a página carrega (ou exibe o bloqueio de tipo não ativado). Os fluxos de **ação** **não estão cobertos por E2E** — e configurar perguntas e QR Code agora vive na **tela dedicada por item** (`/user/edit/feedback/:kind/:itemId`), não mais na lista. Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
 
 **Cenários a cobrir:**
 

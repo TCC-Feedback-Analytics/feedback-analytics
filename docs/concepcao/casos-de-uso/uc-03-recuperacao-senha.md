@@ -42,7 +42,7 @@
 
 ## Base para Teste E2E
 
-> **Este UC não possui cobertura E2E no Playwright.** Não existe arquivo `uc-03-*.spec.ts` em `apps/web/e2e/` — o fluxo depende de recebimento de e-mail em tempo real e esbarra no rate limit de e-mail do Supabase em testes automatizados. Os cenários abaixo descrevem o comportamento esperado e a estratégia de cobertura por outros meios (unidade/manual), mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+> **Este UC não possui cobertura E2E no Playwright.** Não existe arquivo `uc-03-*.spec.ts` em `feedback-analytics-web/e2e/` — o fluxo depende de recebimento de e-mail em tempo real e esbarra no rate limit de e-mail do Supabase em testes automatizados. Os cenários abaixo descrevem o comportamento esperado e a estratégia de cobertura por outros meios (unidade/manual), mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
 
 **Cenários a cobrir:**
 

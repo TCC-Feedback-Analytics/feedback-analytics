@@ -50,7 +50,7 @@ Há um detalhe técnico que vale explicar em linguagem simples, porque é uma de
 - **View cruzando schemas:** `enterprise_public` resolve o nome da empresa a partir de `auth.users.raw_user_meta_data` para o fluxo anônimo do QR Code.
 
 **Plano de adoção do Drizzle (incremental, não-destrutivo):**
-1. Adicionar `drizzle-orm` + `drizzle-kit` e uma conexão Postgres (ex.: `postgres`/`pg`) no `backends/api-gateway`, lendo a connection string do Postgres do Supabase.
+1. Adicionar `drizzle-orm` + `drizzle-kit` e uma conexão Postgres (ex.: `postgres`/`pg`) no `feedback-analytics-api-gateway`, lendo a connection string do Postgres do Supabase.
 2. **Introspecção:** rodar `drizzle-kit pull`/`introspect` sobre o banco existente para *gerar* o schema TypeScript a partir do que já existe — assim o `database/sql/` continua sendo a verdade e o Drizzle reflete fielmente as tabelas (`feedback`, `enterprise`, `feedback_analysis`, `catalog_items`, etc.).
 3. Reconciliar o schema do Drizzle com os contratos TypeScript já existentes em `shared/interfaces/domain/feedback.domain.ts` (ex.: `Feedback`, `FeedbackStats`, `CollectionPoint`) — os tipos inferidos do Drizzle devem casar com esses contratos de domínio para não duplicar verdade.
 4. Migrar **um caminho de leitura autenticado** primeiro (candidato natural: as agregações de stats que hoje somam em JavaScript — base da Etapa 02), repassando o `enterprise_id` da sessão como filtro explícito em toda query.

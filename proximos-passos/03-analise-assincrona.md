@@ -81,7 +81,7 @@ O "perguntar de tempos em tempos" (em inglês, *polling*) é como **olhar o pain
 
 O fluxo inteiro roda **síncrono, dentro da requisição HTTP serverless**:
 
-`iaAnalyze.controller.ts` → `iaAnalyze.service.ts` (`analyzeRawFeedbacks` / `regenerateFeedbackInsights`) → `iaAnalyze.provider.ts` (`runIaAnalyzeAnalysis`, faz `fetch` para o serviço `ia-analyze`) → `services/ia-analyze/.../iaAnalyze.service.ts` (`runIaAnalyzeService`) → `gemini.provider.ts` (`createIaApiClient` → `analyzeBatch`).
+`iaAnalyze.controller.ts` → `iaAnalyze.service.ts` (`analyzeRawFeedbacks` / `regenerateFeedbackInsights`) → `iaAnalyze.provider.ts` (`runIaAnalyzeAnalysis`, faz `fetch` para o serviço `ia-analyze`) → `feedback-analytics-ia-analyze/.../iaAnalyze.service.ts` (`runIaAnalyzeService`) → `gemini.provider.ts` (`createIaApiClient` → `analyzeBatch`).
 
 Pontos concretos que causam o timeout e o estouro de cota:
 

@@ -67,16 +67,16 @@ Atalhos de comparação previstos (presets):
 
 ### Estado atual (verificado no código)
 
-- **Endpoint:** `GET /api/protected/user/feedbacks/stats` → `getFeedbacksStatsController` em `backends/api-gateway/src/controllers/protected/feedbacks.controller.ts` (a partir da linha ~340).
+- **Endpoint:** `GET /api/protected/user/feedbacks/stats` → `getFeedbacksStatsController` em `feedback-analytics-api-gateway/src/controllers/protected/feedbacks.controller.ts` (a partir da linha ~340).
   - Aceita `scope_type` e `catalog_item_id`; resolve os `collection_point` do escopo via `resolveScopeCollectionPointIds` (`repositories/scope.repository.ts`).
   - Consulta `feedback` filtrando por `enterprise_id` (+ `collection_point_id` quando há escopo) e faz `.select('id, rating')`. **Não há filtro por `created_at`** — sempre lê o histórico inteiro.
   - **Toda a agregação é em JavaScript**: `totalFeedbacks` (length do array), `averageRating` (reduce/soma), `ratingDistribution` (cinco `.filter(...).length`), `sentimentBreakdown` e as estatísticas de satisfação (`ratingStats`, `csatTopTwoBox`, `netSatisfaction`) em `libs/statistics/`.
 - **Banco:** `database/sql/tables/public.feedback.sql` define `created_at timestamp with time zone default now()`, mas a tabela só tem índice na PK (`id`) e na FK (`feedback_enterprise_id_fkey`). **Não há índice em `created_at`** — confirmado no DDL.
 - **Frontend:**
-  - `apps/web/src/services/serviceFeedbacks.ts` → `ServiceGetFeedbackStats` monta a query string.
-  - `apps/web/src/routes/load/loadFeedbackStats.ts` e `apps/web/src/routes/loaders/loaderUserDashboard.ts` carregam o estado inicial (escopo `COMPANY`).
-  - `apps/web/pages/user/dashboard.tsx` re-busca os stats quando o escopo muda, lendo `scope`/`catalogItemId` do contexto `apps/web/src/lib/context/insightsControls.tsx`.
-  - Renderização em `apps/web/components/user/pages/dashboard/`: `SectionMetric`, `SectionEvaluationDistribution`, `SectionSatisfactionRadar`. **Não existe nenhum seletor de data.**
+  - `feedback-analytics-web/src/services/serviceFeedbacks.ts` → `ServiceGetFeedbackStats` monta a query string.
+  - `feedback-analytics-web/src/routes/load/loadFeedbackStats.ts` e `feedback-analytics-web/src/routes/loaders/loaderUserDashboard.ts` carregam o estado inicial (escopo `COMPANY`).
+  - `feedback-analytics-web/pages/user/dashboard.tsx` re-busca os stats quando o escopo muda, lendo `scope`/`catalogItemId` do contexto `feedback-analytics-web/src/lib/context/insightsControls.tsx`.
+  - Renderização em `feedback-analytics-web/components/user/pages/dashboard/`: `SectionMetric`, `SectionEvaluationDistribution`, `SectionSatisfactionRadar`. **Não existe nenhum seletor de data.**
 
 ### Banco — índice de período
 
@@ -117,10 +117,10 @@ O cálculo dos atalhos (qual data é "mês passado") fica idealmente no **fronte
 ### Frontend — componentes novos
 
 - `serviceFeedbacks.ts`: repassar `start_date`/`end_date`; nova função para a comparação.
-- **Seletor de período** (ex.: `apps/web/components/user/pages/dashboard/DateRangeSelector.tsx`) com os atalhos + intervalo personalizado.
+- **Seletor de período** (ex.: `feedback-analytics-web/components/user/pages/dashboard/DateRangeSelector.tsx`) com os atalhos + intervalo personalizado.
 - **Bloco de comparação** (ex.: `SectionComparisonMetrics.tsx`) com os cartões de número grande + referência + delta (seta/cor).
 - Integrar período ao contexto `insightsControls` (hoje só guarda escopo), para que período e escopo combinem numa única seleção.
-- Datas: já existe `apps/web/src/lib/utils/FormatDate.ts`. Avaliar `date-fns` (leve, bom para "início do mês anterior") — confirmar antes em `apps/web/package.json` para não duplicar dependência.
+- Datas: já existe `feedback-analytics-web/src/lib/utils/FormatDate.ts`. Avaliar `date-fns` (leve, bom para "início do mês anterior") — confirmar antes em `feedback-analytics-web/package.json` para não duplicar dependência.
 
 ### Decisão de fuso horário
 

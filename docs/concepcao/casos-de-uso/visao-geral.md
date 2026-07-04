@@ -9,7 +9,7 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 > Os cenários da seção "Base para Teste E2E" de cada UC são a referência de comportamento esperado; cada arquivo de UC com cobertura aponta para o seu `uc-XX-*.spec.ts` correspondente. O mapeamento **não é 1:1 com todos os cenários**: nem todo cenário documentado tem um teste E2E implementado, e parte dos UCs tem apenas smoke test de carregamento. A cobertura real de cada cenário (✅ E2E, smoke, skip, planejado, unidade/integração) está indicada caso a caso na seção de testes de cada UC.
 >
 > **Estado atual da cobertura E2E:**
-> - **11 UCs** possuem arquivo de spec em `apps/web/e2e/` (UC-01, 02, 04, 05, 06, 07, 08, 09, 10, 11, 12).
+> - **11 UCs** possuem arquivo de spec em `feedback-analytics-web/e2e/` (UC-01, 02, 04, 05, 06, 07, 08, 09, 10, 11, 12).
 > - **UC-03 não possui cobertura E2E** (depende de e-mail real / rate limit do Supabase).
 > - **UC-05, UC-06, UC-07 e UC-10** têm apenas **smoke test de carregamento de página** — os fluxos de ação documentados não são exercitados por E2E.
 > - São **27** chamadas `test()` no total, incluindo **7** `test.skip()` (condicionais) em UC-04, UC-08, UC-11 e UC-12. O `auth.setup.ts` é fixture de login, não um teste de UC.
@@ -124,22 +124,22 @@ UC-04 (Coleta de feedback)
 
 ## Relação com Testes E2E
 
-A maioria dos UCs possui um arquivo de teste E2E do Playwright em `apps/web/e2e/`. O **Status** abaixo reflete a profundidade real da cobertura, não apenas a existência do arquivo:
+A maioria dos UCs possui um arquivo de teste E2E do Playwright em `feedback-analytics-web/e2e/`. O **Status** abaixo reflete a profundidade real da cobertura, não apenas a existência do arquivo:
 
 | Arquivo de UC | Arquivo de teste E2E | Status |
 |---|---|---|
-| [uc-01-cadastro-conta.md](uc-01-cadastro-conta.md) | [uc-01-cadastro-conta.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-01-cadastro-conta.spec.ts) | ✅ Implementado (2 testes: e-mail e documento duplicados) |
-| [uc-02-login.md](uc-02-login.md) | [uc-02-login.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-02-login.spec.ts) | ✅ Implementado (2 testes) |
+| [uc-01-cadastro-conta.md](uc-01-cadastro-conta.md) | [uc-01-cadastro-conta.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-01-cadastro-conta.spec.ts) | ✅ Implementado (2 testes: e-mail e documento duplicados) |
+| [uc-02-login.md](uc-02-login.md) | [uc-02-login.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-02-login.spec.ts) | ✅ Implementado (2 testes) |
 | [uc-03-recuperacao-senha.md](uc-03-recuperacao-senha.md) | *Sem spec* | ❌ Sem cobertura E2E (unidade / manual) |
-| [uc-04-envio-feedback-qrcode.md](uc-04-envio-feedback-qrcode.md) | [uc-04-envio-feedback-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-04-envio-feedback-qrcode.spec.ts) | ✅ Implementado (2 testes; envio válido com skip condicional) |
-| [uc-05-geracao-qrcode.md](uc-05-geracao-qrcode.md) | [uc-05-geracao-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-05-geracao-qrcode.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-06-ativacao-tipos-feedback.md](uc-06-ativacao-tipos-feedback.md) | [uc-06-ativacao-tipos-feedback.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-06-ativacao-tipos-feedback.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-07-configuracao-catalogo.md](uc-07-configuracao-catalogo.md) | [uc-07-configuracao-catalogo.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-07-configuracao-catalogo.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-08-configuracao-coleta-ia.md](uc-08-configuracao-coleta-ia.md) | [uc-08-configuracao-coleta-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-08-configuracao-coleta-ia.spec.ts) | ✅ Implementado (smoke + 2 saves com skip condicional) |
-| [uc-09-dashboard.md](uc-09-dashboard.md) | [uc-09-dashboard.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-09-dashboard.spec.ts) | ✅ Implementado (5 testes) |
-| [uc-10-listagem-feedbacks.md](uc-10-listagem-feedbacks.md) | [uc-10-listagem-feedbacks.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-10-listagem-feedbacks.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-11-insights-ia.md](uc-11-insights-ia.md) | [uc-11-insights-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-11-insights-ia.spec.ts) | ✅ Implementado (2 smokes + regenerar com skip condicional) |
-| [uc-12-gestao-perfil.md](uc-12-gestao-perfil.md) | [uc-12-gestao-perfil.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/apps/web/e2e/uc-12-gestao-perfil.spec.ts) | ✅ Implementado (6 testes; 2 com skip condicional) |
+| [uc-04-envio-feedback-qrcode.md](uc-04-envio-feedback-qrcode.md) | [uc-04-envio-feedback-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-04-envio-feedback-qrcode.spec.ts) | ✅ Implementado (2 testes; envio válido com skip condicional) |
+| [uc-05-geracao-qrcode.md](uc-05-geracao-qrcode.md) | [uc-05-geracao-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-05-geracao-qrcode.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-06-ativacao-tipos-feedback.md](uc-06-ativacao-tipos-feedback.md) | [uc-06-ativacao-tipos-feedback.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-06-ativacao-tipos-feedback.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-07-configuracao-catalogo.md](uc-07-configuracao-catalogo.md) | [uc-07-configuracao-catalogo.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-07-configuracao-catalogo.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-08-configuracao-coleta-ia.md](uc-08-configuracao-coleta-ia.md) | [uc-08-configuracao-coleta-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-08-configuracao-coleta-ia.spec.ts) | ✅ Implementado (smoke + 2 saves com skip condicional) |
+| [uc-09-dashboard.md](uc-09-dashboard.md) | [uc-09-dashboard.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-09-dashboard.spec.ts) | ✅ Implementado (5 testes) |
+| [uc-10-listagem-feedbacks.md](uc-10-listagem-feedbacks.md) | [uc-10-listagem-feedbacks.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-10-listagem-feedbacks.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-11-insights-ia.md](uc-11-insights-ia.md) | [uc-11-insights-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-11-insights-ia.spec.ts) | ✅ Implementado (2 smokes + regenerar com skip condicional) |
+| [uc-12-gestao-perfil.md](uc-12-gestao-perfil.md) | [uc-12-gestao-perfil.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-12-gestao-perfil.spec.ts) | ✅ Implementado (6 testes; 2 com skip condicional) |
 
 **Legenda de Status:** ✅ Implementado = há ao menos um fluxo de ação coberto · 🔎 Apenas smoke = o spec só verifica que a página carrega, sem exercitar os fluxos de ação documentados · ❌ Sem cobertura E2E = não há arquivo de spec.
 

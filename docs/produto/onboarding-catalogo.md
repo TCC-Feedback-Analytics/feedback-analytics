@@ -83,4 +83,4 @@ Tudo isso acontece **de forma invisível**, sem nenhuma intervenção manual do 
 
 - [QR Codes por Escopo → qrcode-escopo-dinamico.md](./qrcode-escopo-dinamico.md)
 - [Coleta via QR Code → coleta-qrcode.md](./coleta-qrcode.md)
-- [Regras de Negócio — RNE-010 → visao-geral.md#regras-de-negócio-rne](../concepcao/requisitos-e-funcionalidades.md)
+- [Regras de Negócio — RNE-010](../concepcao/requisitos-e-funcionalidades.md#regras-de-negócio-rne)
