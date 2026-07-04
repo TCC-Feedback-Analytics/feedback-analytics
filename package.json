@@ -2,35 +2,5 @@
   "name": "feedback-analytics",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
-    "dev:web-apiGateway-iaAnalyze": "concurrently \"npm run dev:web\" \"npm run dev:api\" \"npm run dev:ia\"",
-    "dev:web": "npm run dev --prefix apps/web",
-    "dev:api": "npm run dev --prefix backends/api-gateway",
-    "dev:ia": "npm run dev --prefix services/ia-analyze",
-    "server:dev": "npm run dev:api",
-    "server:ia-analyze:dev": "npm run dev:ia",
-    "build": "npm run build --prefix apps/web",
-    "build:web": "npm run build --prefix apps/web",
-    "lint": "npm run lint:api && npm run lint:web && npm run lint:ia",
-    "lint:web": "npm run lint --prefix apps/web",
-    "lint:api": "npm run lint --prefix backends/api-gateway",
-    "lint:ia": "npm run lint --prefix services/ia-analyze",
-    "preview": "npm run preview --prefix apps/web",
-    "test": "npm run test --prefix apps/web",
-    "test:web": "npm run test --prefix apps/web",
-    "test:api": "npm run test --prefix backends/api-gateway",
-    "test:ia": "npm run test --prefix services/ia-analyze",
-    "test:e2e": "npm run test:e2e --prefix apps/web",
-    "test:e2e:ui": "npm run test:e2e:ui --prefix apps/web",
-    "test:e2e:report": "npm run test:e2e:report --prefix apps/web"
-  },
-  "dependencies": {
-    "zod": "^4.0.13"
-  },
-  "devDependencies": {
-    "@types/node": "^26.0.1",
-    "concurrently": "^9.0.0"
-  }
+  "type": "module"
 }

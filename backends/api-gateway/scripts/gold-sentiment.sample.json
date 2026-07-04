@@ -1,8 +1,0 @@
-[
-  { "feedback_id": "exemplo-1", "human": "positive", "model": "positive" },
-  { "feedback_id": "exemplo-2", "human": "positive", "model": "positive" },
-  { "feedback_id": "exemplo-3", "human": "negative", "model": "negative" },
-  { "feedback_id": "exemplo-4", "human": "negative", "model": "neutral" },
-  { "feedback_id": "exemplo-5", "human": "neutral", "model": "neutral" },
-  { "feedback_id": "exemplo-6", "human": "neutral", "model": "positive" }
-]

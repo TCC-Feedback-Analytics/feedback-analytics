@@ -1,1 +1,0 @@
-CREATE INDEX "idx_feedback_enterprise_created_at" ON "feedback" USING btree ("enterprise_id","created_at" DESC NULLS LAST);
