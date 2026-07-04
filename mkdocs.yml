@@ -130,23 +130,13 @@ nav:
       - Modelagem de dados (DER): arquitetura/modelagem-de-dados.md
       - Histórico de decisões:
           - Monorepo vs. Monolito: arquitetura/historico-de-decisoes/decisao-monorepo-vs-monolito.md
+          - ORM vs. RLS: arquitetura/orm-rls-decisao.md
   - Referência Técnica:
-      - Backend (API Gateway):
-          - Visão geral: referencia/backend/visao-geral.md
-          - Arquitetura e estrutura: referencia/backend/arquitetura-estrutura.md
-          - Endpoints: referencia/backend/endpoints.md
-      - Serviço IA Analyze:
-          - Visão geral: referencia/ia-analyze/visao-geral.md
-          - Arquitetura e estrutura: referencia/ia-analyze/arquitetura-estrutura.md
-          - Endpoints: referencia/ia-analyze/endpoints.md
       - Banco de dados (schema): referencia/banco-de-dados/visao-geral.md
-      - Frontend:
-          - Visão geral: referencia/frontend/visao-geral.md
-          - Arquitetura e estrutura: referencia/frontend/arquitetura-estrutura.md
-          - Fluxo de autenticação: referencia/frontend/fluxo-autenticacao.md
-          - System design: referencia/frontend/system-design.md
-          - Interface e performance: referencia/frontend/interface-performance.md
       - Padrões de projeto: referencia/padroes-projeto.md
+      - "Backend / API Gateway (repo próprio) ↗": https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/docs
+      - "Frontend (repo próprio) ↗": https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/tree/main/docs
+      - "Serviço IA Analyze (repo próprio) ↗": https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/tree/main/docs
   - Guias:
       - Instalação: guias/guia-instalacao.md
       - CI/CD e deploy: guias/workflows.md
@@ -158,4 +148,5 @@ nav:
           - IA Analyze: guias/testes/ia-analyze.md
           - Vitest & Playwright: guias/testes/vitest_playwright.md
           - Lacunas E2E: guias/testes/lucanas_e2e.md
+          - Testes de usabilidade: guias/testes/usabilidade.md
   - Changelog: changelog_documentacao.md

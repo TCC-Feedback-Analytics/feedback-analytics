@@ -6,11 +6,11 @@ Este documento responde, de frente, à crítica da banca *"usar Supabase não ex
 
 Artefatos relacionados:
 
-- Schema Drizzle **canônico** (introspectado do banco real via `db:pull`): [`backends/api-gateway/drizzle/schema.ts`](../../backends/api-gateway/drizzle/schema.ts) · tipos inferidos estáveis em [`src/db/types.ts`](../../backends/api-gateway/src/db/types.ts)
-- Cliente Drizzle (lazy, pooler): [`backends/api-gateway/src/db/client.ts`](../../backends/api-gateway/src/db/client.ts)
-- Config do drizzle-kit: [`backends/api-gateway/drizzle.config.ts`](../../backends/api-gateway/drizzle.config.ts)
-- Convenção de migrations: [Migrations com Drizzle](migrations-drizzle.md)
-- Caminho migrado (stats via Drizzle, tenant-scoped): [`src/db/tenantScope.ts`](../../backends/api-gateway/src/db/tenantScope.ts) + [`src/repositories/feedbackStats.repository.ts`](../../backends/api-gateway/src/repositories/feedbackStats.repository.ts)
+- Schema Drizzle **canônico** (introspectado do banco real via `db:pull`): [`backends/api-gateway/drizzle/schema.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle/schema.ts) · tipos inferidos estáveis em [`src/db/types.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/types.ts)
+- Cliente Drizzle (lazy, pooler): [`backends/api-gateway/src/db/client.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/client.ts)
+- Config do drizzle-kit: [`backends/api-gateway/drizzle.config.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle.config.ts)
+- Convenção de migrations: [Migrations com Drizzle](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/migrations-drizzle.md)
+- Caminho migrado (stats via Drizzle, tenant-scoped): [`src/db/tenantScope.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/tenantScope.ts) + [`src/repositories/feedbackStats.repository.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/repositories/feedbackStats.repository.ts)
 - Modelagem existente: [Modelo Conceitual (MER)](modelo-conceitual-mer.md) · [Diagrama de Entidade e Relacionamento (DER)](modelagem-de-dados.md) · [Visão Geral do Banco](../referencia/banco-de-dados/visao-geral.md)
 
 ---
@@ -39,7 +39,7 @@ Um ORM, porém, conecta ao Postgres por uma **connection string com uma role adm
 1. **Drizzle nos caminhos AUTENTICADOS/INTERNOS** (onde o backend já sabe de qual empresa é a requisição), **sempre com filtro explícito por `enterprise_id`**.
 2. **O fluxo público anônimo (QR Code) NÃO usa Drizzle** — continua via cliente Supabase + RLS, que é a fronteira de segurança correta para um papel `anon` não confiável.
 3. **A RLS permanece LIGADA em todas as tabelas**, como **defesa em profundidade**: mesmo que um filtro de aplicação falhe, a policy do banco é a segunda barreira.
-4. **Adoção incremental, não migração total**: começamos por um caminho de leitura (as agregações de stats — fundação da [Etapa 02](../../proximos-passos/02-metricas-por-periodo-e-comparacao.md)); o resto migra sob demanda, declarado como trabalho futuro.
+4. **Adoção incremental, não migração total**: começamos por um caminho de leitura (as agregações de stats — fundação da [Etapa 02](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/proximos-passos/02-metricas-por-periodo-e-comparacao.md)); o resto migra sob demanda, declarado como trabalho futuro.
 
 ## 4. Mitigações (como evitamos o vazamento entre empresas)
 
