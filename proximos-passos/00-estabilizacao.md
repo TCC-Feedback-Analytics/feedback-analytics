@@ -77,7 +77,7 @@ O fluxo de regeneração busca feedbacks via `fetchAlreadyAnalyzedFeedbacks` (`b
 
 ### 4) Timeout da análise — diagnóstico
 
-Tanto `vercel.json` quanto `services/ia-analyze/vercel.json` pedem `maxDuration: 300` (e o gateway usa `DEFAULT_REMOTE_TIMEOUT_MS = 280_000`). Porém, no **plano Hobby (free) da Vercel**, o teto real de duração de função é **~60s** — o `maxDuration=300` é ignorado e a função é cortada bem antes. Como toda a análise roda **síncrona dentro da requisição HTTP** (encadeia 1 chamada ao Gemini por lote de ≤20 feedbacks por escopo), lotes grandes simplesmente não cabem em 60s. O entregável aqui é o **diagnóstico documentado** (medir o `elapsedMs` já logado por `logIaAnalyzeFailure` em `iaAnalyze.controller.ts` e correlacionar com o corte em ~60s), que **justifica formalmente** a [etapa 03 — Análise assíncrona](./03-analise-assincrona.md) (processar em segundo plano, fora do ciclo da requisição) e a [etapa 08 — Infraestrutura e custo](./08-infraestrutura-e-custo.md) (avaliar plano/host). Nesta etapa **não** reescrevemos a arquitetura — apenas confirmamos a causa e, opcionalmente, reduzimos o limite default de feedbacks por execução para caber na janela enquanto a 03 não chega.
+Tanto `vercel.json` quanto `services/ia-analyze/vercel.json` pedem `maxDuration: 300` (e o gateway usa `DEFAULT_REMOTE_TIMEOUT_MS = 280_000`). Porém, no **plano Hobby (free) da Vercel**, o teto real de duração de função é **~60s** — o `maxDuration=300` é ignorado e a função é cortada bem antes. Como toda a análise roda **síncrona dentro da requisição HTTP** (encadeia 1 chamada ao Gemini por lote de ≤20 feedbacks por escopo), lotes grandes simplesmente não cabem em 60s. O entregável aqui é o **diagnóstico documentado** (medir o `elapsedMs` já logado por `logIaAnalyzeFailure` em `iaAnalyze.controller.ts` e correlacionar com o corte em ~60s), que **justifica formalmente** a [etapa 03 — Análise assíncrona](./03-analise-assincrona.md) (processar em segundo plano, fora do ciclo da requisição) e a [etapa 08 — Infraestrutura e custo](./08-infraestrutura-e-custo.md) (avaliar plano/host). Nesta etapa **não** reescrevemos a arquitetura — apenas confirmamos a causa e, opcionalmente, reduzimos o limite default de feedbacks por execução para caber na janela enquanto a 03 não chega. O diagnóstico completo (evidências de código + planilha de medição a preencher com os logs da Vercel) está em [00 — Diagnóstico do timeout](./00-diagnostico-timeout.md).
 
 ## Riscos e decisões em aberto
 
@@ -95,7 +95,7 @@ Tanto `vercel.json` quanto `services/ia-analyze/vercel.json` pedem `maxDuration:
 - [ ] Existe migração versionada em `database/sql/` adicionando `UNIQUE(document)` e `UNIQUE(auth_user_id)` em `public.enterprise`; tentar cadastrar documento duplicado retorna `409 document_already_exists` de forma consistente, inclusive sob concorrência.
 - [ ] Um erro `429` de **cota diária** simulado **não** dispara as 4 tentativas — falha rápido e com mensagem clara; um `503` ainda é retentado normalmente (teste unitário no provider).
 - [ ] Clicar "gerar insights" duas vezes seguidas no mesmo escopo resulta em **1** chamada ao Gemini (a segunda lê do cache) — verificável por log/contador.
-- [ ] Documento de diagnóstico do timeout registra o tempo até o corte (~60s) e referencia explicitamente as etapas 03 e 08.
+- [ ] Documento de diagnóstico do timeout registra o tempo até o corte (~60s) e referencia explicitamente as etapas 03 e 08. → [00 — Diagnóstico do timeout](./00-diagnostico-timeout.md) criado (evidências de código prontas; falta colar a medição dos logs da Vercel).
 
 ## Etapas de entrega
 
@@ -115,5 +115,6 @@ Tanto `vercel.json` quanto `services/ia-analyze/vercel.json` pedem `maxDuration:
 ## Relacionado
 
 - [⟵ Roadmap geral](./README.md)
+- [00 — Diagnóstico do timeout](./00-diagnostico-timeout.md) — evidências da causa-raiz (Parte F) que fundamentam as etapas 03 e 08
 - [03 — Análise assíncrona](./03-analise-assincrona.md) — solução estrutural para o timeout e o custo da IA
 - [08 — Infraestrutura e custo](./08-infraestrutura-e-custo.md) — plano de hospedagem e teto de tempo de execução

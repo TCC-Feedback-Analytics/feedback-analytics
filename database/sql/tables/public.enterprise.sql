@@ -70,6 +70,37 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Unicidade
+-- Barreira REAL (atômica, à prova de corrida) contra cadastros duplicados, e
+-- pré-requisito do `ON CONFLICT (auth_user_id)` usado pela trigger
+-- create_enterprise_on_signup. Idempotente: só cria se ainda não existir.
+--
+-- ATENÇÃO: se já houver duplicatas no banco, o ADD CONSTRAINT FALHA. Rode antes
+-- e limpe o que retornar:
+--   SELECT document, count(*)     FROM public.enterprise GROUP BY document     HAVING count(*) > 1;
+--   SELECT auth_user_id, count(*) FROM public.enterprise GROUP BY auth_user_id HAVING count(*) > 1;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'enterprise_document_key'
+      AND conrelid = 'public.enterprise'::regclass
+  ) THEN
+    ALTER TABLE "public"."enterprise"
+      ADD CONSTRAINT enterprise_document_key UNIQUE (document);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'enterprise_auth_user_id_key'
+      AND conrelid = 'public.enterprise'::regclass
+  ) THEN
+    ALTER TABLE "public"."enterprise"
+      ADD CONSTRAINT enterprise_auth_user_id_key UNIQUE (auth_user_id);
+  END IF;
+END $$;
+
 -- Triggers
 DROP TRIGGER IF EXISTS "set_updated_at" ON "public"."enterprise";
 CREATE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."enterprise"

@@ -42,6 +42,12 @@ export interface IaAnalyzeRawRunResponse {
 export interface IaAnalyzeRegenerateInsightsRequest {
   scope_type?: IaAnalyzeScopeType;
   catalog_item_id?: string;
+  /**
+   * Quando `true`, ignora o cache de leitura e força uma nova geração via LLM,
+   * mesmo que já exista relatório salvo e sem feedback novo (botão "forçar
+   * regeneração"). Por padrão (`false`/ausente) o cache é respeitado.
+   */
+  force?: boolean;
 }
 
 export interface IaAnalyzeRegenerateInsightsResponse {
@@ -55,4 +61,10 @@ export interface IaAnalyzeRegenerateInsightsResponse {
    * sem feedbacks com texto analisados suficientes).
    */
   reportGenerated: boolean;
+  /**
+   * `true` quando a resposta veio do relatório salvo (cache de leitura), sem
+   * chamar o LLM — caso não haja feedback analisado novo desde a última geração.
+   * Permite ao front distinguir "recalculado agora" de "reaproveitado".
+   */
+  fromCache: boolean;
 }

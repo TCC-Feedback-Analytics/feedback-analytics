@@ -32,10 +32,21 @@ BEGIN
     RAISE EXCEPTION 'document_already_exists' USING ERRCODE = '23505';
   END IF;
 
-  -- insere enterprise (continua prevenindo conflito por auth_user_id)
-  INSERT INTO public.enterprise (document, account_type, terms_version, terms_accepted_at, auth_user_id, trial_ends_at, subscription_status)
-  VALUES (v_document, v_account_type, v_terms_version, v_terms_accepted_at, NEW.id, NOW() + INTERVAL '4 months', 'TRIAL')
-  ON CONFLICT (auth_user_id) DO NOTHING;
+  -- Insere a empresa. A barreira REAL contra documento duplicado é o
+  -- UNIQUE(document); o SELECT acima é só otimização de mensagem amigável.
+  -- Numa corrida (dois signups simultâneos passam pelo SELECT), o INSERT viola
+  -- o UNIQUE e re-erguemos como 'document_already_exists' para manter o 409
+  -- consistente. O conflito por auth_user_id segue idempotente no ON CONFLICT
+  -- (re-disparo do trigger não duplica), então o único unique_violation que
+  -- pode escapar do INSERT é o de documento.
+  BEGIN
+    INSERT INTO public.enterprise (document, account_type, terms_version, terms_accepted_at, auth_user_id, trial_ends_at, subscription_status)
+    VALUES (v_document, v_account_type, v_terms_version, v_terms_accepted_at, NEW.id, NOW() + INTERVAL '4 months', 'TRIAL')
+    ON CONFLICT (auth_user_id) DO NOTHING;
+  EXCEPTION
+    WHEN unique_violation THEN
+      RAISE EXCEPTION 'document_already_exists' USING ERRCODE = '23505';
+  END;
 
   -- Busca a enterprise atual para semear perguntas padrão no contexto COMPANY.
   SELECT e.id INTO v_enterprise_id
