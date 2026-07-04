@@ -137,7 +137,7 @@
 | **RNF06** | Usabilidade (UX) | Interface *mobile-first* responsiva, focando em simplicidade extrema no formulário de coleta (público). |
 | **RNF07** | Escalabilidade | Arquitetura Cloud/Serverless (BFF Node.js + Supabase) com provisionamento automático sob demanda. |
 | **RNF08** | Confiabilidade | Garantia de integridade referencial no banco de dados (chaves estrangeiras), refletindo no dashboard o estado consistente dos dados. |
-| **RNF09** | Manutenibilidade | Monorepo (npm Workspaces), separação estrita de serviços com deploys independentes, e tipagem global forte com TypeScript. |
+| **RNF09** | Manutenibilidade | Serviços em repositórios independentes com deploys separados e tipos compartilhados por um pacote versionado (`@feedback/lib-shared`), com tipagem global forte em TypeScript. |
 | **RNF10** | Acurácia de IA | A Inteligência Artificial deve atingir >= 80% de precisão semântica nos testes de sentimento e "sanitização" contra alucinações. |
 | **RNF11** | Monitoramento da API | O sistema deve expor um *Endpoint* de *Health Check* ultraleve para monitoramento de disponibilidade da infraestrutura. |
 | **RNF12** | Resiliência de IA (Fallback Local) | O sistema deve possuir um mecanismo de contingência que utilize algoritmos de extração locais (baseados em *stopwords*) caso a API externa do provedor de IA falhe ou gere "alucinações" inaceitáveis. |
@@ -229,7 +229,7 @@
 | **RNF-006** | Usabilidade (UX): Responsividade garantida (*mobile-first*) no fluxo público para melhorar conversões de feedback do usuário na ponta. | Implementado | Alta |
 | **RNF-007** | Escalabilidade: Topologia em Nuvem usando infraestrutura Serverless (Vercel) integrando Node.js e banco dinâmico da Supabase. | Implementado | Alta |
 | **RNF-008** | Confiabilidade: Restrições de chaves estrangeiras, `ON DELETE RESTRICT` e uso de sub-consultas validadas impedem exclusões acidentais que quebrem os dados e dashboards. | Implementado | Alta |
-| **RNF-009** | Manutenibilidade: Adoção do padrão Monorepo com NPM Workspaces para o reuso de interfaces/tipagens globais entre Backend e Frontend usando TypeScript rigoroso. | Implementado | Alta |
+| **RNF-009** | Manutenibilidade: serviços em repositórios independentes com um pacote de contratos versionado (`@feedback/lib-shared`) para reuso de interfaces/tipagens globais entre Backend e Frontend usando TypeScript rigoroso. | Implementado | Alta |
 | **RNF-010** | Acurácia de IA: A precisão das categorias semânticas geradas (positivas/negativas) e a correlação cruzada de dados deve manter-se em 80% frente ao julgamento humano. | Em testes (Refinamento) | Alta |
 | **RNF-011** | Monitoramento da API: Provisionamento de rota leve de *Health Check* sem acesso ao banco para varreduras de UpTime por sistemas de monitoramento (DataDog, UptimeRobot, etc). | Implementado | Média |
 | **RNF-012** | Resiliência de IA (Fallback): Contingência lógica dentro da camada de inteligência com uso de filtros de *stopwords* base garantindo keywords em cenários de timeout/alucinações da API remota. | Implementado | Alta |

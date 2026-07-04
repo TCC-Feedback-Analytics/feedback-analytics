@@ -1,6 +1,6 @@
 # Guia de Instalação
 
-> Configure o ambiente completo do Feedback Analytics em poucos passos (tipicamente em torno de 15 minutos, dependendo da máquina e da conexão).
+> Suba o ambiente local completo do Feedback Analytics. Como o projeto é **multi-repo**, você clona e configura cada serviço separadamente. Cada repositório traz um `.env.example` e um `README` com as instruções **autoritativas** do próprio serviço — este guia dá a visão de conjunto.
 
 ## Antes de Começar
 
@@ -10,57 +10,63 @@ Certifique-se de ter instalado:
 |---|---|---|
 | **Node.js** | 20.x | `node -v` |
 | **npm** | 10.x | `npm -v` |
+| **Git** | — | `git --version` |
 | **Conta Supabase** | — | [supabase.com](https://supabase.com) |
 | **Chave API Gemini** | — | [Google AI Studio](https://aistudio.google.com) |
 
 ---
 
-## Passo 1 — Clone o Repositório
+## Passo 1 — Clone os Repositórios
+
+O código está dividido em três serviços deployáveis (o pacote de contratos é consumido como dependência, não precisa ser clonado para rodar):
 
 ```bash
-git clone https://github.com/seu-usuario/feedback-analytics.git
-cd feedback-analytics
+git clone https://github.com/TCC-Feedback-Analytics/feedback-analytics-web.git
+git clone https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway.git
+git clone https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze.git
 ```
+
+> Os serviços consomem o pacote público [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts) via dependência git — o `npm install` de cada repo já o baixa.
 
 ---
 
 ## Passo 2 — Instale as Dependências
 
-O projeto é um monorepo. Instale as dependências em cada workspace separadamente:
+Em **cada** repositório clonado:
 
 ```bash
-npm install
-cd apps/web && npm install && cd ../..
-cd backends/api-gateway && npm install && cd ../..
-cd services/ia-analyze && npm install && cd ../..
+cd feedback-analytics-web        && npm install && cd ..
+cd feedback-analytics-api-gateway && npm install && cd ..
+cd feedback-analytics-ia-analyze  && npm install && cd ..
 ```
 
 ---
 
 ## Passo 3 — Configure as Variáveis de Ambiente
 
-Crie um arquivo `.env` em cada serviço com as variáveis abaixo.
+Cada serviço tem seu próprio `.env.example` — **copie-o para `.env` e preencha**. A lista completa e atual de cada serviço está no seu repositório; as variáveis principais são:
 
-### `apps/web/.env`
+### `feedback-analytics-web/.env`
 
 ```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua_anon_key_aqui
 VITE_API_BASE_URL=http://localhost:3000   # em produção/preview na Vercel pode ficar vazio (derivação por hostname)
 ```
 
-### `backends/api-gateway/.env`
+> O frontend fala **apenas com o API Gateway** — não acessa o Supabase diretamente.
+
+### `feedback-analytics-api-gateway/.env`
 
 ```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua_anon_key_aqui
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_ANON_KEY=sua_anon_key_aqui
+DATABASE_URL=postgresql://...@...pooler.supabase.com:6543/postgres   # Transaction Pooler (ver nota)
 IA_ANALYZE_EXECUTION_MODE=local
 IA_ANALYZE_REMOTE_TOKEN=um_token_secreto_compartilhado
 IA_ANALYZE_REMOTE_URL=http://localhost:4100
 PORT=3000
 ```
 
-### `services/ia-analyze/.env`
+### `feedback-analytics-ia-analyze/.env`
 
 ```env
 GEMINI_API_KEY=sua_chave_gemini_aqui
@@ -68,15 +74,17 @@ IA_ANALYZE_INTERNAL_TOKEN=um_token_secreto_compartilhado
 PORT=4100
 ```
 
-:::warning Token Compartilhado
-O token interno tem **nomes diferentes nos dois lados**: no API Gateway é `IA_ANALYZE_REMOTE_TOKEN`, no IA Analyze é `IA_ANALYZE_INTERNAL_TOKEN`. Ambos devem ter o **mesmo valor** — o Gateway o envia no header `x-ia-analyze-token` e o serviço valida. Use uma string longa e aleatória (mínimo 32 caracteres).
-:::
+!!! warning "Token compartilhado (nomes diferentes nos dois lados)"
+    No API Gateway o token interno se chama `IA_ANALYZE_REMOTE_TOKEN`; no IA Analyze, `IA_ANALYZE_INTERNAL_TOKEN`. Ambos devem ter o **mesmo valor** — o Gateway o envia no header `x-ia-analyze-token` e o serviço valida. Use uma string longa e aleatória (mínimo 32 caracteres).
+
+!!! note "`DATABASE_URL` — use o Transaction Pooler"
+    Em ambientes serverless (e para evitar problemas de resolução IPv6), o Gateway usa a conexão **Transaction Pooler** do Supabase (`...pooler.supabase.com:6543`, com `prepare: false`), não a conexão direta (`db.[ref].supabase.co`).
 
 ---
 
 ## Passo 4 — Configure o Banco de Dados
 
-O schema do banco está versionado em `database/sql/` como arquivos DDL organizados por tipo de objeto (`tables/`, `policies/`, `triggers/`, `functions/`). Aplique esses scripts no seu projeto Supabase (via SQL Editor ou Supabase CLI). Consulte `database/sql/README.md` para a estrutura e `database/sql/DESCRICOES.md` para a descrição de cada objeto.
+O schema do banco está versionado **neste repositório** (`feedback-analytics`), em `database/sql/`, como arquivos DDL organizados por tipo de objeto (`tables/`, `policies/`, `triggers/`, `functions/`). Aplique esses scripts no seu projeto Supabase (via SQL Editor ou Supabase CLI). Consulte `database/sql/README.md` para a estrutura e `database/sql/DESCRICOES.md` para a descrição de cada objeto.
 
 As principais tabelas são:
 
@@ -92,26 +100,22 @@ As principais tabelas são:
 
 ---
 
-## Passo 5 — Inicie o Ambiente
+## Passo 5 — Inicie os Serviços
 
-### Todos os serviços juntos (recomendado)
-
-```bash
-npm run dev:web-apiGateway-iaAnalyze
-```
-
-Isso inicia:
-- **Frontend** em `http://localhost:5173`
-- **API Gateway** em `http://localhost:3000`
-- **IA Analyze** em `http://localhost:4100`
-
-### Serviços individualmente
+Cada serviço roda a partir do seu próprio repositório (abra um terminal por serviço):
 
 ```bash
-npm run dev:web   # Apenas frontend
-npm run dev:api   # Apenas API Gateway
-npm run dev:ia    # Apenas IA Analyze
+# feedback-analytics-web
+npm run dev        # Frontend em http://localhost:5173
+
+# feedback-analytics-api-gateway
+npm run dev        # API Gateway em http://localhost:3000
+
+# feedback-analytics-ia-analyze
+npm run dev        # IA Analyze em http://localhost:4100
 ```
+
+> Consulte o `package.json`/`README` de cada repo para o nome exato do script de desenvolvimento.
 
 ---
 
@@ -134,16 +138,20 @@ Se ambos retornarem `ok: true`, o ambiente está funcionando.
 | Erro | Causa | Solução |
 |---|---|---|
 | `Missing Gemini API key` | `GEMINI_API_KEY` vazio | Verifique o `.env` do `ia-analyze` |
-| `401 unauthorized_internal_request` | Tokens internos diferentes | Iguale `IA_ANALYZE_INTERNAL_TOKEN` nos dois serviços |
+| `401 unauthorized_internal_request` | Tokens internos diferentes | Iguale `IA_ANALYZE_REMOTE_TOKEN` (gateway) e `IA_ANALYZE_INTERNAL_TOKEN` (ia-analyze) |
 | `422 collecting_data_required` | Empresa sem dados de contexto | Preencha **Objetivo** e **Resumo** em Configurações |
 | `422 insufficient_feedbacks` | Menos de 5 feedbacks disponíveis | Colete mais feedbacks antes de analisar |
-| `ECONNREFUSED :4100` | IA Analyze não está rodando | Execute `npm run dev:ia` |
+| `ECONNREFUSED :4100` | IA Analyze não está rodando | Suba o serviço `feedback-analytics-ia-analyze` |
+| `ENOTFOUND db.[ref].supabase.co` | `DATABASE_URL` usando conexão direta | Troque pela conexão **Transaction Pooler** (`...pooler.supabase.com:6543`) |
 
 ---
 
 ## Executar os Testes
 
+Cada repositório roda seus próprios testes (veja [Testes](testes/visao-geral.md) para a estratégia geral):
+
 ```bash
-npm run test:web   # Testes do frontend (Vitest)
-npm run lint       # Lint em todos os serviços
+# dentro de cada repo
+npm test        # testes de unidade/integração (Vitest)
+npm run lint    # lint do serviço
 ```

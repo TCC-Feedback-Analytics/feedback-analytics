@@ -20,7 +20,7 @@ O **Vitest** é utilizado para testar a lógica isolada da aplicação (funçõe
    A sintaxe do Vitest (`describe`, `test`, `expect`, `vi`) é praticamente idêntica à do Jest. Isso significa que desenvolvedores com experiência prévia em Jest tendem a se adaptar rapidamente, com uma curva de aprendizado reduzida.
 
 4. **Mesma Ferramenta no Frontend e Backend:**
-   Utilizamos o Vitest tanto na aplicação web (`apps/web`) quanto nos serviços backend (`backends/api-gateway` e `services/ia-analyze`). Isso mantém o padrão de escrita e a execução de testes unificados em todo o monorepo.
+   Utilizamos o Vitest tanto na aplicação web (`feedback-analytics-web`) quanto nos serviços backend (`feedback-analytics-api-gateway` e `feedback-analytics-ia-analyze`). Isso mantém o padrão de escrita e a execução de testes unificados em todos os serviços.
 
 ---
 
@@ -31,7 +31,7 @@ O **Playwright** é utilizado para realizar testes **End-to-End (E2E)** no front
 ### Por que escolhemos o Playwright?
 
 1. **Multinavegador Nativo:**
-   O Playwright suporta nativamente três grandes motores de renderização: **Chromium** (Chrome, Edge), **Firefox** e **WebKit** (Safari), o que permite ampliar a cobertura entre navegadores quando necessário. Atualmente, porém, o projeto está configurado (`apps/web/playwright.config.ts`) para executar a suíte E2E apenas em **Chromium** (Desktop Chrome).
+   O Playwright suporta nativamente três grandes motores de renderização: **Chromium** (Chrome, Edge), **Firefox** e **WebKit** (Safari), o que permite ampliar a cobertura entre navegadores quando necessário. Atualmente, porém, o projeto está configurado (`feedback-analytics-web/playwright.config.ts`) para executar a suíte E2E apenas em **Chromium** (Desktop Chrome).
 
 2. **Redução de Testes Intermitentes (Flaky Tests):**
    Um dos maiores problemas em testes E2E é a instabilidade (testes que passam uma hora e falham na outra por lentidão na rede). O Playwright resolve isso com **Auto-Waiting** (espera automática): ele aguarda os elementos estarem visíveis, clicáveis e estáveis antes de interagir com eles.
@@ -52,5 +52,5 @@ O **Playwright** é utilizado para realizar testes **End-to-End (E2E)** no front
 | :--- | :---: | :--- |
 | Testar funções puras, cálculos de IA, validações de schemas (Zod). | **Vitest** | `npm run test` |
 | Testar se um componente React renderiza corretamente isolado na tela. | **Vitest** | `npm run test` |
-| Testar se as rotas da API Express respondem com os status HTTP corretos. | **Vitest** | `npm run test:api` |
+| Testar se as rotas da API Express respondem com os status HTTP corretos. | **Vitest** | `npm run test` |
 | Testar o fluxo completo de cadastro, login ou geração de QR Codes no navegador. | **Playwright** | `npm run test:e2e` |

@@ -86,7 +86,6 @@ markdown_extensions:
 
 nav:
   - Início: index.md
-  - Visão geral: visao-geral.md
   - Produto:
       - Coleta por QR Code: produto/coleta-qrcode.md
       - QR Code por escopo: produto/qrcode-escopo-dinamico.md
@@ -129,7 +128,7 @@ nav:
       - Modelo conceitual (MER): arquitetura/modelo-conceitual-mer.md
       - Modelagem de dados (DER): arquitetura/modelagem-de-dados.md
       - Histórico de decisões:
-          - Monorepo vs. Monolito: arquitetura/historico-de-decisoes/decisao-monorepo-vs-monolito.md
+          - Arquitetura distribuída (evolução do monorepo): arquitetura/historico-de-decisoes/decisao-monorepo-vs-monolito.md
           - ORM vs. RLS: arquitetura/orm-rls-decisao.md
   - Referência Técnica:
       - Banco de dados (schema): referencia/banco-de-dados/visao-geral.md

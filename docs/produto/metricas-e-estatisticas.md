@@ -2,7 +2,7 @@
 
 ## Introdução
 
-Toda métrica do Feedback Analytics nasce de três fontes de dados coletadas no feedback do cliente: a **nota de 1 a 5** (a estrela), o **texto livre** que ele escreveu e a **análise de IA** feita sobre esse texto (sentimento, temas e aspectos). A partir desses dados brutos, o backend calcula — com métodos estatísticos consagrados na literatura (ex.: intervalo de Wilson, IC t) — um conjunto de métricas que respondem, de forma honesta, a perguntas como "os clientes estão satisfeitos?", "o que eles elogiam ou reclamam?" e "posso confiar nesses números?". A regra de ouro: **a matemática vive no backend** (módulo de funções puras `backends/api-gateway/src/libs/statistics`); o frontend apenas apresenta. Toda métrica também respeita o **escopo selecionado** (Empresa, Produto, Serviço ou Departamento).
+Toda métrica do Feedback Analytics nasce de três fontes de dados coletadas no feedback do cliente: a **nota de 1 a 5** (a estrela), o **texto livre** que ele escreveu e a **análise de IA** feita sobre esse texto (sentimento, temas e aspectos). A partir desses dados brutos, o backend calcula — com métodos estatísticos consagrados na literatura (ex.: intervalo de Wilson, IC t) — um conjunto de métricas que respondem, de forma honesta, a perguntas como "os clientes estão satisfeitos?", "o que eles elogiam ou reclamam?" e "posso confiar nesses números?". A regra de ouro: **a matemática vive no backend** (módulo de funções puras `feedback-analytics-api-gateway/src/libs/statistics`); o frontend apenas apresenta. Toda métrica também respeita o **escopo selecionado** (Empresa, Produto, Serviço ou Departamento).
 
 ---
 

@@ -74,5 +74,5 @@ O bloqueio é verificado **antes** da checagem de duplicidade diária — é a p
 
 - [Anti-Spam por Fingerprint → anti-spam-fingerprint.md](./anti-spam-fingerprint.md)
 - [Coleta via QR Code → coleta-qrcode.md](./coleta-qrcode.md)
-- [Regras de Negócio → visao-geral.md#regras-de-negócio-rne](../concepcao/requisitos-e-funcionalidades.md)
+- [Regras de Negócio (RNE)](../concepcao/requisitos-e-funcionalidades.md#regras-de-negócio-rne)
 - [Endpoints Públicos](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md)

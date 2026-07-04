@@ -86,7 +86,7 @@ O risco de um TCC parecer "duas listas soltas" (refatorações + funcionalidades
 |---|---|---|
 | **Autenticação própria?** | Manter Supabase Auth (recomendado, menor risco) **ou** biblioteca de auth self-hosted (só se formos para servidor próprio total) | [07](./07-seguranca-e-lgpd.md) e [08](./08-infraestrutura-e-custo.md) |
 | **Self-host total?** | "Mínimo" (fica no Supabase, move só o worker) **ou** "tudo num servidor próprio" (mais esforço, mais demonstração) | [08](./08-infraestrutura-e-custo.md) |
-| **Separar os repositórios?** | **Não** é recomendado — manter o monorepo (as features cruzam várias partes; o deploy já é independente) | [08](./08-infraestrutura-e-custo.md) |
+| **Separar os repositórios?** | ✅ **Decidido (jul/2026): separado em multi-repo.** A motivação foi organizacional (isolar acesso por repositório para novos contribuidores); a sincronização de contratos passou a um pacote versionado (`@feedback/lib-shared`). Ver [decisão de arquitetura](../docs/arquitetura/historico-de-decisoes/decisao-monorepo-vs-monolito.md#evolução-de-monorepo-para-multi-repo). | [08](./08-infraestrutura-e-custo.md) |
 
 ## Alerta honesto de escopo
 
