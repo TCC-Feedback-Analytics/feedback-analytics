@@ -149,7 +149,10 @@ No monolito, esse cenário seria crítico: 10 análises simultâneas significari
 
 ## Evolução: de Monorepo para Multi-repo
 
-**Decisão de jul/2026.** O código, antes co-localizado em um monorepo (npm Workspaces), foi separado em **repositórios independentes** — um por serviço, mais um repositório para os contratos e este para a documentação. A motivação foi **organizacional**, não técnica: permitir **isolamento de acesso por repositório** (contribuidores com menos experiência atuam só no frontend, sem acesso ao restante) e **históricos + CI independentes** por serviço.
+**Decisão de jul/2026.** O código, antes co-localizado em um monorepo (npm Workspaces), foi separado em **repositórios independentes** — um por serviço, mais um repositório para os contratos e este para a documentação. A motivação foi **organizacional e técnica**:
+
+- **Organizacional:** **isolamento de acesso por repositório** (contribuidores com menos experiência atuam só no frontend, sem acesso ao restante) e **históricos + CI independentes** por serviço.
+- **Técnica — segurança e qualidade no acesso a dados:** com a entrada do **ORM (Drizzle)** nos caminhos autenticados, a conexão passa a ser **direta ao Postgres** (via `DATABASE_URL`/pooler), e essa conexão **não é filtrada pela RLS** — ou seja, **a RLS deixa de proteger automaticamente onde o ORM entra**. O isolamento por empresa (tenant) passa a exigir **filtro explícito por `enterprise_id` na aplicação** (a RLS permanece ligada como *defesa em profundidade*, não como guarda principal desse caminho). Isso eleva o cuidado exigido no acesso ao banco: **separar esse código sensível no seu próprio repositório** (`feedback-analytics-api-gateway`), longe do frontend, **concentra a atenção e a revisão** onde a segurança é crítica e reduz o raio de impacto de um erro. Ver [ORM × RLS: nossa decisão](../orm-rls-decisao.md).
 
 ### O que permaneceu e o que mudou
 
