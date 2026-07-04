@@ -525,7 +525,7 @@ Arquivos só podem ser **substituídos** (novo upload sobrescreve) ou **mantidos
 ## Veja Também
 
 - [Arquitetura Geral do Sistema](../../arquitetura/visao-geral.md)
-- [Backend — Arquitetura Detalhada](../backend/arquitetura-estrutura.md)
+- [Backend — Arquitetura Detalhada](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/arquitetura-estrutura.md)
 - [Funcionalidades — Visão Geral](../../concepcao/requisitos-e-funcionalidades.md)
 - [Anti-spam e Fingerprint](../../produto/anti-spam-fingerprint.md)
 - [Higienização JWT / LGPD](../../produto/higienizacao-jwt-lgpd.md)

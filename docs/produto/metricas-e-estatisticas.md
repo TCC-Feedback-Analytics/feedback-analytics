@@ -157,4 +157,4 @@ A lista vem ordenada **pior → melhor** (menor nota no topo), para o gestor ata
 
 ## Para detalhes da API
 
-Os formatos completos de requisição e resposta dos endpoints que expõem essas métricas — `GET /feedbacks/stats`, `GET /feedbacks/questions` e `GET /feedbacks/analysis` — estão na [Referência de Endpoints](../referencia/backend/endpoints.md).
+Os formatos completos de requisição e resposta dos endpoints que expõem essas métricas — `GET /feedbacks/stats`, `GET /feedbacks/questions` e `GET /feedbacks/analysis` — estão na [Referência de Endpoints](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md).

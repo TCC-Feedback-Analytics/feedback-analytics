@@ -260,5 +260,5 @@ Para não passar uma falsa sensação de precisão, a interface comunica **quão
 ## Referência Técnica
 
 - [Motor de IA com Filtro Semântico → filtro-semantico-ia.md](./filtro-semantico-ia.md)
-- [Serviço IA Analyze](../referencia/ia-analyze/visao-geral.md)
-- [Endpoints de Análise IA](../referencia/backend/endpoints.md)
+- [Serviço IA Analyze](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/docs/visao-geral.md)
+- [Endpoints de Análise IA](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md)

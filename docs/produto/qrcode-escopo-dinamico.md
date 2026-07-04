@@ -92,4 +92,4 @@ O sistema usa uma **contagem variável de 0 a 3 perguntas ativas** por ponto de 
 - [Onboarding do Catálogo → onboarding-catalogo.md](./onboarding-catalogo.md)
 - [Coleta via QR Code → coleta-qrcode.md](./coleta-qrcode.md)
 - [Painel de Insights por Escopo → painel-insights-ia.md](./painel-insights-ia.md)
-- [Endpoints de QR Code](../referencia/backend/endpoints.md)
+- [Endpoints de QR Code](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md)
