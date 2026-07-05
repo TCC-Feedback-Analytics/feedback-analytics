@@ -38,8 +38,8 @@ O banco de dados é a camada de persistência central da plataforma. A lógica d
 
 | Item | Detalhe |
 |---|---|
-| **Banco** | PostgreSQL (gerenciado pelo Supabase) |
-| **Autenticação** | Supabase Auth (`auth.users`) — JWT com claims customizados |
+| **Banco** | PostgreSQL (hospedado no Supabase, acessado direto via `DATABASE_URL` + Drizzle) |
+| **Autenticação** | **Better Auth** (tabelas `user`/`session`/`account`/`verification` no próprio Postgres) — sessão em cookie httpOnly, validada no api-gateway. *(As tabelas legadas `auth.users` do Supabase Auth podem persistir no schema `auth` como legado.)* |
 | **Segurança** | Row Level Security (RLS) habilitado em todas as tabelas públicas |
 | **Storage** | Supabase Storage (buckets com triggers de proteção) |
 | **Schema principal** | `public` |
@@ -426,8 +426,8 @@ erDiagram
 
 O sistema usa **duas camadas de autorização**:
 
-1. **API Gateway:** o middleware `requireAuth` valida a sessão/JWT (Supabase Auth, via cookies httpOnly) e injeta `req.user` + `req.supabase` na requisição; as queries rodam no contexto autenticado do usuário.
-2. **RLS no PostgreSQL:** cada tabela possui policies que derivam a empresa do usuário a partir de `auth.uid()` — subconsulta `SELECT id FROM public.enterprise WHERE auth_user_id = auth.uid()` — sendo a barreira final.
+1. **API Gateway (barreira principal):** o middleware `requireAuth` valida a sessão via **Better Auth** (cookie httpOnly) e injeta `req.user` na requisição; o isolamento por empresa é aplicado na aplicação, com filtro explícito por `enterprise_id`.
+2. **RLS no PostgreSQL (defesa em profundidade):** as policies foram escritas para o modelo do Supabase Auth (`auth.uid()` → `SELECT id FROM public.enterprise WHERE auth_user_id = auth.uid()`). Com o Drizzle conectando por uma role que ignora a RLS, essa camada deixa de ser o guarda principal do caminho autenticado e passa a ser a **rede de segurança** — permanece ligada. Ver [ORM × RLS](../../arquitetura/orm-rls-decisao.md).
 
 ### Perfis de acesso
 

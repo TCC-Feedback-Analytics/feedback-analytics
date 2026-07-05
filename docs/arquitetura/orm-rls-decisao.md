@@ -4,6 +4,8 @@
 
 Este documento responde, de frente, à crítica da banca *"usar Supabase não exercita conhecimento de banco; migrem para um ORM"* e registra o trade-off central — segurança no nível do banco (RLS) versus ORM — para a defesa do TCC.
 
+> **Nota (auth):** a **autenticação** deixou de usar o Supabase Auth e passou para o **Better Auth** — a sessão é validada na aplicação (Gateway) e não mais por `auth.uid()` do Postgres. O **banco continua sendo o mesmo Postgres** (hospedado no Supabase, acessado direto por `DATABASE_URL` + Drizzle). "Sair do Supabase" aqui significou sair do **Auth + SDK**, não do banco. Ver [Autenticação com Better Auth](historico-de-decisoes/decisao-autenticacao-better-auth.md).
+
 Artefatos relacionados:
 
 - Schema Drizzle **canônico** (introspectado do banco real via `db:pull`): [`drizzle/schema.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle/schema.ts) · tipos inferidos estáveis em [`src/db/types.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/types.ts)
@@ -28,7 +30,7 @@ Ironicamente, ORMs "mágicos" como o **Prisma escondem o SQL** — demonstrariam
 
 ## 2. O trade-off central: ORM × RLS
 
-Hoje, num acesso autenticado, **o próprio banco** confere "esta linha é da empresa do usuário?" usando `auth.uid()` dentro das policies (ex.: `enterprise_id IN (SELECT id FROM enterprise WHERE auth_user_id = auth.uid())`).
+As policies de RLS foram escritas para o modelo do Supabase Auth, em que **o próprio banco** conferia "esta linha é da empresa do usuário?" usando `auth.uid()` (ex.: `enterprise_id IN (SELECT id FROM enterprise WHERE auth_user_id = auth.uid())`). Com a migração da autenticação para o **Better Auth**, quem identifica o usuário e a empresa da requisição é **a aplicação** (o Gateway, a partir da sessão Better Auth) — não mais o `auth.uid()` do Postgres. Isso **reforça** a decisão abaixo: a checagem de tenant passa a viver na aplicação, e a RLS fica como **defesa em profundidade**.
 
 Um ORM, porém, conecta ao Postgres por uma **connection string com uma role administrativa que IGNORA a RLS** (é o modo normal de operar com performance via pool). Propagar o JWT/claims do usuário para cada conexão e fazer a RLS valer também no Drizzle é **possível, mas frágil e lento** num pool compartilhado.
 
@@ -37,7 +39,7 @@ Um ORM, porém, conecta ao Postgres por uma **connection string com uma role adm
 ## 3. A decisão
 
 1. **Drizzle nos caminhos AUTENTICADOS/INTERNOS** (onde o backend já sabe de qual empresa é a requisição), **sempre com filtro explícito por `enterprise_id`**.
-2. **O fluxo público anônimo (QR Code) NÃO usa Drizzle** — continua via cliente Supabase + RLS, que é a fronteira de segurança correta para um papel `anon` não confiável.
+2. **O fluxo público anônimo (QR Code) permanece sob RLS**, que é a fronteira de segurança correta para um papel `anon` não confiável.
 3. **A RLS permanece LIGADA em todas as tabelas**, como **defesa em profundidade**: mesmo que um filtro de aplicação falhe, a policy do banco é a segunda barreira.
 4. **Adoção incremental, não migração total**: começamos por um caminho de leitura (as agregações de stats — fundação da [Etapa 02](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/proximos-passos/02-metricas-por-periodo-e-comparacao.md)); o resto migra sob demanda, declarado como trabalho futuro.
 
