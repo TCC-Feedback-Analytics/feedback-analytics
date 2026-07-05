@@ -16,7 +16,7 @@
 2. Informa o e-mail cadastrado.
 3. Clica em "Enviar".
 4. O sistema exibe uma mensagem genérica confirmando o envio (independente do e-mail existir ou não — por segurança).
-5. O gestor recebe o e-mail com o link de redefinição.
+5. O **api-gateway** dispara, via **Better Auth**, o e-mail com o link de redefinição (enviado por SMTP — SendGrid em produção, Mailpit no local) e o gestor o recebe.
 
 **Etapa 2 — Redefinir a senha:**
 
@@ -42,7 +42,7 @@
 
 ## Base para Teste E2E
 
-> **Este UC não possui cobertura E2E no Playwright.** Não existe arquivo `uc-03-*.spec.ts` em `feedback-analytics-web/e2e/` — o fluxo depende de recebimento de e-mail em tempo real e esbarra no rate limit de e-mail do Supabase em testes automatizados. Os cenários abaixo descrevem o comportamento esperado e a estratégia de cobertura por outros meios (unidade/manual), mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+> **Este UC não possui cobertura E2E no Playwright.** Não existe arquivo `uc-03-*.spec.ts` em `feedback-analytics-web/e2e/` — o fluxo depende de recebimento de e-mail em tempo real em testes automatizados. Os cenários abaixo descrevem o comportamento esperado e a estratégia de cobertura por outros meios (unidade/manual), mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
 
 **Cenários a cobrir:**
 

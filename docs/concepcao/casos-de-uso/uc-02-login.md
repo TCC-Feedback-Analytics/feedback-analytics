@@ -13,8 +13,10 @@
 1. O gestor acessa a tela de login.
 2. Preenche e-mail e senha.
 3. Clica em "Entrar".
-4. O sistema valida as credenciais.
-5. A sessão é criada e o gestor é redirecionado para o dashboard.
+4. O sistema valida as credenciais pelo **Better Auth** (endpoint `POST /api/public/auth/login` no api-gateway).
+5. A sessão é criada e entregue em um **cookie httpOnly**; o gestor é redirecionado para o dashboard.
+
+> **Como funciona:** a autenticação usa o **Better Auth** por baixo — o web só chama os endpoints do api-gateway e envia as requisições com credencial (cookie). As tabelas de sessão/usuário ficam no Postgres.
 
 ---
 

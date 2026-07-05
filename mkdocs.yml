@@ -129,6 +129,7 @@ nav:
       - Modelagem de dados (DER): arquitetura/modelagem-de-dados.md
       - Histórico de decisões:
           - Arquitetura distribuída (evolução do monorepo): arquitetura/historico-de-decisoes/decisao-monorepo-vs-monolito.md
+          - Autenticação com Better Auth: arquitetura/historico-de-decisoes/decisao-autenticacao-better-auth.md
           - ORM vs. RLS: arquitetura/orm-rls-decisao.md
   - Referência Técnica:
       - Banco de dados (schema): referencia/banco-de-dados/visao-geral.md

@@ -11,7 +11,8 @@ Certifique-se de ter instalado:
 | **Node.js** | 20.x | `node -v` |
 | **npm** | 10.x | `npm -v` |
 | **Git** | — | `git --version` |
-| **Conta Supabase** | — | [supabase.com](https://supabase.com) |
+| **Postgres** (banco) | — | um Postgres acessível via `DATABASE_URL` — pode ser o do Supabase |
+| **Mailpit** (SMTP local) | — | captura os e-mails de auth no ambiente local — [mailpit.axllent.org](https://mailpit.axllent.org) |
 | **Chave API Gemini** | — | [Google AI Studio](https://aistudio.google.com) |
 
 ---
@@ -57,14 +58,36 @@ VITE_API_BASE_URL=http://localhost:3000   # em produção/preview na Vercel pode
 ### `feedback-analytics-api-gateway/.env`
 
 ```env
-SUPABASE_URL=https://seu-projeto.supabase.co
-SUPABASE_ANON_KEY=sua_anon_key_aqui
+# Banco de dados — o mesmo Postgres (hospedado no Supabase), acessado direto
 DATABASE_URL=postgresql://...@...pooler.supabase.com:6543/postgres   # Transaction Pooler (ver nota)
+
+# Autenticação — Better Auth
+BETTER_AUTH_SECRET=segredo_aleatorio_aqui   # gere com: openssl rand -base64 32 (SEM ele o app NÃO sobe)
+BETTER_AUTH_URL=http://localhost:3000        # URL pública do gateway
+
+# E-mail (confirmação de cadastro, recuperação de senha) — local: Mailpit
+SMTP_HOST=127.0.0.1
+SMTP_PORT=1025
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+MAIL_FROM=no-reply@feedback.local
+
+# Integração com o IA Analyze
 IA_ANALYZE_EXECUTION_MODE=local
 IA_ANALYZE_REMOTE_TOKEN=um_token_secreto_compartilhado
 IA_ANALYZE_REMOTE_URL=http://localhost:4100
 PORT=3000
 ```
+
+!!! warning "`BETTER_AUTH_SECRET` é obrigatório"
+    Sem `BETTER_AUTH_SECRET` o api-gateway **não sobe**. Gere um valor aleatório com `openssl rand -base64 32` e mantenha-o secreto.
+
+!!! note "Autenticação saiu do Supabase Auth → Better Auth"
+    O login/cadastro/sessão agora usam **Better Auth** (não mais o Supabase Auth). O **banco continua sendo o Postgres do Supabase** — apenas o Auth e o SDK do Supabase saíram. As tabelas do Better Auth (`user`, `session`, `account`, `verification`) ficam nesse mesmo Postgres. Não use mais `SUPABASE_URL`, `SUPABASE_ANON_KEY` nem `AUTH_PROVIDER`.
+
+!!! tip "E-mail em produção (SendGrid)"
+    Em produção, use SMTP do SendGrid: `SMTP_HOST=smtp.sendgrid.net`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER=apikey`, `SMTP_PASS=<sua API key SG.…>` e `MAIL_FROM=<remetente verificado no SendGrid>`.
 
 ### `feedback-analytics-ia-analyze/.env`
 
@@ -98,11 +121,18 @@ As principais tabelas são:
 | `public.feedback_insights_report` | Relatórios de insights consolidados |
 | `public.tracked_devices` | Controle anti-spam por dispositivo |
 
+> **Tabelas de autenticação (Better Auth):** além das tabelas de negócio acima, o Better Auth mantém suas próprias tabelas (`user`, `session`, `account`, `verification`) neste mesmo Postgres. Elas são gerenciadas pelo api-gateway — consulte o `README`/migrations do repositório do Gateway para criá-las.
+
 ---
 
 ## Passo 5 — Inicie os Serviços
 
-Cada serviço roda a partir do seu próprio repositório (abra um terminal por serviço):
+Cada serviço roda a partir do seu próprio repositório (abra um terminal por serviço). No ambiente local, suba também o **Mailpit** para capturar os e-mails de autenticação (confirmação de cadastro, recuperação de senha):
+
+```bash
+# Mailpit (SMTP local) — captura os e-mails de auth; UI em http://localhost:8025
+mailpit    # SMTP em 127.0.0.1:1025 (casa com SMTP_HOST/SMTP_PORT do gateway)
+```
 
 ```bash
 # feedback-analytics-web

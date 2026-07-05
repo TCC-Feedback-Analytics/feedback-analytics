@@ -11,7 +11,7 @@ A infraestrutura do projeto roda integralmente na **Vercel**, sem servidores ded
 | `feedback-analytics-ia-analyze` | `@vercel/node` | Serverless Function | 300s |
 
 - **Frontend (web):** arquivos estáticos (HTML, CSS, JS) gerados no build e servidos diretamente pela CDN da Vercel. Não há servidor — o React roda no navegador do usuário.
-- **API-Gateway:** função Node.js que acorda a cada requisição, consulta o banco (Supabase) e encerra. O timeout de 300s cobre com folga as operações de I/O e a orquestração das chamadas à IA — que, em lotes grandes, encadeia várias chamadas ao LLM por requisição.
+- **API-Gateway:** função Node.js que acorda a cada requisição, consulta o banco (Postgres, via Drizzle) e encerra. O timeout de 300s cobre com folga as operações de I/O e a orquestração das chamadas à IA — que, em lotes grandes, encadeia várias chamadas ao LLM por requisição.
 - **IA-Analyze:** função Node.js de longa duração — recebe feedbacks, chama o LLM externo (pode levar 30–60s) e processa o resultado. Precisa de 300s de timeout, inviável de rodar no mesmo projeto do Gateway.
 
 > **Nota — bundle do Gateway:** antes do deploy, o workflow de deploy do repo `feedback-analytics-api-gateway` roda uma etapa de esbuild que empacota o entrypoint em um `_bundle.cjs`. É esse bundle que o `vercel.json` do Gateway aponta como `src`.
@@ -44,7 +44,7 @@ A partir daqui, cada serviço tem sua própria arquitetura interna — veja os l
 Responsável pela experiência do usuário, navegação via React Router (loaders/actions), e consumo das APIs do Gateway. Nunca acessa o banco ou serviços de IA diretamente.
 
 **API Gateway (padrão BFF)**
-Ponto único de entrada para o frontend. Concentra autenticação (JWT via Supabase Auth), orquestração das regras de negócio, integração com o banco de dados (Supabase com RLS) e coordenação das chamadas aos serviços externos.
+Ponto único de entrada para o frontend. Concentra autenticação (sessão via **Better Auth**, entregue em cookie httpOnly), orquestração das regras de negócio, integração com o banco de dados (Postgres via Drizzle, com RLS ligada como defesa em profundidade) e coordenação das chamadas aos serviços externos.
 
 **Contratos Compartilhados (`@feedback/lib-shared`)**
 Pacote versionado importado por múltiplos serviços. Evita duplicação de tipos TypeScript — contratos de API, interfaces de entidades e tipos de integração vivem aqui e são a fonte de verdade para todos os serviços.
@@ -66,10 +66,10 @@ O sistema tem uma topologia **hub-and-spoke**: o API Gateway é o hub central. O
 
 ### Área Protegida (empresa logada)
 
-1. O Frontend autentica via **Supabase Auth**; a sessão (JWT) é mantida em **cookies httpOnly** definidos pela API
-2. Todas as requisições ao Gateway são enviadas com `credentials: 'include'`, levando os cookies de sessão automaticamente
-3. O middleware `requireAuth` valida a sessão (`supabase.auth.getUser()`) e injeta `req.user` + `req.supabase` na request
-4. O Gateway lê/escreve no banco (Supabase) e, quando necessário, chama o IA Analyze
+1. O Frontend chama os endpoints de autenticação do Gateway (`/api/public/auth/login|register|logout|...`), que usam **Better Auth** por baixo; a sessão é mantida em um **cookie httpOnly** definido pelo Gateway
+2. Todas as requisições ao Gateway são enviadas com `credentials: 'include'`, levando o cookie de sessão automaticamente
+3. O middleware `requireAuth` valida a sessão via **Better Auth** (a partir do cookie) e injeta `req.user` na request
+4. O Gateway lê/escreve no banco (Postgres via Drizzle) e, quando necessário, chama o IA Analyze
 
 ### Fluxo de Análise IA
 
@@ -107,8 +107,10 @@ Os tipos TypeScript que transitam entre Gateway e IA Analyze **não são duplica
 | Build | Vite | — |
 | Backend Runtime | Node.js | 20.x |
 | Backend Framework | Express | — |
-| Autenticação | Supabase JS | 2.x |
-| Banco de Dados | Supabase (PostgreSQL) | — |
+| Autenticação | Better Auth (sessão em cookie httpOnly) | — |
+| ORM / Acesso a dados | Drizzle ORM (SQL-first) | — |
+| Banco de Dados | PostgreSQL (hospedado no Supabase, acessado direto via `DATABASE_URL`) | — |
+| E-mail transacional | SMTP (SendGrid em produção · Mailpit no local) | — |
 | IA | Provedor LLM externo — atualmente Google Gemini (`@google/genai`, modelo `gemini-2.5-flash`), configurável via `GEMINI_API_KEY`; trocar de provedor exige alteração de código | — |
 | Testes | Vitest + Testing Library | — |
 | Distribuição | Multi-repo + pacote `@feedback/lib-shared` | — |
