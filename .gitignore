@@ -42,3 +42,5 @@ apps/web/test-results/
 # MkDocs (site da documentação)
 site/
 .docs-venv/
+
+.claude
