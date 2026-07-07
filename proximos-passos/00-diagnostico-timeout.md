@@ -58,7 +58,7 @@ Basta correlacionar o `elapsedMs` registrado (e a **duração da função** most
 
 ## Como medir (passo a passo na Vercel)
 
-> Esta é a parte que precisa ser feita por quem tem acesso ao painel da Vercel (produção/homolog).
+> Esta é a parte que precisa ser feita por quem tem acesso ao painel da Vercel (produção/developer).
 
 1. No painel da Vercel, abrir o projeto do **gateway** e do **ia-analyze** → aba **Logs** (Runtime Logs) / **Observability**.
 2. Reproduzir uma análise **grande** (ex.: um escopo com ≥ 40 feedbacks) para forçar o estouro.

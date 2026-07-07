@@ -104,7 +104,7 @@ Cada workflow tem seu próprio grupo de concorrência (`deploy-api`, `deploy-ia-
 
 **Dois ambientes, um único workflow**
 
-Cada workflow serve tanto para o ambiente de testes (branch `homolog` → deploy de preview) quanto para produção (branch `main` → deploy final). A lógica de qual ambiente usar está dentro do próprio workflow, então não precisamos manter arquivos duplicados para cada situação.
+Cada workflow serve tanto para o ambiente de testes (branch `developer` → deploy de preview) quanto para produção (branch `main` → deploy final). A lógica de qual ambiente usar está dentro do próprio workflow, então não precisamos manter arquivos duplicados para cada situação.
 
 **O `vercel.json` de cada domínio**
 

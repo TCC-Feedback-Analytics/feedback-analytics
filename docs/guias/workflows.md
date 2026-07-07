@@ -62,9 +62,9 @@ Evitar cliques acidentais no botão "Run workflow" da interface do GitHub. Sem a
 
 O CI executa a base e o meio da pirâmide — **testes de unidade e integração (Vitest)** — em **toda** PR, em jobs paralelos. São testes herméticos (100% mockados, sem rede nem secrets), rápidos e determinísticos: o lugar certo para bloquear cedo.
 
-O topo da pirâmide — **e2e (Playwright)**, no repo `feedback-analytics-web` — precisa de um ambiente real no ar e exercita o login por **cookie cross-domain**. Por isso não roda como teste hermético; roda como **gate da PR → `main`** contra o ambiente de **homologação já deployado** (`feedback-analytics-web-homolog.vercel.app`). Faz sentido porque toda PR para `main` vem obrigatoriamente da branch de homologação, um alias estável onde a derivação web→api e o cookie `SameSite=None; Secure` já funcionam.
+O topo da pirâmide — **e2e (Playwright)**, no repo `feedback-analytics-web` — precisa de um ambiente real no ar e exercita o login por **cookie cross-domain**. Por isso não roda como teste hermético; roda como **gate da PR → `main`** contra o ambiente de **homologação já deployado** (`feedback-analytics-web-developer.vercel.app`). Faz sentido porque toda PR para `main` vem obrigatoriamente da branch de homologação, um alias estável onde a derivação web→api e o cookie `SameSite=None; Secure` já funcionam.
 
-Por que **não** bloquear o deploy de homologação com e2e? Porque o frontend tem uma proteção anti-cross-branch que faz uma URL de preview efêmera derivar uma API de hash inexistente e ignorar uma URL de API explícita de outra branch. Um preview efêmero não consegue autenticar contra a API homolog fixa. Testar contra o homolog já deployado contorna isso sem mexer no código do app.
+Por que **não** bloquear o deploy de homologação com e2e? Porque o frontend tem uma proteção anti-cross-branch que faz uma URL de preview efêmera derivar uma API de hash inexistente e ignorar uma URL de API explícita de outra branch. Um preview efêmero não consegue autenticar contra a API developer fixa. Testar contra o developer já deployado contorna isso sem mexer no código do app.
 
 ### Vantagens e limites
 
@@ -72,7 +72,7 @@ Por que **não** bloquear o deploy de homologação com e2e? Porque o frontend t
 - **Serviços independentes** — deploya-se só o frontend sem tocar a API ou o serviço de IA, e vice-versa. Janela de risco menor a cada deploy.
 - **Deploy consciente** — nada vai para produção sem ação intencional.
 - **Produção não é atualizada automaticamente após merge** — se o dev esquece de disparar o deploy, a `main` fica com código mais novo que o ambiente silenciosamente.
-- **E2E depende do homolog estar atualizado** — o gate testa o ambiente deployado; se o homolog não foi redeployado com o código a promover, valida uma versão defasada.
+- **E2E depende do developer estar atualizado** — o gate testa o ambiente deployado; se o developer não foi redeployado com o código a promover, valida uma versão defasada.
 - **E2E muta dados reais** — os specs usam `service_role` no Supabase compartilhado (seed/cleanup), então rodar o gate concorrentemente pode gerar flakiness.
 
 ---
@@ -88,10 +88,10 @@ feature → homologação → main
 | Branch | Ambiente | Papel |
 |---|---|---|
 | `feature/*` | Local | Desenvolvimento. Nunca deployada diretamente. |
-| Homologação (`homolog` / `developer` no web) | Vercel Preview (alias fixo) | Recebe merges de features. Deploy manual gera URL de preview para validação. |
+| Homologação (`developer`) | Vercel Preview (alias fixo) | Recebe merges de features. Deploy manual gera URL de preview para validação. |
 | `main` | Vercel Production | Recebe apenas merges vindos da branch de homologação. |
 
-> **Nota:** no `feedback-analytics-web` a branch de homologação foi renomeada de `homolog` para `developer` (apenas o nome; o subdomínio Vercel segue `-homolog`). Consulte cada repo para a convenção vigente.
+> **Nota:** a branch de homologação é `developer` em todos os repos (era `homolog`), e o alias fixo da Vercel acompanha o nome (`-developer`).
 
 ---
 
@@ -130,7 +130,7 @@ Os secrets são configurados em cada repositório GitHub em **Settings → Secre
 | 1 | `feature/*` | Desenvolvimento local |
 | 2 | PR → homologação | CI roda automaticamente: lint + typecheck + testes + build. Merge bloqueado se falhar. |
 | 3 | homologação (validação) | Deploy manual via `workflow_dispatch` com confirmação `ok` → URL de preview na Vercel; e2e pós-deploy valida o ambiente |
-| 4 | PR → `main` | CI roda novamente **e** o `e2e-main` (web) roda a suíte e2e contra o homolog — merge bloqueado se falhar |
+| 4 | PR → `main` | CI roda novamente **e** o `e2e-main` (web) roda a suíte e2e contra o developer — merge bloqueado se falhar |
 | 5 | `main` (produção) | Deploy manual via `workflow_dispatch` com confirmação `ok` → deploy `--prod` na Vercel do serviço alterado |
 
 > **Cada serviço é deployado independentemente** — deploya-se somente o frontend sem tocar o API Gateway ou o serviço de IA.
