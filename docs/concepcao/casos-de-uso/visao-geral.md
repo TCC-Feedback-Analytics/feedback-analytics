@@ -4,15 +4,15 @@
 
 Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção de um ator que resulta em um valor concreto. A premissa de organização é:
 
-> **Caso de Uso ↔ arquivo de teste E2E (quando existe)**
+> **Caso de Uso ↔ cenários de teste**
 >
-> Os cenários da seção "Base para Teste E2E" de cada UC são a referência de comportamento esperado; cada arquivo de UC com cobertura aponta para o seu `uc-XX-*.spec.ts` correspondente. O mapeamento **não é 1:1 com todos os cenários**: nem todo cenário documentado tem um teste E2E implementado, e parte dos UCs tem apenas smoke test de carregamento. A cobertura real de cada cenário (✅ E2E, smoke, skip, planejado, unidade/integração) está indicada caso a caso na seção de testes de cada UC.
+> Os cenários da seção "Base para Teste E2E" de cada UC são a referência de comportamento esperado. Eles eram cobertos por uma suíte **Playwright (e2e)**, agora **removida**; passaram a ser executados **manualmente**, seguindo o [runbook de testes manuais do Web](../../guias/testes/manuais-web.md). O mapeamento **não é 1:1 com todos os cenários**: nem todo cenário documentado vira um passo do runbook, e parte dos UCs tem apenas smoke de carregamento. A cobertura real de cada cenário (✅ manual, smoke, planejado, unidade/integração) está indicada caso a caso na seção de testes de cada UC.
 >
-> **Estado atual da cobertura E2E:**
-> - **11 UCs** possuem arquivo de spec em `feedback-analytics-web/e2e/` (UC-01, 02, 04, 05, 06, 07, 08, 09, 10, 11, 12).
-> - **UC-03 não possui cobertura E2E** (depende de e-mail real / rate limit do Supabase).
-> - **UC-05, UC-06, UC-07 e UC-10** têm apenas **smoke test de carregamento de página** — os fluxos de ação documentados não são exercitados por E2E.
-> - São **27** chamadas `test()` no total, incluindo **7** `test.skip()` (condicionais) em UC-04, UC-08, UC-11 e UC-12. O `auth.setup.ts` é fixture de login, não um teste de UC.
+> **Estado atual da cobertura:**
+> - A suíte **Playwright (e2e)** foi **removida** — a pasta `feedback-analytics-web/e2e/` não existe mais.
+> - O [runbook de testes manuais do Web](../../guias/testes/manuais-web.md) reproduz manualmente os cenários de **11 dos 12 UCs** (UC-01, 02, 04, 05, 06, 07, 08, 09, 10, 11, 12).
+> - **UC-03 fica fora do runbook do Web** (depende de e-mail real / rate limit do Supabase) — permanece coberto por unidade/manual pontual.
+> - **UC-05, UC-06, UC-07 e UC-10** têm apenas **smoke de carregamento de página** no runbook — os fluxos de ação documentados não são exercitados nesses cenários.
 
 ---
 
@@ -124,23 +124,23 @@ UC-04 (Coleta de feedback)
 
 ## Relação com Testes E2E
 
-A maioria dos UCs possui um arquivo de teste E2E do Playwright em `feedback-analytics-web/e2e/`. O **Status** abaixo reflete a profundidade real da cobertura, não apenas a existência do arquivo:
+A suíte de testes E2E do Playwright (`feedback-analytics-web/e2e/`) foi **removida**; os cenários de cada UC passaram a ser executados **manualmente**, pelo [runbook de testes manuais do Web](../../guias/testes/manuais-web.md). A coluna **Cobertura** abaixo reflete a profundidade dos cenários hoje reproduzidos manualmente (equivalente ao que a suíte automatizada exercitava antes da remoção):
 
-| Arquivo de UC | Arquivo de teste E2E | Status |
-|---|---|---|
-| [uc-01-cadastro-conta.md](uc-01-cadastro-conta.md) | [uc-01-cadastro-conta.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-01-cadastro-conta.spec.ts) | ✅ Implementado (2 testes: e-mail e documento duplicados) |
-| [uc-02-login.md](uc-02-login.md) | [uc-02-login.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-02-login.spec.ts) | ✅ Implementado (2 testes) |
-| [uc-03-recuperacao-senha.md](uc-03-recuperacao-senha.md) | *Sem spec* | ❌ Sem cobertura E2E (unidade / manual) |
-| [uc-04-envio-feedback-qrcode.md](uc-04-envio-feedback-qrcode.md) | [uc-04-envio-feedback-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-04-envio-feedback-qrcode.spec.ts) | ✅ Implementado (2 testes; envio válido com skip condicional) |
-| [uc-05-geracao-qrcode.md](uc-05-geracao-qrcode.md) | [uc-05-geracao-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-05-geracao-qrcode.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-06-ativacao-tipos-feedback.md](uc-06-ativacao-tipos-feedback.md) | [uc-06-ativacao-tipos-feedback.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-06-ativacao-tipos-feedback.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-07-configuracao-catalogo.md](uc-07-configuracao-catalogo.md) | [uc-07-configuracao-catalogo.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-07-configuracao-catalogo.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-08-configuracao-coleta-ia.md](uc-08-configuracao-coleta-ia.md) | [uc-08-configuracao-coleta-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-08-configuracao-coleta-ia.spec.ts) | ✅ Implementado (smoke + 2 saves com skip condicional) |
-| [uc-09-dashboard.md](uc-09-dashboard.md) | [uc-09-dashboard.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-09-dashboard.spec.ts) | ✅ Implementado (5 testes) |
-| [uc-10-listagem-feedbacks.md](uc-10-listagem-feedbacks.md) | [uc-10-listagem-feedbacks.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-10-listagem-feedbacks.spec.ts) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-11-insights-ia.md](uc-11-insights-ia.md) | [uc-11-insights-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-11-insights-ia.spec.ts) | ✅ Implementado (2 smokes + regenerar com skip condicional) |
-| [uc-12-gestao-perfil.md](uc-12-gestao-perfil.md) | [uc-12-gestao-perfil.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-12-gestao-perfil.spec.ts) | ✅ Implementado (6 testes; 2 com skip condicional) |
+| Arquivo de UC | Cobertura manual (runbook) |
+|---|---|
+| [uc-01-cadastro-conta.md](uc-01-cadastro-conta.md) | ✅ 2 cenários (e-mail e documento duplicados) |
+| [uc-02-login.md](uc-02-login.md) | ✅ 2 cenários |
+| [uc-03-recuperacao-senha.md](uc-03-recuperacao-senha.md) | ❌ Fora do runbook do Web (unidade / manual pontual) |
+| [uc-04-envio-feedback-qrcode.md](uc-04-envio-feedback-qrcode.md) | ✅ 2 cenários (envio válido é condicional) |
+| [uc-05-geracao-qrcode.md](uc-05-geracao-qrcode.md) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-06-ativacao-tipos-feedback.md](uc-06-ativacao-tipos-feedback.md) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-07-configuracao-catalogo.md](uc-07-configuracao-catalogo.md) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-08-configuracao-coleta-ia.md](uc-08-configuracao-coleta-ia.md) | ✅ Smoke + 2 salvamentos condicionais |
+| [uc-09-dashboard.md](uc-09-dashboard.md) | ✅ 5 cenários |
+| [uc-10-listagem-feedbacks.md](uc-10-listagem-feedbacks.md) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-11-insights-ia.md](uc-11-insights-ia.md) | ✅ 2 smokes + regenerar (condicional) |
+| [uc-12-gestao-perfil.md](uc-12-gestao-perfil.md) | ✅ 6 cenários (2 condicionais) |
 
-**Legenda de Status:** ✅ Implementado = há ao menos um fluxo de ação coberto · 🔎 Apenas smoke = o spec só verifica que a página carrega, sem exercitar os fluxos de ação documentados · ❌ Sem cobertura E2E = não há arquivo de spec.
+**Legenda de Cobertura:** ✅ = há ao menos um fluxo de ação reproduzido manualmente · 🔎 Apenas smoke = o cenário verifica apenas que a página carrega, sem exercitar os fluxos de ação documentados · ❌ = fica fora do runbook de testes manuais do Web.
 
-A seção "Base para Teste E2E" de cada UC lista, cenário a cenário, o que está coberto por E2E, o que é apenas smoke, o que está skipped e o que está apenas planejado. As coberturas detalhadas (incluindo testes de unidade, de integração e cenários skipped) estão mapeadas no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+A seção "Base para Teste E2E" de cada UC lista, cenário a cenário, o que é reproduzido manualmente, o que é apenas smoke e o que está apenas planejado. As coberturas detalhadas (incluindo testes de unidade, de integração e cenários planejados) estão mapeadas no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).

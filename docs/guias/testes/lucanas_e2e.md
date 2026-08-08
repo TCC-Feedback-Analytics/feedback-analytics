@@ -1,14 +1,19 @@
 # Lacunas dos Testes E2E (Playwright)
 
-Este documento mapeia os conflitos, divergências e lacunas entre a documentação de **Casos de Uso (`docs/casos-de-uso/`)** e a implementação dos testes E2E com o **Playwright (`feedback-analytics-web/e2e/`)**. 
+Este documento mapeia os conflitos, divergências e lacunas entre a documentação de **Casos de Uso (`docs/casos-de-uso/`)** e a antiga implementação dos testes E2E com o **Playwright (`feedback-analytics-web/e2e/`)** — hoje executados **manualmente**.
 
 O objetivo deste relatório é servir de guia para correções de regras de negócio e expansão da cobertura de testes.
+
+!!! warning "A automação E2E (Playwright) foi removida — o E2E agora é manual"
+    A suíte **Playwright** (`feedback-analytics-web/e2e/`) e o gate `e2e-main.yml` foram **removidos** do projeto e do CI (o deploy passou a ser **main-only**, sem ambiente de homologação). A execução ponta a ponta dos Casos de Uso passou a ser **manual**, documentada em **[Testes manuais — Web](./manuais-web.md)** (UCs) e **[Testes manuais — API Gateway](./manuais-api-gateway.md)** (integração/e2e do gateway).
+
+    As seções abaixo continuam válidas como **mapa dos cenários difíceis** — o que dependia de e-mail/SMS reais, de recursos do sistema operacional ou de estado persistido — só que agora servem de **checklist para a execução manual** em vez de justificar `test.skip` no pipeline. As referências a arquivos `*.spec.ts` e a `test.skip` descrevem a **antiga** suíte automatizada.
 
 ---
 
 ## 1. ⚠️ Skipped Intencional (Fluxos Externos ou Execução Manual)
 
-Estes cenários foram desativados nos testes E2E do Playwright (`test.skip(true, '...')`) de forma intencional. Eles dependem de sistemas externos de terceiros (como servidores de e-mail e operadoras de SMS) ou de comportamentos específicos da infraestrutura que inviabilizam a automação contínua clássica no pipeline de CI.
+Estes cenários eram desativados nos testes E2E do Playwright (`test.skip(true, '...')`) de forma intencional, por dependerem de sistemas externos de terceiros (como servidores de e-mail e operadoras de SMS) ou de comportamentos específicos da infraestrutura que inviabilizavam a automação contínua clássica no pipeline de CI. Na **execução manual** (runbook [Testes manuais — Web](./manuais-web.md)), um testador pode exercitá-los usando e-mail/SMS reais quando necessário.
 
 | Identificador | Descrição do Caso de Uso | Arquivo de Teste E2E | Motivo do Skip |
 | :--- | :--- | :--- | :--- |

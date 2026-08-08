@@ -42,7 +42,7 @@
 
 ## Base para Teste E2E
 
-> **O E2E atual deste UC é apenas um smoke test de carregamento de página** ([uc-10-listagem-feedbacks.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-10-listagem-feedbacks.spec.ts)): verifica que a página `/user/feedbacks/all` carrega a lista de feedbacks ou exibe o estado vazio. Os fluxos de **ação** (filtros, busca, paginação, modal de detalhes) **não estão cobertos por E2E**. Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+> A suíte Playwright (e2e) deste UC foi **removida**; ela cobria apenas um **smoke test de carregamento de página** (verificava que a página `/user/feedbacks/all` carregava a lista de feedbacks ou exibia o estado vazio), e os fluxos de **ação** (filtros, busca, paginação, modal de detalhes) nunca tiveram E2E. Os cenários agora são executados manualmente — veja o [runbook de testes manuais do Web](../../guias/testes/manuais-web.md). Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
 
 **Cenários a cobrir:**
 

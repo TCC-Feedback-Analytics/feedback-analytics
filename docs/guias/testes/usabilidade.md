@@ -10,7 +10,7 @@
 ---
 ## 2. Fase Pré-Teste
 Ações que devem ser obrigatoriamente concluídas **antes** de disponibilizar o sistema para uso comercial das empresas parceiras:
-* **Limpeza e Higienização de Dados:** Zerar completamente as tabelas de dados de operação (`feedback` e `feedback_analysis`) no Supabase no ambiente que será disponibilizado (homologação/produção) para garantir que métricas antigas ou testes de desenvolvimento não poluam os relatórios reais das empresas.
+* **Limpeza e Higienização de Dados:** Zerar completamente as tabelas de dados de operação (`feedback` e `feedback_analysis`) no ambiente de **produção** (não há mais ambiente de homologação — o deploy é main-only) para garantir que métricas antigas ou testes de desenvolvimento não poluam os relatórios reais das empresas.
 * **Auditoria de Variáveis de Ambiente:** Confirmar se as variáveis cruciais (como a chave da API do Gemini e credenciais de acesso ao Supabase) estão seguras, ativas e configuradas no servidor Express (API Gateway).
 * **Termo de Consentimento (Aspectos Éticos):** Obter o aceite formal ou a assinatura dos gestores parceiros no Termo de Consentimento Livre e Esclarecido (TCLE) que regulamenta a participação no teste de usabilidade.
 * **Kit de Coleta (SUS):** Garantir que o link do formulário (Google Forms) contendo o questionário estruturado da escala SUS (*System Usability Scale*) esteja pronto, revisado e operacional.
