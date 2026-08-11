@@ -26,39 +26,7 @@
 
 #### Mapa de Empatia
 
-**Visualizar o código no site:** https://mermaid.ai/
-
-```mermaid
-mindmap
-  root((Ana
-    38 anos
-    Gestora))
-    Pensa e Sente
-      Não tenho tempo de ler cada comentário nas redes sociais
-      Será que estamos realmente agradando?
-      Ansiosa por não saber o que os clientes realmente pensam
-    O Que Ouve
-      Gerentes: você precisa estar atento ao que o cliente diz
-      Equipe: alguns clientes reclamaram do tempo de espera hoje
-      Clientes indiretamente: comentários soltos em redes sociais
-      Marketing: precisamos de depoimentos positivos para a campanha
-    O Que Vê
-      Relatórios de vendas diários
-      Concorrência inaugurando novas unidades ou lançando produtos
-      Avaliações dispersas no Instagram, iFood e Google
-      Planilhas manuais para tentar consolidar informações
-    Fala e Faz
-      Gostaria de ter um relatório simples para a reunião semanal
-      Tenta ler avaliações online quando tem tempo
-    Dores
-      Decisões baseadas em achismo
-      Dados descentralizados em vários lugares
-      Melhorias feitas com base em intuição, não em dados
-    Ganhos
-      Todos os feedbacks em um único dashboard
-      Identificar um problema em minutos, não em semanas
-      Ser vista como gerente que ouve os clientes e melhora o serviço
-```
+<img src="../assets/mapaEmpatiaAna.png" alt="Mapa de Empatia - Ana Rocha" width="600" />
 
 ---
 
@@ -84,39 +52,7 @@ mindmap
 
 #### Mapa de Empatia
 
-**Visualizar o código no site:** https://mermaid.ai/
-
-```mermaid
-mindmap
-  root((Lucas
-    25 anos
-    Cliente))
-    Pensa e Sente
-      O café estava ótimo, queria poder elogiar de forma rápida
-      A fila estava enorme, mas que preguiça de procurar o Instagram deles
-      Com pressa — satisfeito ou frustrado dependendo do dia
-    O Que Ouve
-      Atendente: obrigado, volte sempre!
-      Amigos: vamos tomar um café naquela cafeteria nova?
-      Ambiente: música e barulho de outras conversas
-    O Que Vê
-      QR Code na mesa com a chamada: Sua opinião é importante!
-      Ambiente da loja: limpeza e decoração
-      Qualidade do produto que consumiu
-    Fala e Faz
-      Escaneia o QR Code por curiosidade
-      Abandona o processo se o formulário for longo
-      Envia o feedback se for rápido e fácil
-      O café estava muito bom hoje!
-    Dores
-      Baixar app ou preencher formulário com muitas perguntas
-      Ser obrigado a fornecer dados pessoais para dar opinião
-      Nenhum canal fácil para reclamar no momento em que acontece
-    Ganhos
-      Dar feedback em menos de um minuto direto pelo celular
-      Poder ser sincero sem se identificar
-      Sentir que sua opinião pode melhorar um lugar que gosta
-```
+<img src="../assets/mapaLucas.png" alt="Mapa de Empatia - Ana Rocha" width="600" />
 
 ---
 
@@ -144,38 +80,7 @@ mindmap
 
 #### Mapa de Empatia
 
-**Visualizar o código no site:** https://mermaid.ai/
-
-```mermaid
-mindmap
-  root((Carlos
-    46 anos
-    Dono))
-    Pensa e Sente
-      Estou tomando decisões de expansão sem dados confiáveis?
-      Os gerentes me passam a versão polida da realidade
-      Preciso saber onde investir com segurança
-    O Que Ouve
-      Gerentes: relatórios otimistas nas reuniões mensais
-      Clientes indiretamente: reclamações chegam com atraso e filtradas
-      Mercado: concorrentes crescendo e lançando novidades
-    O Que Vê
-      PDFs e planilhas de desempenho mensal
-      Unidades com resultados diferentes sem explicação clara
-      Concorrentes abrindo novas unidades com velocidade
-    Fala e Faz
-      Precisamos melhorar o desempenho dessa unidade
-      Revisa relatórios PDF mensalmente
-      Reúne-se com gerentes para discutir resultados
-    Dores
-      Informações sempre filtradas pelos gestores
-      Relatórios genéricos sem recomendações práticas
-      Decisões de investimento sem base objetiva
-    Ganhos
-      Relatório IA com resumo executivo e recomendações acionáveis
-      Comparação objetiva entre unidades, produtos e serviços
-      Independência para auditar a satisfação do cliente sem intermediários
-```
+<img src="../assets/mapaCarlos.png" alt="Mapa de Empatia - Ana Rocha" width="600" />
 
 ---
 
