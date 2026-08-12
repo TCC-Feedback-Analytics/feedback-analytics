@@ -20,7 +20,7 @@ A solução é mudar a forma de trabalhar. Em vez de "faça tudo agora enquanto 
 Para isso, três peças entram em cena, e vale entender cada uma em palavras simples:
 
 - **A fila** é a *comanda de pedidos*: uma lista durável de tarefas a fazer. Quando você clica "Analisar", o sistema só **anota** o pedido nessa lista e já te responde "processando". Se faltar luz ou o sistema reiniciar, a comanda continua lá — nenhum pedido se perde.
-- **O trabalhador** (em inglês, *worker*) é o *cozinheiro*: um programa que fica **sempre ligado**, pega os pedidos da comanda um a um e os executa em segundo plano.
+- **O trabalhador** (em inglês, *worker*) é o *cozinheiro*: um programa que **trabalha em segundo plano** (acordado de tempos em tempos), pega os pedidos da comanda um a um e os executa.
 - **O controle de ritmo** (em inglês, *rate limiter*) é a *regra da cozinha* de "no máximo X pratos por minuto": ele garante que o sistema nunca peça à IA mais do que a cota gratuita permite — assim a cota não estoura e o serviço não cai.
 
 O benefício é direto: **acabam os erros de "tempo esgotado"**, a **cota diária da IA para de estourar**, e o gestor passa a **acompanhar o progresso** ("analisando 12 de 40...") em vez de encarar uma tela travada que não diz nada.
@@ -61,7 +61,7 @@ Gestor clica "Analisar"
   Sistema ANOTA o pedido na fila  ──►  responde NA HORA: "processando" (+ um nº de acompanhamento)
         │
         ▼
-  O TRABALHADOR (sempre ligado) pega o pedido da fila
+  O TRABALHADOR (em segundo plano) pega o pedido da fila
         │   processa os feedbacks aos poucos, RESPEITANDO o limite da IA
         │   (ex.: no máximo N pedidos por minuto e M por dia)
         ▼
@@ -95,11 +95,11 @@ Pontos concretos que causam o timeout e o estouro de cota:
 - **Tudo dentro do request HTTP.** O controller só responde depois que a última chamada ao Gemini volta. Em `vercel.json` há `"maxDuration": 300`, mas o **plano free (Hobby) corta em ~60s** — é a causa provável do "tempo esgotado".
 - **Várias chamadas ao Gemini por clique.** `buildAnalysisBatches` fatia em lotes de ≤20 feedbacks por escopo; `runIaAnalyzeService` dispara os lotes com concorrência limitada (`mapWithConcurrency`, padrão 3). São N chamadas em sequência/paralelo dentro do mesmo request.
 - **O retry multiplica o consumo.** Em `gemini.provider.ts`, `MAX_ATTEMPTS = 4` re-tenta em 429/503/5xx com backoff. Cada retry é **mais um pedido contra a cota** — e o relógio do timeout continua correndo durante os `sleep()` do backoff.
-- **"Gerar insights" reprocessa tudo.** `fetchAlreadyAnalyzedFeedbacks` busca até **100 feedbacks** (`limit = 100`) e `regenerateFeedbackInsights` **não tem cache**: cada clique remonta os lotes e **reconsulta o Gemini do zero**.
+- **"Gerar insights" reprocessa quando há novidade.** `fetchAlreadyAnalyzedFeedbacks` busca até **100 feedbacks** (`limit = 100`). Hoje já existe um **cache de leitura** (entregue na etapa 00): se nenhum feedback é mais novo que o relatório salvo, devolve do banco **sem chamar o LLM**. Mas quando há novidade (ou `force`), o `regenerateFeedbackInsights` **remonta os lotes e reconsulta a IA de forma síncrona** — o mesmo risco de timeout que esta etapa resolve.
 
-### A solução: fila no Postgres + worker always-on
+### A solução: fila própria no Postgres + drain por cron
 
-**Fila — `pg-boss`.** Usar [`pg-boss`](https://github.com/timgit/pg-boss), uma fila de jobs que vive **dentro do próprio Postgres** (cria um schema `pgboss` com as tabelas de jobs). Vantagem decisiva para um TCC com orçamento zero: **nenhuma infraestrutura nova** — sem Redis, sem SQS, sem outro serviço para pagar/manter. Reaproveita o Postgres que já temos no Supabase. O `pg-boss` já entrega de fábrica: persistência durável, retry com backoff, `expireInSeconds`, agendamento (`throttle`/`singletonKey`) e *archiving* de jobs concluídos.
+**Fila própria (sem dependência nova).** Uma tabela `ia_analysis_job` no próprio Postgres é **a fila E o status**. O worker puxa o próximo job com `SELECT ... FOR UPDATE SKIP LOCKED` — o padrão clássico de fila em SQL, que evita dois workers pegarem o mesmo job sem travar a tabela. Zero infra nova (sem Redis, sem SQS, **sem `pg-boss`**), reaproveitando o Postgres do Supabase — e é a demonstração de banco mais forte (responde diretamente à crítica da banca).
 
 **Contrato do job.** Um único tipo de job, com payload neutro:
 
@@ -110,44 +110,44 @@ type IaAnalyzeJob = {
   scope_type: IaAnalyzeScopeType;          // COMPANY | PRODUCT | SERVICE | DEPARTMENT
   catalog_item_id: string | null;          // null = escopo empresa
   job_type: 'analyze_raw' | 'regenerate_insights'; // qual operação enfileirar
-  requested_by: string;                    // userId, para auditoria/RLS
+  requested_by: string;                    // userId, para auditoria
 };
 ```
 
-O `enqueue` substitui a chamada síncrona nos controllers: o controller passa a **só inserir o job e responder 202 Accepted** com um identificador (o `id` do job do `pg-boss`, ou uma linha própria de status — ver abaixo).
+O `enqueue` substitui a chamada síncrona nos controllers: o controller passa a **só inserir o job e responder 202 Accepted** com o `jobId` (a própria linha de `ia_analysis_job`).
 
 **Rate limiter (controle de ritmo) — *token bucket* duplo.** Um limitador em duas janelas, alinhado às cotas reais do Gemini free:
 - **por minuto** (requisições/minuto, o RPM do modelo); e
 - **por dia** (requisições/dia, a cota diária que hoje estoura).
 
-Implementação simples e durável: uma tabela `ia_rate_budget (enterprise_id?, window_day date, minute_bucket, tokens_used, ...)` consultada/atualizada **dentro de uma transação** antes de cada chamada ao Gemini; se não houver "ficha" (token) disponível, o worker **não falha** — ele **re-agenda o job** (`pg-boss` `retry`/`delay`) para a próxima janela. Isso é *back-pressure*: a pressão da fila não vira pressão na IA; o ritmo é ditado pelo orçamento, não pelo número de cliques.
+Implementação simples e durável: uma tabela `ia_rate_budget` (janela de minuto e de dia) reservada **atomicamente** antes de cada chamada à IA; se não houver "ficha" (token) disponível, o worker **não falha** — ele **re-agenda o job** (`status=waiting_budget`, `next_run_at`) para a próxima janela. Isso é *back-pressure*: a pressão da fila não vira pressão na IA; o ritmo é ditado pelo orçamento, não pelo número de cliques.
 
 **Idempotência.** Reaproveitar o que já existe: `feedback_analysis` já é a fonte da verdade do "o que já foi analisado", e o service já filtra via `fetchAlreadyAnalyzedFeedbackIds`. Somar a isso:
-- `singletonKey` do `pg-boss` por `(enterprise_id, scope_type, catalog_item_id, job_type)` → **não enfileira duas vezes** o mesmo pedido enquanto um está pendente/ativo (resolve o "duplo clique" e o "clica de novo porque travou");
-- um `INSERT ... ON CONFLICT DO NOTHING` em `feedback_analysis` (ou checagem de `already analyzed` por lote) → mesmo que um job rode duas vezes, **não duplica linhas**.
+- um **índice parcial único** em `ia_analysis_job` por `(enterprise_id, job_type, scope_type, catalog_item_id)` enquanto o job está ativo → **não enfileira duas vezes** o mesmo pedido (resolve o "duplo clique" e o "clica de novo porque travou");
+- `unique(feedback_id)` em `feedback_analysis` + `INSERT ... ON CONFLICT DO NOTHING` → mesmo que um job rode duas vezes, **não duplica linhas** (esse `unique` **não existe hoje** e entra na migration `0002`).
 
-**Retomada / resiliência.** Se o worker cair no meio, o `pg-boss` devolve o job à fila (visibilidade/`expireInSeconds`) e ele **continua de onde parou** — como os lotes são fatiados e a persistência é por lote, o reprocessamento pula o que já foi gravado (idempotência acima). Backoff exponencial nos jobs (`retryBackoff: true`) para 429/503, em vez do retry *dentro* do request de hoje.
+**Retomada / resiliência.** A persistência é por lote e o service já pula os já-analisados (`fetchAlreadyAnalyzedFeedbackIds`); se o worker parar no meio, o próximo tick **continua de onde parou**. Backoff exponencial via `attempts`/`next_run_at` para 429/5xx, em vez do retry *dentro* do request de hoje.
 
-**Status para o polling.** Tabela leve `ia_analysis_job (id, enterprise_id, scope_type, catalog_item_id, status, total, done, error_code, created_at, updated_at)` com **RLS multi-tenant** (mesmo padrão `auth.uid()` das outras 13 tabelas). O front faz `GET /api/protected/ia-analyze/jobs/:id` a cada poucos segundos e lê `done`/`total`/`status`. O worker atualiza essa linha a cada lote concluído.
+**Status para o polling.** A própria linha `ia_analysis_job (id, enterprise_id, scope_type, catalog_item_id, status, total, done, error_code, ...)` — isolada por **`enterprise_id` + `tenantScope`** (app-level; a RLS/`auth.uid()` foi removida no cutover). O front faz `GET /api/protected/ia-analyze/jobs/:id` a cada poucos segundos e lê `done`/`total`/`status`. O worker atualiza essa linha a cada lote concluído.
 
-**Onde o worker roda (always-on).** O `pg-boss` precisa de um **processo de longa duração** consumindo a fila — o que **não cabe em função serverless** (que é efêmera por natureza). Esta é a ponte direta com a etapa de infraestrutura: o serviço `ia-analyze` (ou um novo processo `worker`) precisa rodar como container/processo sempre-ligado. Ver **[08 — Infraestrutura e custo](./08-infraestrutura-e-custo.md)** para a decisão de hospedagem (ex.: container free-tier em Railway/Render/Fly, ou um host barato), incluindo como o worker e o serviço HTTP convivem.
+**Onde o worker roda — na infra atual, sem host always-on.** O worker mora no **`feedback-analytics-api-gateway`** (único repo com acesso ao banco e à orquestração; o `ia-analyze` é stateless e segue como o serviço de compute que o worker *chama*). Em vez de um processo sempre-ligado, um endpoint interno `POST /internal/worker/tick` é chamado por **cron externo** (~1 min) e drena um lote por invocação — cabe no serverless da Vercel e **desacopla esta etapa da [08](./08-infraestrutura-e-custo.md)**. O mesmo núcleo `drainJobs()` pode virar um loop always-on num host externo depois (etapa 08), sem reescrita.
 
 ### Por camada
 
 | Camada | O que muda |
 |---|---|
-| **Backend (gateway)** | Controllers de `analyze`/`regenerate` passam a **enfileirar** (202 + id) em vez de executar. Novo endpoint `GET .../jobs/:id` para o polling. |
-| **Backend (worker)** | Novo consumidor `pg-boss` que chama a lógica **já existente** (`runIaAnalyzeService`), porém sob o rate limiter e gravando progresso. |
-| **Banco** | Schema do `pg-boss`; tabelas `ia_analysis_job` e `ia_rate_budget` (com RLS); migrações versionadas em `database/sql/`. |
-| **Infra** | Worker always-on (ver etapa 08). Variáveis: limites por minuto/dia, modelo, concorrência. |
-| **Frontend** | Trocar "esperar resposta" por "enfileirar + polling de progresso". (Mudança pequena de UX; detalhe fora do escopo deste doc.) |
+| **Backend (gateway)** | Controllers de `analyze`/`regenerate` passam a **enfileirar** (202 + `jobId`) atrás da flag `IA_ASYNC_ENABLED`. Novos endpoints: `GET .../jobs/:id` (polling) e `POST /internal/worker/tick` (drain). |
+| **Worker (no gateway)** | `drainJobs()` reusa a lógica existente (`buildAnalysisBatches`, `runIaAnalyzeAnalysis`, `insertFeedbackAnalysisRows`), sob o rate limiter e gravando progresso. |
+| **Banco** | Migration Drizzle `0002`: tabelas `ia_analysis_job` e `ia_rate_budget` (isoladas por `enterprise_id`), e `unique(feedback_id)` em `feedback_analysis`. |
+| **Infra** | Nenhum host novo: cron externo bate no `/internal/worker/tick`. Variáveis: limites por minuto/dia, lotes por tick, flag. |
+| **Frontend** | Trocar "esperar resposta" por "enfileirar + polling de progresso" (preservando o contrato de transição de flag dos hooks scoped). |
 
 ## Riscos e decisões em aberto
 
-- **Worker always-on tem custo/operação.** É a maior mudança de infra do projeto e depende da etapa 08. Risco mitigado por usar `pg-boss` (sem Redis) e free-tiers de container — mas exige um processo de pé, não apenas serverless.
+- **Execução do worker.** No MVP, um **cron externo** bate no `/internal/worker/tick` (roda na Vercel atual, sem host novo) → **não depende da etapa 08**. Um worker always-on num host externo (Oracle/Fly) fica como **upgrade futuro** (mesmo `drainJobs()`), aí com pool dedicado em modo sessão.
 - **Polling vs. tempo real.** O polling é simples e suficiente, mas gera requisições periódicas. Para o TCC é adequado; *server-sent events*/websocket fica como melhoria futura, **fora do escopo**.
 - **Calibrar os limites do *rate limiter*.** Os números exatos de RPM/dia do Gemini free podem mudar; os limites precisam ser **configuráveis por variável de ambiente**, não fixos no código (lição do `gemini-2.5-flash` *hardcoded*).
-- **Conexões ao Postgres.** `pg-boss` mantém conexões; em Supabase free há teto de conexões. Avaliar usar o **pooler** e um pool pequeno e dedicado ao worker.
+- **Conexões ao Postgres.** No modelo cron-drain cada tick é uma invocação curta que reusa o **pooler em modo transação** já configurado (`prepare:false`) — `FOR UPDATE SKIP LOCKED` funciona nele. Só o upgrade para worker always-on precisaria de um pool dedicado em modo sessão (teto de conexões do Supabase free).
 - **Migração suave.** Manter, por trás de uma *feature flag*, o caminho síncrono antigo até o assíncrono estar validado — para não quebrar o fluxo durante a transição.
 - **Acoplamento com o provedor de IA.** O worker deve chamar a IA pela **porta** `IaApiClient`, não direto pelo Gemini, para já nascer compatível com a **[04 — Provedor de LLM configurável](./04-provedor-de-llm-configuravel.md)**.
 
@@ -232,23 +232,24 @@ Preservar o contrato de transição de flag `true → false` — os 3 hooks scop
 - [ ] **Duplo clique** (ou clicar de novo após travar) **não cria** trabalho duplicado nem linhas duplicadas em `feedback_analysis` (idempotência).
 - [ ] Derrubar o worker **no meio** de um job e religá-lo: o job **retoma e conclui**, sem reprocessar o que já foi gravado.
 - [ ] A tela mostra **progresso real** ("X de Y") que avança até "concluído".
-- [ ] O endpoint de status respeita **RLS**: um gestor não enxerga o job de outra empresa.
+- [ ] O endpoint de status respeita o **isolamento por `enterprise_id`** (app-level): um gestor não enxerga o job de outra empresa.
 
 ## Etapas de entrega
 
-1. **Fila mínima.** Subir `pg-boss` no Postgres; mover `analyze_raw` para um job; controller passa a enfileirar (202 + id). Worker roda **sem** rate limiter ainda (só tira o trabalho do request).
-2. **Status + polling.** Tabela `ia_analysis_job` com RLS; worker grava `done/total`; endpoint `GET .../jobs/:id`; front mostra progresso.
-3. **Rate limiter.** *Token bucket* por minuto e por dia (`ia_rate_budget`); jobs sem orçamento são re-agendados (back-pressure). Limites por variável de ambiente.
-4. **Idempotência + retomada.** `singletonKey` por escopo; `ON CONFLICT DO NOTHING`; backoff; testar queda do worker no meio.
-5. **`regenerate_insights` assíncrono + cache.** Mover "Gerar insights" para a fila e evitar reprocessar quando nada mudou desde o último relatório.
-6. **Limpeza.** Remover (ou esconder atrás de flag) o caminho síncrono antigo; documentar variáveis e operação do worker.
+1. **Migration `0002`.** Tabelas `ia_analysis_job` e `ia_rate_budget` + `unique(feedback_id)` em `feedback_analysis`; schema Drizzle + trigger `set_updated_at`.
+2. **Fila mínima.** `iaJob.repository` (enqueue com dedup pelo índice parcial); controllers enfileiram (202 + `jobId`) atrás da flag `IA_ASYNC_ENABLED`; `GET .../jobs/:id` (polling).
+3. **Worker/drain.** `drainJobs()` + `POST /internal/worker/tick`; refactor do pipeline (`prepareAnalyzeRawJob`/`runOneBatch`) para progresso por lote.
+4. **Rate limiter.** *Token bucket* por minuto e por dia (`ia_rate_budget`); jobs sem orçamento viram `waiting_budget` e são re-agendados (back-pressure). Limites por variável de ambiente.
+5. **Frontend.** Action retorna `jobId`; `useAnalysisJobPolling`; progresso "X de Y" na UI (preservando os hooks scoped).
+6. **`regenerate_insights` assíncrono.** Mover "Gerar insights" para a fila (reusa o cache de leitura já existente).
+7. **Cron + limpeza.** Ligar o cron externo; documentar variáveis/operação; manter o síncrono atrás da flag até validar.
 
 ## O que isso demonstra no TCC
 
 Esta é a **peça central de arquitetura** do trabalho. Rende um capítulo forte sobre:
 
 - **Arquitetura assíncrona** e o padrão **produtor–consumidor** (fila + worker), com justificativa de *por que* o modelo síncrono falha em ambiente serverless.
-- **Filas de mensagens/jobs** e a escolha de projeto de usar o **próprio banco como fila** (`pg-boss`) para custo zero — uma decisão arquitetural defensável e mensurável.
+- **Filas de jobs** e a escolha de projeto de usar o **próprio banco como fila** com `SELECT ... FOR UPDATE SKIP LOCKED` (custo zero, sem dependência) — uma decisão arquitetural defensável que exercita concorrência e bloqueio em SQL.
 - **Rate limiting** com *token bucket* e **back-pressure**: como proteger um recurso externo escasso (a cota da IA) sem derrubar o sistema.
 - **Idempotência** e **resiliência/retomada**: garantias de "exatamente-uma-vez-do-ponto-de-vista-do-resultado" diante de falhas e retentativas.
 - Um **antes/depois mensurável** (taxa de timeout, consumo de cota, latência percebida) — material ideal para a seção de resultados.
@@ -259,4 +260,4 @@ Esta é a **peça central de arquitetura** do trabalho. Rende um capítulo forte
 - [00 — Estabilização](./00-estabilizacao.md) — conserta os sintomas (timeout, retry, cota) na superfície; **esta etapa resolve a causa raiz**.
 - [04 — Provedor de LLM configurável](./04-provedor-de-llm-configuravel.md) — o worker chama a IA pela **porta** `IaApiClient`, ficando agnóstico de provedor.
 - [05 — Feedback por áudio](./05-feedback-por-audio.md) — a transcrição de áudio é mais um trabalho pesado que se **encaixa naturalmente nesta mesma fila/worker**.
-- [08 — Infraestrutura e custo](./08-infraestrutura-e-custo.md) — onde hospedar o **worker always-on** que esta etapa exige.
+- [08 — Infraestrutura e custo](./08-infraestrutura-e-custo.md) — **upgrade futuro** (opcional): trocar o cron-drain por um worker always-on num host externo. Esta etapa **não depende** mais da 08.
