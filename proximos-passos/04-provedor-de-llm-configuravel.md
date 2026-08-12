@@ -130,6 +130,93 @@ Com o modelo agora configurável (`LLM_MODEL`) e múltiplos provedores, dá para
 4. **Comparação empírica:** montar um gold set, rodar `eval-classifier` contra ≥2 modelos, registrar kappa/macro-F1 e **escolher o default por evidência**. Entrega valor: decisão fundamentada + material de TCC.
 5. **(Posterior) BYO-key por empresa:** storage cifrado + RLS + propagação de chave por escopo + UI. Entrega valor: resolve a cota na raiz, distribuindo o limite por empresa.
 
+## Plano de execução detalhado — sub-fase BYO-key por empresa (decidido em ago/2026)
+
+> Este plano detalha a **etapa 5** ("BYO-key por empresa") acima, com as decisões já travadas com a equipe. Foi validado contra o código real dos 4 repositórios em ago/2026. Enquanto não implementado, o Status geral desta etapa segue 🔵 Planejado.
+
+### Decisões travadas
+
+1. **Estratégia (alinhada a este doc):** primeiro a **fábrica `createProvider`** (Strategy) + modelo configurável + adaptador OpenRouter reusando prompt/parser, **mantendo o Gemini selecionável**; depois o **BYO-key por empresa** por cima, **com fallback a uma chave global** para empresas que ainda não configuraram a sua.
+2. **Transporte da chave gateway → ia-analyze: por header HTTP** (à la `x-ia-analyze-token`). **Zero mudança** no pacote `@feedback/lib-shared` (sem bump de versão/tag, sem tocar os 3 consumidores). A chave fica fora do corpo JSON e dos logs de payload.
+3. **Storage:** tabela dedicada `enterprise_ia_config` (1:1 com `enterprise`), chave cifrada com **AES-256-GCM** (`node:crypto`), segredo em `IA_CONFIG_ENCRYPTION_KEY`.
+4. **Modelo:** lista curada no frontend (`google/gemini-2.5-flash`, `anthropic/claude-3.5-sonnet`, `openai/gpt-4o-mini`, `deepseek/deepseek-chat`, `openrouter/auto`) **+ opção "modelo personalizado"**.
+5. **Validação da chave:** `GET https://openrouter.ai/api/v1/auth/key` no momento de salvar.
+
+### Arquitetura alvo
+
+```
+[Config]  Web (perfil) → Gateway: PUT /api/protected/user/ia-config
+            → valida no OpenRouter (/auth/key) → cifra AES-256-GCM → enterprise_ia_config
+
+[Análise] Web → Gateway (busca+decifra config do tenant)
+            → ia-analyze  [headers: x-ia-analyze-token, x-llm-api-key, x-llm-model, x-llm-provider]
+            → createProvider(headers ?? env)  → OpenRouter (ou Gemini)
+```
+
+Empresa sem chave configurada ⇒ o gateway não envia os headers de credencial ⇒ o ia-analyze usa a **chave global do env** (fallback). A flag `REQUIRE_USER_IA_KEY=true` desliga o fallback quando a migração terminar.
+
+### Camadas de implementação
+
+**Camada 1 — Fundação (repo `feedback-analytics-ia-analyze`)** — é a etapa 1–2 deste doc:
+- `[NEW] src/providers/shared/retry.ts` — extrair de `gemini.provider.ts` as funções genéricas de retry/erro (`getErrorStatus`, `isRetryableError`, `RETRYABLE_STATUS`, backoff com jitter). Para OpenRouter, ler o header `Retry-After`.
+- `[NEW] src/providers/openrouter.provider.ts` — implementa `IaApiClient`; POST `/chat/completions` com `messages[]`, `max_tokens`, `response_format:{type:'json_object'}`; trunca via `finish_reason==='length'`; **402/401 não-retentáveis**. Reusa `buildIaPromptByScope` e `extractJsonFromText` sem alteração.
+- `[NEW] src/providers/createProvider.ts` — fábrica `{ provider, apiKey, model }` → `IaApiClient`.
+- `[MODIFY] src/providers/gemini.provider.ts` — remover o `model:'gemini-2.5-flash'` hardcoded (receber `model`); usar `shared/retry.ts`.
+- `[MODIFY] src/services/iaAnalyze.service.ts` — trocar o import fixo `createIaApiClient(process.env.GEMINI_API_KEY)` pela fábrica, com creds vindos dos headers (Camada 2) **ou** do env como fallback.
+- `[MODIFY] .env.example` — `LLM_PROVIDER`, `LLM_MODEL`, `OPENROUTER_API_KEY`.
+
+**Camada 2 — Transporte por header (repos `ia-analyze` + `gateway`):**
+- `ia-analyze [MODIFY] src/controllers/iaAnalyze.controller.ts` — após o `IA_ANALYZE_INTERNAL_TOKEN`, ler `x-llm-provider/x-llm-api-key/x-llm-model`; ausentes ⇒ cai no env. **Nunca logar esses headers.**
+- `gateway [MODIFY] src/providers/iaAnalyze.provider.ts` — estender `runIaAnalyzeAnalysis(payload, creds?)` e injetar os headers `x-llm-*` junto do `x-ia-analyze-token`.
+
+**Camada 3 — Storage + endpoints (repo `feedback-analytics-api-gateway`):**
+- `[MODIFY] drizzle/schema/enterprise.ts` — tabela `enterpriseIaConfig` espelhando `collectingDataEnterprise` (1:1): `enterpriseId` unique + FK cascade; `provider`, `model`, `apiKeyCiphertext`, `apiKeyIv`, `apiKeyAuthTag`, timestamps. Re-exportar no barrel `drizzle/schema.ts`.
+- **Migration:** `db:generate` (gera `0002_*.sql`) → `db:migrate` → `db:check` (fluxo schema-first do ADR-0001; não usar `db:pull` cego).
+- `[NEW] src/utils/crypto.ts` — AES-256-GCM (`node:crypto`), chave em `IA_CONFIG_ENCRYPTION_KEY`.
+- `[NEW] src/repositories/iaConfig.repository.ts` — get/upsert/delete filtrando por `enterprise_id` (`scopedByEnterprise`).
+- `[NEW] src/libs/iaConfig/validateOpenRouterKey.ts` — valida a chave no `/auth/key`.
+- `[NEW] src/controllers/protected/iaConfig.controller.ts` + `src/routes/protected/iaConfig.routes.ts` — GET/PUT/DELETE `/protected/user/ia-config` (molde `enterprise.controller.ts`). **GET nunca retorna a chave** (só `{ has_key, provider, model, masked_key }`). Registrar em `src/index.ts`.
+- `[MODIFY] src/config/errors.ts` — `ia_config_not_found`, `ia_config_invalid_key`, `ia_config_required`.
+
+**Camada 4 — Injeção no fluxo (repo `gateway`):**
+- `[MODIFY] src/services/iaAnalyze.service.ts` — antes de `runIaAnalyzeAnalysis`: buscar+decifrar a config do `enterpriseId`; se existe, passar creds; se não e `REQUIRE_USER_IA_KEY!=='true'`, chamar sem creds (fallback global); se exigido, lançar `ia_config_required`.
+- `[MODIFY] .env.example` — `IA_CONFIG_ENCRYPTION_KEY`, `REQUIRE_USER_IA_KEY=false`.
+- *(Opcional)* rate-limit por `enterprise_id` nos endpoints de análise.
+
+**Camada 5 — UI (repo `feedback-analytics-web`):**
+- `[NEW] src/services/serviceIaConfig.ts` (molde `serviceEnterprise.ts`, usa os helpers de `src/lib/utils/http.ts`).
+- `[NEW] pages/user/edit/editIaSettings.tsx` (wrapper fino) + `[NEW] components/user/pages/profile/editIaSettings/formIaSettings.tsx` (rhf + `zodResolver` + `useFetcher`/`useToast`); API key mascarada (reaproveitar o toggle de `components/public/forms/fields/*/fieldPassword.tsx`), select de modelo curado + custom, badge de status, link para `https://openrouter.ai/keys`.
+- `[NEW] src/routes/actions/actionIaSettings.ts` + `[MODIFY] src/routes/user.tsx` (nova rota) + `[MODIFY] src/lib/mock/menu.ts` (item "Configuração de IA").
+
+### Segurança
+
+| Risco | Mitigação |
+|---|---|
+| Vazar a key no GET | GET retorna só `{ has_key, provider, model, masked_key }` |
+| Key em texto no DB | AES-256-GCM (`src/utils/crypto.ts`); segredo em `IA_CONFIG_ENCRYPTION_KEY` (env, nunca no repo) |
+| Key em logs | Não logar headers `x-llm-*`; revisar `describeError` do ia-analyze |
+| Endpoint interno aberto | `IA_ANALYZE_INTERNAL_TOKEN` segue obrigatório |
+| Gasto de créditos em loop | Rate-limit por `enterprise_id` (opcional) |
+| Perda da `IA_CONFIG_ENCRYPTION_KEY` | Rotacioná-la exige re-cadastro de todas as chaves (ficam indecifráveis) |
+
+### Verificação
+
+- **Unit:** roundtrip do `crypto.ts`; OpenRouter provider mockado (sucesso, JSON com texto ao redor, `finish_reason:'length'`, 401, 402, 429+`Retry-After`); repo `iaConfig` (upsert/get/delete por `enterprise_id`); regressão `LLM_PROVIDER=gemini` idêntica.
+- **Manual:** cadastrar chave válida/ inválida na UI; rodar análise e confirmar consumo da chave do tenant no dashboard do OpenRouter; trocar modelo; deletar chave e verificar `ia_config_required` (com flag) ou fallback (sem flag).
+- **TCC:** com o modelo configurável, usar `gateway/src/libs/eval/classifierEval.ts` + `scripts/eval-classifier.ts` para comparar Gemini vs. modelos OpenRouter (kappa + macro-F1) e escolher o default por evidência.
+
+### Esforço estimado
+
+| Camada | Esforço |
+|---|---|
+| 1 — Fábrica + OpenRouter + modelo (ia-analyze) | ~6–8h |
+| 2 — Headers (ia-analyze + gateway) | ~2h |
+| 3 — Crypto + tabela + endpoints (gateway) | ~5–6h |
+| 4 — Injeção no fluxo + flag | ~2h |
+| 5 — UI (web) | ~4–5h |
+| 6 — Docs + testes | ~4h |
+| **Total** | **~23–27h** |
+
 ## O que isso demonstra no TCC
 
 - **Padrões de projeto:** **Strategy** (provedor de IA intercambiável) e **Adapter** (envolver a API do OpenRouter no contrato neutro do sistema), com um caso real de **porta/adaptador** já presente no código.
