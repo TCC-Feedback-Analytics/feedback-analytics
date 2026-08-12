@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Status** | 🔵 Planejado |
+| **Status** | 🟢 Em andamento — planejamento detalhado concluído e verificado contra o código (ago/2026); ver "Plano de execução detalhado" no fim |
 | **Quando** | Mês 2-3 |
 | **Esforço** | Alto |
 | **Prioridade** | 🔴 Essencial |
@@ -77,6 +77,13 @@ O "perguntar de tempos em tempos" (em inglês, *polling*) é como **olhar o pain
 
 > Esta seção é para a equipe de desenvolvimento; quem não é da área pode pular.
 
+> ⚠️ **Revisão de ago/2026 (verificado contra o código):** o mecanismo abaixo foi **refinado** após a verificação. As premissas originais que **mudaram** (detalhes na seção "Plano de execução detalhado" no fim):
+> - **Fila própria com `SELECT ... FOR UPDATE SKIP LOCKED`** no lugar do `pg-boss` (evita o atrito com o pooler em modo transação e é a demonstração de banco mais forte).
+> - **Worker no `feedback-analytics-api-gateway`**, não no `ia-analyze` (que é stateless, sem `DATABASE_URL`); o `ia-analyze` segue como o serviço de compute que o worker *chama*.
+> - **Execução por *drain* via cron** (endpoint `/internal/worker/tick`), que roda na **infra Vercel atual sem host always-on** → desacopla esta etapa da [08](./08-infraestrutura-e-custo.md).
+> - **Isolamento por `enterprise_id` + `tenantScope`** (app-level), pois a **RLS/`auth.uid()` foi removida** no cutover — não há mais o "padrão das 13 tabelas".
+> - **Migrations no Drizzle** (`drizzle/*.sql`, próxima `0002`), não em `database/sql/`.
+
 ### O problema, no código de hoje
 
 O fluxo inteiro roda **síncrono, dentro da requisição HTTP serverless**:
@@ -143,6 +150,79 @@ Implementação simples e durável: uma tabela `ia_rate_budget (enterprise_id?, 
 - **Conexões ao Postgres.** `pg-boss` mantém conexões; em Supabase free há teto de conexões. Avaliar usar o **pooler** e um pool pequeno e dedicado ao worker.
 - **Migração suave.** Manter, por trás de uma *feature flag*, o caminho síncrono antigo até o assíncrono estar validado — para não quebrar o fluxo durante a transição.
 - **Acoplamento com o provedor de IA.** O worker deve chamar a IA pela **porta** `IaApiClient`, não direto pelo Gemini, para já nascer compatível com a **[04 — Provedor de LLM configurável](./04-provedor-de-llm-configuravel.md)**.
+
+## Plano de execução detalhado (revisado ago/2026)
+
+> Verificado contra o código dos repositórios. Decisões travadas: **fila própria (SKIP LOCKED)** + **drain por cron**. Status geral: 🟢 Em andamento.
+
+### Arquitetura alvo
+
+```
+CLIQUE (serverless, rápido)
+  Web → Gateway POST /api/protected/ia-analyze/analyze-raw|regenerate-insights
+      → enfileira em ia_analysis_job (INSERT + dedup) → 202 { jobId }
+
+DRAIN (serverless, curto, ~1 min)
+  Cron externo → POST /internal/worker/tick (token)
+      → drainJobs(limit): claim SKIP LOCKED → por lote: checa rate budget →
+        runIaAnalyzeAnalysis(1 lote) → insert idempotente → job.done++
+      → sem orçamento: reschedule (status=waiting_budget, next_run_at)
+
+POLLING (progresso)
+  Web → GET /api/protected/ia-analyze/jobs/:id → { status, done, total }
+      → ao concluir, dispara a transição de flag que os hooks scoped já observam
+```
+
+O drain roda como invocação serverless curta usando o `getDb()` atual (pooler transação, `prepare:false`) — `FOR UPDATE SKIP LOCKED` funciona dentro de transação no pooler; **não precisa de conexão modo sessão**.
+
+### Camada 1 — Banco (gateway, migration `0002`)
+
+Editar o schema Drizzle (novo `drizzle/schema/iaJobs.ts` re-exportado no barrel `drizzle/schema.ts`) → `db:generate` → `db:migrate`/`db:check`. Trigger `set_updated_at` e índice parcial entram como SQL manual na migration custom (padrão do `0001`).
+
+- **`ia_analysis_job`** (espelha `feedback_insights_report`): `id`, `enterprise_id` FK cascade, `job_type` check (`analyze_raw|regenerate_insights`), `scope_type` check, `catalog_item_id` FK, `status` check (`queued|running|waiting_budget|completed|failed`), `total`/`done`, `options jsonb`, `attempts`, `next_run_at`, `error_code`, `requested_by`, timestamps. Índice **parcial único** `(enterprise_id, job_type, scope_type, catalog_item_id) WHERE status IN ('queued','running','waiting_budget')` (dedup do duplo-clique) + índice `(status, next_run_at)` (claim).
+- **`ia_rate_budget`**: token bucket durável (`window_kind` minute/day, `window_start`, `used`, `unique(window_kind, window_start)`); reserva atômica via `INSERT ... ON CONFLICT DO UPDATE ... WHERE used < limite`.
+- **`feedback_analysis`**: adicionar `unique(feedback_id)` (idempotência real — hoje não existe).
+
+### Camada 2 — Fila + worker (gateway)
+
+- `[NEW] src/repositories/iaJob.repository.ts` — `enqueue` (dedup pelo índice parcial), `getByIdScoped` (`scopedByEnterprise`), `claimNext` (SKIP LOCKED), `updateProgress`, `complete`, `fail`, `reschedule`.
+- `[NEW] src/libs/iaJob/rateBudget.ts` — token bucket; envs `IA_RPM_LIMIT`/`IA_RPD_LIMIT`.
+- `[NEW] src/libs/iaJob/drainJobs.ts` — núcleo: claim ≤N jobs; por job, processa lote a lote sob o budget, persiste e atualiza `done`; sem orçamento → `reschedule`. Bound por `IA_WORKER_BATCHES_PER_TICK`.
+- `[MODIFY] src/services/iaAnalyze.service.ts` — extrair `prepareAnalyzeRawJob` (fetch+filtros+dedup+`buildAnalysisBatches`) e `runOneBatch` (`runIaAnalyzeAnalysis` + `insertFeedbackAnalysisRows` idempotente) para reuso do worker; as funções síncronas atuais seguem para o caminho flag-off.
+
+### Camada 3 — Endpoints (gateway)
+
+- `[MODIFY] src/controllers/protected/iaAnalyze.controller.ts` — atrás da flag `IA_ASYNC_ENABLED`, enfileirar e responder **202 `{ jobId }`** (flag off = síncrono atual).
+- `[NEW] getIaJobController` → `GET /protected/ia-analyze/jobs/:id` (escopado por `resolveEnterpriseId`).
+- `[NEW] workerTickController` → `POST /internal/worker/tick` (token `WORKER_TICK_TOKEN`, sem `requireAuth`) → `drainJobs`.
+- `[MODIFY] .env.example` — `IA_ASYNC_ENABLED`, `WORKER_TICK_TOKEN`, `IA_RPM_LIMIT`, `IA_RPD_LIMIT`, `IA_WORKER_BATCHES_PER_TICK`.
+
+### Camada 4 — Frontend (web)
+
+Preservar o contrato de transição de flag `true → false` — os 3 hooks scoped (`useScopedPendingCount`/`useScopedInsightsReport`/`useScopedFeedbackAnalysis`) já refazem o fetch nessa transição.
+
+- `[MODIFY] src/services/serviceFeedbacks.ts` — retornam `{ jobId }`; `[NEW]` `ServiceGetAnalysisJob(jobId)`.
+- `[MODIFY] src/routes/actions/actionFeedbackInsightsReport.ts` — não `await` a IA; retorna `{ ok, jobId }`.
+- `[NEW] src/lib/hooks/useAnalysisJobPolling.ts` — polling ~3s até `completed|failed`; aciona a transição de flag ao concluir.
+- `[MODIFY] layouts/user.tsx` + `src/lib/context/insightsControls.tsx` + `components/user/layout/InsightsActionBar.tsx` — iniciar polling, expor `progress {done,total}`, labels "Analisando 12 de 40".
+- Tipos async definidos **localmente** (evita bump de tag do `@feedback/lib-shared`).
+
+### Camada 5 — Infra/cron (sem host novo)
+
+- Cron externo (cron-job.org ~1 min, ou GitHub Actions ~5 min) faz `POST /internal/worker/tick` com o token — só um "pinger" HTTP, sem host always-on nem Dockerfile.
+- **Upgrade futuro (etapa 08):** o mesmo `drainJobs()` vira um loop always-on num host externo, aí com pool dedicado em modo sessão. Sem reescrita.
+
+### Esforço estimado
+
+| Item | Esforço |
+|---|---|
+| Migration + schema (jobs, budget, unique) | ~3h |
+| Repositório de fila + enqueue + polling | ~5h |
+| drain + tick + refactor do pipeline por lote | ~8h |
+| Rate limiter + reschedule | ~3h |
+| Frontend (polling + progresso) | ~5h |
+| regenerate assíncrono + cron + docs + testes | ~5h |
+| **Total** | **~27–30h** |
 
 ## Como vamos saber que deu certo
 
