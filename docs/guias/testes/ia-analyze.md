@@ -10,6 +10,9 @@ Os testes do serviço IA utilizam o **Vitest** como motor de execução e o **Su
 
 > **Total geral de testes do IA Analyze: 46 testes distribuídos em 6 arquivos**
 
+!!! note "Sem suíte dependente de ambiente"
+    Todas as suítes do IA Analyze são **unitárias/de rota mockadas** (Gemini mockado) e **seguem automatizadas no CI**. O serviço não possui testes de integração ou e2e que dependam de banco/ambiente real, portanto não foi afetado pela conversão dessas camadas em runbooks manuais — mudança que atingiu apenas o [API Gateway](./manuais-api-gateway.md) e o [Web (Playwright)](./manuais-web.md).
+
 ---
 
 ## Como Executar os Testes

@@ -1,6 +1,6 @@
 # Testes — Frontend (`feedback-analytics-web`)
 
-Este documento detalha a arquitetura, estrutura e especificação dos testes na aplicação Web (Frontend). Nele, você encontrará a distribuição exata dos testes separados por sua granularidade: **Unidade**, **Integração** e **Fim a Fim (E2E)**, incluindo a finalidade e a contagem exata de testes de cada arquivo físico.
+Este documento detalha a arquitetura, estrutura e especificação dos testes na aplicação Web (Frontend). Nele, você encontrará a distribuição exata dos testes separados por sua granularidade: **Unidade**, **Integração** (ambos automatizados no CI via Vitest) e **Fim a Fim (E2E)** — esta última **não é mais automatizada**: a suíte Playwright foi removida e virou o runbook manual [Testes manuais — Web](./manuais-web.md).
 
 ---
 
@@ -45,7 +45,7 @@ O que define se um teste é classificado como **Unidade** ou **Integração** é
 
 * **Unidade:** Todos os colaboradores ou serviços externos do arquivo/função em teste são substituídos por mocks (`vi.mock` ou `vi.spyOn`). O teste valida o comportamento isolado daquela unidade isolada de código.
 * **Integração:** Valida contratos entre diferentes peças ou módulos reais. O fluxo de dados transita de forma real entre múltiplos módulos (ex: da *Action* do React Router que processa dados estruturados até as validações internas, mockando apenas a comunicação HTTP com a API externa).
-* **E2E (End-to-End):** O fluxo roda a aplicação inteira integrada (Frontend, API-Gateway, IA-Analyze e banco de dados Supabase real), simulando a interação visual de um usuário real em um browser.
+* **E2E (End-to-End):** O fluxo roda a aplicação inteira integrada (Frontend, API-Gateway, IA-Analyze e banco de dados real), simulando a interação visual de um usuário real em um browser. Esta camada **não é mais automatizada** — é executada **manualmente** pelo runbook [Testes manuais — Web](./manuais-web.md).
 
 ---
 
@@ -94,33 +94,15 @@ O que define se um teste é classificado como **Unidade** ou **Integração** é
 
 ---
 
-## 3. Testes Fim a Fim (`E2E Tests — Playwright`)
+## 3. Testes Fim a Fim (E2E) — agora manuais
 
-> **Total: 27 testes em 11 specs** (mais o `auth.setup.ts`, que é fixture de setup e não conta como caso de teste)
->
-> Executados no navegador Chrome real via Playwright. Simulam a experiência ponta a ponta do usuário, cobrindo os fluxos principais de 11 Casos de Uso (UC-01, UC-02 e UC-04 a UC-12). O UC-03 (recuperação de senha) não possui spec E2E.
+> A suíte **E2E automatizada (Playwright)** do `feedback-analytics-web` — os specs `e2e/*.spec.ts`, as fixtures (incluindo o `auth.setup.ts`), o `playwright.config.ts` e os scripts npm `test:e2e`/`:ui`/`:report` — foi **removida** do projeto e do CI.
 
-> [!NOTE]
-> Por padrão, os testes E2E executam apontando para o ambiente de desenvolvimento local (`http://localhost:5173`) configurado em `feedback-analytics-web/.env`. Para rodá-los:
-> ```bash
-> cd feedback-analytics-web
-> powershell -ExecutionPolicy Bypass -Command "npx playwright test"
-> ```
+Essa suíte rodava em navegador Chrome real contra o ambiente **homolog** deployado — modelo descontinuado junto com o ambiente de homologação (o deploy passou a ser **main-only**, direto para produção). A cobertura ponta a ponta dos 11 Casos de Uso que ela exercitava (UC-01, UC-02 e UC-04 a UC-12; o UC-03 nunca teve roteiro E2E) passou a ser **manual**, reproduzível clicando na aplicação conforme o runbook:
 
-| Arquivo de Teste | Caso de Uso e Propósito do Arquivo | Qtd. Testes |
-| :--- | :--- | :---: |
-| [auth.setup.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/fixtures/auth.setup.ts) | **Setup de Autenticação:** Realiza o fluxo de login inicial do gestor de testes e armazena os cookies e tokens de sessão no arquivo `.auth/user.json`. Esse estado é compartilhado globalmente para evitar que todos os outros testes protegidos precisem fazer login individualmente. | **1** |
-| [uc-01-cadastro-conta.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-01-cadastro-conta.spec.ts) | **UC-01: Cadastro de Conta:** Valida a criação de conta de gestor, checando restrições de CPFs já cadastrados/inválidos, não-aceitação de termos obrigatórios e a política de prevenção de enumeração de e-mails duplicados. | **2** |
-| [uc-02-login.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-02-login.spec.ts) | **UC-02: Login:** Valida os fluxos de login no painel administrativo, cobrindo credenciais válidas com redirecionamento correto para o dashboard, senhas incorretas e validação de formato de e-mail. | **2** |
-| [uc-04-envio-feedback-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-04-envio-feedback-qrcode.spec.ts) | **UC-04: Envio de Feedback via QR Code:** Simula o envio de avaliação pelo cliente final, incluindo notas em estrelas, seleção de satisfação por itens configurados, comentário escrito, envio anônimo ou identificado, e validações de e-mail/campos vazios. | **2** |
-| [uc-05-geracao-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-05-geracao-qrcode.spec.ts) | **UC-05: Geração de QR Code:** Valida as configurações e disponibilização do QR Code no painel do gestor (ativar/desativar QR Code, copiar link para clipboard, checar parâmetros corretos de redirecionamento e instruções de impressão). | **1** |
-| [uc-06-ativacao-tipos-feedback.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-06-ativacao-tipos-feedback.spec.ts) | **UC-06: Ativação de Tipos de Feedback:** Testa o painel onde o gestor pode ativar ou desativar de forma imediata quais escopos (produtos, serviços ou departamentos) farão parte do formulário de coleta dinâmica. | **1** |
-| [uc-07-configuracao-catalogo.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-07-configuracao-catalogo.spec.ts) | **UC-07: Configuração de Catálogo:** Valida a inserção, edição, exclusão e verificação visual em lista de itens vinculados aos catálogos da empresa (produtos, serviços e departamentos). | **1** |
-| [uc-08-configuracao-coleta-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-08-configuracao-coleta-ia.spec.ts) | **UC-08: Configuração de Coleta e Contexto de IA:** Valida as telas onde o gestor define o objetivo de negócio e perguntas personalizadas dinâmicas que alimentam o formulário de feedback e as análises cognitivas da IA. | **3** |
-| [uc-09-dashboard.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-09-dashboard.spec.ts) | **UC-09: Dashboard Principal:** Valida o painel com as métricas essenciais pós-autenticação, incluindo saudação amigável ao gestor logado, contagem de feedbacks no período, distribuição gráfica de sentimentos, a seção de relatório de insights (`CT-UC09-04`) e link de navegação rápida para listagens completas. | **5** |
-| [uc-10-listagem-feedbacks.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-10-listagem-feedbacks.spec.ts) | **UC-10: Listagem de Feedbacks:** Valida as ferramentas de pesquisa na tabela principal de feedbacks (busca de termos textuais, filtragem por nota/estrelas, filtragem por categoria, paginação, visualização detalhada em modal e limpeza completa de filtros). | **1** |
-| [uc-11-insights-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-11-insights-ia.spec.ts) | **UC-11: Insights de IA:** Testa o processamento e exibição de relatórios sintéticos pela inteligência artificial (análise qualitativa de sentimentos e palavras-chave, humor predominante, recomendações acionáveis automáticas, regeneração manual de insights e tratamento do estado sem feedbacks mínimos suficientes). | **3** |
-| [uc-12-gestao-perfil.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-12-gestao-perfil.spec.ts) | **UC-12: Gestão de Perfil:** Valida a área de gerenciamento pessoal e segurança do gestor, testando visualização de e-mail e dados da empresa, links de redirecionamento, acesso à configuração do catálogo via `/user/edit/types-feedback` (`CT-UC12-04`), fluxos colapsáveis de segurança, fluxo de logout pelo menu de conta (item `role="menuitem"`), e a proteção geral de rotas autenticadas. | **6** |
+- **[Testes manuais — Web (Casos de Uso)](./manuais-web.md)** — casos UC-01…UC-12 reproduzidos pela UI.
+
+Os testes de **Unidade** e **Integração** (Vitest) descritos acima continuam automatizados no CI.
 
 ---
 
@@ -128,5 +110,6 @@ O que define se um teste é classificado como **Unidade** ou **Integração** é
 
 * [Plano Estratégico de Testes](./plano-estrategico.md)
 * [Visão Geral dos Testes](./visao-geral.md)
+* [Testes manuais — Web (Casos de Uso)](./manuais-web.md)
 * [Testes da API Gateway](./api-gateway.md)
 * [Testes do Serviço de IA](./ia-analyze.md)

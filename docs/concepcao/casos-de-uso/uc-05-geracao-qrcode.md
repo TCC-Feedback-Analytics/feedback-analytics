@@ -35,7 +35,7 @@
 
 ## Base para Teste E2E
 
-> **O E2E atual deste UC é apenas um smoke test de carregamento de página** ([uc-05-geracao-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-05-geracao-qrcode.spec.ts)): verifica que a página `/user/qrcode/enterprise` carrega e exibe o QR Code ou o botão de controle. Os fluxos de **ação** (ativar/desativar, download, copiar link, compartilhar) **não estão cobertos por E2E**. Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+> A suíte Playwright (e2e) deste UC foi **removida**; ela cobria apenas um **smoke test de carregamento de página** (verificava que a página `/user/qrcode/enterprise` carregava e exibia o QR Code ou o botão de controle), e os fluxos de **ação** (ativar/desativar, download, copiar link, compartilhar) nunca tiveram E2E. Os cenários agora são executados manualmente — veja o [runbook de testes manuais do Web](../../guias/testes/manuais-web.md). Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
 
 **Cenários a cobrir:**
 

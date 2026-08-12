@@ -1,6 +1,6 @@
 # Testes — Backend (`feedback-analytics-api-gateway`)
 
-Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço **API Gateway**. Os testes cobrem as rotas, os controladores (*controllers*), as validações de esquema (*Zod schemas*) e a integração com serviços adjacentes, isolando o banco de dados e as chamadas externas por meio de mocks.
+Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço **API Gateway**. Os testes cobrem as rotas, os controladores (*controllers*), as validações de esquema (*Zod schemas*) e a integração com serviços adjacentes, isolando o banco de dados e as chamadas externas por meio de mocks. As suítes que exigiam um **banco/ambiente real** (integração e e2e de *cutover*) foram removidas do CI e passaram a ser um [runbook manual](./manuais-api-gateway.md).
 
 ---
 
@@ -9,6 +9,11 @@ Este documento detalha a arquitetura, a estrutura e a especificação dos testes
 Os testes do API Gateway utilizam o **Vitest** como motor de testes e o **Supertest** para simular requisições HTTP reais diretamente contra a aplicação Express. O banco de dados Supabase é completamente mockado em memória nas fixtures de teste para garantir a velocidade e a repetibilidade das asserções.
 
 > **Total geral de testes do API Gateway: 77 testes distribuídos em 8 arquivos**
+
+!!! info "O que roda no CI (e o que virou manual)"
+    Os 8 arquivos abaixo são testes **unitários/de rota mockados** (`src/tests/*.test.ts`) e **seguem automatizados no CI**. Além deles, o CI mantém o **smoke de migrations** (`schema-migrations.yml`): sobe um Postgres efêmero no runner, **sem credenciais**, e roda `drizzle-kit check` para validar o schema versus as migrations.
+
+    As antigas suítes que dependiam de um **banco/ambiente real** — os testes de **integração** (`src/tests/integration/*.itest.ts`) e o **e2e de cutover** (`src/tests/e2e/authCutover.e2e.ts`), com os configs `vitest.integration.config.ts`/`vitest.e2e.config.ts` e os scripts `test:integration`/`test:e2e` — foram **removidas** do repositório e do CI. Sua cobertura passou a ser **manual**: veja o runbook **[Testes manuais — API Gateway](./manuais-api-gateway.md)**.
 
 ---
 
@@ -68,5 +73,6 @@ Para manter os testes unitários isolados de redes externas ou do banco Supabase
 
 * [Plano Estratégico de Testes](./plano-estrategico.md)
 * [Visão Geral dos Testes](./visao-geral.md)
+* [Testes manuais — API Gateway](./manuais-api-gateway.md)
 * [Testes da Aplicação Web (Frontend)](./web.md)
 * [Testes do Serviço de IA](./ia-analyze.md)

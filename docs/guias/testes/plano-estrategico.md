@@ -1,5 +1,10 @@
 # Plano de Teste Estratégico
 
+!!! warning "Atualização (2026-08-08): E2E/integração agora são manuais; deploy main-only"
+    A **automação E2E (Playwright)** do web, os testes de **integração dependentes de banco** do API Gateway e o gate `e2e-main.yml` foram **removidos** do CI; o **ambiente de homologação** foi descontinuado (o deploy é **main-only**, direto para produção). A execução ponta a ponta e os cenários dependentes de banco/ambiente passaram a ser **manuais**, nos runbooks **[Testes manuais — Web](./manuais-web.md)** e **[Testes manuais — API Gateway](./manuais-api-gateway.md)**.
+
+    Este plano continua válido: a **Fase 1** (estratégia/riscos) é permanente e a **Fase 2** (CTs com passos e dados) virou o **roteiro da execução manual**. Onde o texto abaixo cita "Playwright", "homologação" ou "automação no CI", entenda como a execução **manual** descrita nos runbooks. No CI seguem apenas **unidade + integração mockada** (Vitest) e o **smoke de migrations** do API Gateway (`schema-migrations.yml`).
+
 ## Para que serve este documento?
 ### Está tabela serve para mostrar do por que o plano de teste estratégico é útil e como ele trabalha com os casos de uso.
 Os casos de uso e o plano estratégico dividem responsabilidades sem repetir conteúdo, cada um tem um papel único.
@@ -15,7 +20,7 @@ Os casos de uso e o plano estratégico dividem responsabilidades sem repetir con
 UC define o cenário
     → Fase 1 prioriza e documenta riscos
         → Fase 2 detalha os passos
-            → Playwright executa os passos
+            → Um testador executa os passos manualmente (runbook)
                 → Resultado validado contra o UC
 ```
 Se uma regra mudar no UC (ex: mínimo de feedbacks para análise mudar de 10 para 5), você atualiza o UC e o CT correspondente na Fase 2 — um só lugar para cada tipo de informação. Sem o CT-ID ligando os dois, cada mudança precisaria ser rastreada manualmente nos dois documentos.
@@ -30,11 +35,11 @@ Se uma regra mudar no UC (ex: mínimo de feedbacks para análise mudar de 10 par
 | **Pré-condições por caso** | Parcial | — | ✅ Por CT ("dispositivo sem envio anterior") |
 | **Por que esses fluxos são prioritários** | ✗ | ✅ Mapa de criticidade e bloqueadores entre UCs | — |
 | **Riscos documentados** | ✗ | ✅ Anti-spam, e-mail inacessível em CI, estado sujo | — |
-| **Ambiente e ferramentas necessárias** | ✗ | ✅ Homologação, Playwright, reset de fingerprint | — |
+| **Ambiente e ferramentas necessárias** | ✗ | ✅ Produção/local, execução manual, reset de fingerprint | — |
 | **Critérios de entrada e saída dos testes** | ✗ | ✅ O que precisa existir antes de começar | — |
 | **Decisões de "por que testamos assim"** | ✗ | ✅ Permanente, não muda com o código | — |
-| **Valor sem Playwright implementado** | ✅ Alto | ✅ Alto | ⚠️ Baixo — redundante com os UCs |
-| **Valor com Playwright implementado** | ✅ Alto | ✅ Alto | ✅ Alto — é o roteiro de execução |
+| **Valor sem roteiro de execução (Fase 2)** | ✅ Alto | ✅ Alto | ⚠️ Baixo — redundante com os UCs |
+| **Valor com execução manual (runbook)** | ✅ Alto | ✅ Alto | ✅ Alto — é o roteiro de execução |
 
 ---
 
@@ -88,9 +93,9 @@ Stack técnica: React 19 SPA com React Router v7, Supabase (autenticação + ban
 
 - **Teste de Integração:** Verificação de que as camadas loader → service → API Gateway retornam dados com o contrato esperado; que as actions processam FormData e acionam os serviços corretos; e que o fluxo de autenticação Supabase + cookie funciona de ponta a ponta. Responsável: Engenharia/QA.
 
-- **Teste de Sistema (E2E):** Navegação pelos casos de uso documentados, simulando o comportamento real dos três atores. A automação E2E cobre 11 dos 12 UCs (UC-01, UC-02, UC-04 a UC-12) — o UC-03 (recuperação de senha) fica **fora da automação E2E** por depender de e-mail real e do rate limit de e-mail do Supabase, ficando coberto por testes de unidade/integração e validação manual. Responsável: QA. Ferramenta: **Playwright** (em uso).
+- **Teste de Sistema (E2E):** Navegação pelos casos de uso documentados, simulando o comportamento real dos três atores. A cobertura E2E abrange 11 dos 12 UCs (UC-01, UC-02, UC-04 a UC-12) — o UC-03 (recuperação de senha) fica **fora do roteiro E2E** por depender de e-mail real e do rate limit de e-mail do provedor de autenticação, ficando coberto por testes de unidade/integração e validação manual. Responsável: QA. Execução: **manual**, seguindo o runbook [Testes manuais — Web](./manuais-web.md) (a antiga automação Playwright foi removida).
 
-- **Teste de Aceitação (UAT):** Realizado por gestores reais em ambiente de homologação, validando se os fluxos de configuração → coleta → análise refletem as necessidades reais do negócio.
+- **Teste de Aceitação (UAT):** Realizado por gestores reais em **produção** (não há mais ambiente de homologação — deploy main-only), validando se os fluxos de configuração → coleta → análise refletem as necessidades reais do negócio.
 
 #### 2.2. Abordagens de Teste
 
@@ -109,13 +114,13 @@ Stack técnica: React 19 SPA com React Router v7, Supabase (autenticação + ban
 | Finalidade | Ferramenta | Status |
 |---|---|---|
 | Testes de unidade e componentes | Vitest + @vitest/coverage-v8 | Em uso |
-| Testes E2E de interface | Playwright | Em uso |
+| Execução E2E de interface | Manual pela UI (runbook [Web](./manuais-web.md)) | Em uso — automação Playwright removida |
 | Mock de API em testes de integração | MSW (Mock Service Worker) | A implementar |
 | Gerenciamento de casos de teste | Casos de Uso em `docs/casos-de-uso/` | Em uso |
 
 **Ambiente de Teste:**
 
-Os testes E2E do Playwright são executados por padrão apontando para o ambiente de desenvolvimento local (`http://localhost:5173`), mas podem ser direcionados a outros ambientes (como homologação) configurando a variável de ambiente `PLAYWRIGHT_BASE_URL`. O ambiente de teste deve conter:
+A execução manual do E2E aponta preferencialmente para **produção** (URL deployada) ou, alternativamente, para o ambiente **local** (`http://localhost:5173`). Não há mais ambiente de homologação. O ambiente escolhido deve conter:
 
 - Uma empresa de teste criada, conta ativada e com gestor autenticado.
 - Tipos de feedback ativados (Produtos, Serviços e Departamentos).
@@ -129,13 +134,13 @@ Os testes E2E do Playwright são executados por padrão apontando para o ambient
 
 **Critérios de Entrada:**
 
-- Ambiente de homologação estável e acessível.
+- Ambiente de produção (ou local) estável e acessível.
 - Massa de dados configurada conforme descrito na seção de Ambiente.
 - Deploy da versão a ser testada concluído sem erros de build.
 
 **Critérios de Saída:**
 
-- 100% dos cenários de caminho feliz automatizados (11 dos 12 UCs; UC-03 coberto por testes de unidade/integração) executados com sucesso.
+- 100% dos cenários de caminho feliz (11 dos 12 UCs; UC-03 coberto por testes de unidade/integração) executados manualmente com sucesso.
 - Zero bugs de bloqueio nos fluxos de autenticação e coleta de feedback (UC-01, UC-02, UC-04, UC-05).
 - Cobertura de código ≥ 80% nas funções de validação (testes de unidade).
 - Todos os bugs críticos identificados registrados e com responsável atribuído.
@@ -146,10 +151,10 @@ Os testes E2E do Playwright são executados por padrão apontando para o ambient
 
 | Risco | Probabilidade | Impacto | Ação de Mitigação |
 |---|---|---|---|
-| **Anti-spam bloqueando testes E2E** — o fingerprint do dispositivo de teste é reconhecido após o primeiro envio do dia, impedindo novos envios no mesmo ciclo de testes | Alta | Alto | Gerar um fingerprint UUID aleatório por execução de teste, ou executar scripts de limpeza da tabela de dispositivos no banco de homologação antes de cada suíte |
-| **Fluxo de e-mail inacessível em automação** — confirmação de conta e reset de senha exigem acesso à caixa de e-mail em tempo real, inviável em pipelines automatizados | Média | Alto | Configurar Mailtrap ou serviço equivalente no ambiente de homologação; testar as telas de sucesso/erro do fluxo sem clicar no link real |
-| **Instabilidade do provedor de IA externo** — indisponibilidade bloqueia completamente os testes de UC-11 | Baixa | Alto | Criar mocks das respostas de IA para testes unitários e de integração; marcar os testes E2E de UC-11 como opcionais no pipeline de CI quando o provedor estiver indisponível |
-| **Estado sujo entre execuções de teste** — empresa de teste acumula catálogos, tipos e feedbacks de execuções anteriores, causando resultados inconsistentes | Alta | Médio | Implementar scripts de setup/teardown que restauram o estado inicial da empresa de teste antes de cada suíte E2E |
+| **Anti-spam bloqueando testes E2E** — o fingerprint do dispositivo de teste é reconhecido após o primeiro envio do dia, impedindo novos envios no mesmo ciclo de testes | Alta | Alto | Gerar um fingerprint UUID aleatório por execução de teste, ou executar scripts de limpeza da tabela de dispositivos no banco do ambiente de teste antes de cada rodada |
+| **Fluxo de e-mail inacessível em automação** — confirmação de conta e reset de senha exigem acesso à caixa de e-mail em tempo real, inviável em pipelines automatizados | Média | Alto | Usar Mailpit/Mailtrap ou serviço equivalente no ambiente de teste; testar as telas de sucesso/erro do fluxo sem clicar no link real |
+| **Instabilidade do provedor de IA externo** — indisponibilidade bloqueia completamente os testes de UC-11 | Baixa | Alto | Criar mocks das respostas de IA para testes unitários e de integração; pular o cenário de UC-11 na execução manual quando o provedor estiver indisponível |
+| **Estado sujo entre execuções de teste** — empresa de teste acumula catálogos, tipos e feedbacks de execuções anteriores, causando resultados inconsistentes | Alta | Médio | Implementar scripts de setup/teardown que restauram o estado inicial da empresa de teste antes de cada rodada manual de E2E |
 
 ---
 
@@ -159,11 +164,13 @@ Os testes E2E do Playwright são executados por padrão apontando para o ambient
 
 ### Legenda de Cobertura e Status E2E
 
-*   **✅ Coberto E2E:** O fluxo é testado de ponta a ponta e automatizado na suíte do Playwright.
+> Estas classificações descrevem a **antiga** suíte Playwright e hoje servem de **checklist para a execução manual** (runbook [Testes manuais — Web](./manuais-web.md)). Onde se lê "automatizado", entenda um fluxo que **era** automatizado e agora é reproduzido à mão.
+
+*   **✅ Coberto E2E:** O fluxo é validado de ponta a ponta — era automatizado na suíte do Playwright e hoje é reproduzido manualmente pelo runbook.
 *   **✅ Coberto E2E (smoke):** Há teste E2E automatizado, mas ele cobre apenas o carregamento da página (renderização/estado vazio) — **não** exercita o fluxo de ação (cliques, salvamentos, filtros).
 *   **✅ Coberto E2E (skip condicional):** O teste E2E está implementado e roda no pipeline, mas contém um `test.skip()` condicional que o pula quando uma pré-condição não é satisfeita (ex.: variável de ambiente `E2E_TEST_ENTERPRISE_ID` ausente ou elemento não visível no ambiente).
 *   **📝 Planejado / não implementado:** Cenário especificado no UC, mas sem teste E2E correspondente no spec (nem mesmo um `test.skip` implementado). Aguarda automação.
-*   **⚠️ Skipped Intencional:** O teste E2E está implementado no Playwright, mas é pulado (`test.skip`) por depender de fatores externos manuais (como links reais em caixa de e-mail ou SMS) ou limitações do Supabase (rate limits).
+*   **⚠️ Skipped Intencional:** Cenário que era pulado (`test.skip`) na suíte Playwright por depender de fatores externos manuais (como links reais em caixa de e-mail ou SMS) ou limitações do provedor de autenticação (rate limits); na execução manual pode ser exercitado quando esses fatores estiverem disponíveis.
 *   **🚫 Não é possível testar com Playwright:** Limitação técnica do navegador headless/automatizado (como apelar para o `navigator.share` nativo do SO ou checar fisicamente downloads na máquina).
 *   **❌ Cenários não cobertos:** O cenário existe como especificação teórica, mas não está presente no pipeline de testes do Playwright.
 *   **🔵 Unidade já atende:** Cenário com validação local no frontend (como regras Zod e formatações puras) já coberto por testes unitários locais, reduzindo a necessidade de ser validado repetidamente via E2E.
@@ -339,13 +346,13 @@ Os testes E2E do Playwright são executados por padrão apontando para o ambient
 
 **Massa de Dados:**
 
-- A empresa de teste deve ser criada manualmente no ambiente de homologação antes da primeira execução, com conta ativa, gestor autenticado e todos os tipos de feedback ativados.
+- A empresa de teste deve ser criada manualmente no ambiente de teste (produção ou local) antes da primeira execução, com conta ativa, gestor autenticado e todos os tipos de feedback ativados.
 - O fingerprint de dispositivo deve ser resetado (via script de limpeza no banco) antes de cada execução dos testes de UC-04 para evitar bloqueio por anti-spam.
-- Os feedbacks necessários para UC-11 (mínimo 10) devem ser inseridos diretamente no banco de homologação caso o volume ainda não tenha sido atingido via envio manual.
+- Os feedbacks necessários para UC-11 (mínimo 10) devem ser inseridos diretamente no banco do ambiente de teste caso o volume ainda não tenha sido atingido via envio manual.
 - Para os testes de UC-07 e UC-08, ao menos um item de catálogo deve estar cadastrado e ativo no ambiente de teste.
 
 **Critérios de Sucesso:**
 
 O conjunto de testes é considerado aprovado quando todos os 88 casos de teste desta fase (CT-UC01 a CT-UC12) executam com o resultado esperado, sem nenhum comportamento divergente nos fluxos de Caminho Feliz, e com todos os bloqueios de exceção ocorrendo exatamente na etapa documentada.
 
-Desses 88 cenários, **27 estão efetivamente automatizados no Playwright** — distribuídos em 14 cobertos de ponta a ponta, 7 *smoke* (apenas carregamento de página, sem exercitar o fluxo de ação) e 6 com `test.skip()` condicional. Os demais cenários são atendidos por outras camadas ou ainda aguardam automação: 14 por testes de unidade, 1 por testes de integração de rota, 35 planejados/não implementados em E2E, 8 sem cobertura e 3 inviáveis no Playwright (limitação do navegador automatizado). O UC-03 (recuperação de senha) não possui nenhum spec E2E e é validado por unidade e teste manual.
+Desses 88 cenários, **27 eram automatizados no Playwright** — distribuídos em 14 cobertos de ponta a ponta, 7 *smoke* (apenas carregamento de página, sem exercitar o fluxo de ação) e 6 com `test.skip()` condicional. Com a **remoção da suíte Playwright**, esses 27 passaram a ser executados **manualmente** pelo runbook [Testes manuais — Web](./manuais-web.md), hoje a referência viva da cobertura E2E. Os demais cenários seguem atendidos por outras camadas: 14 por testes de unidade e 1 por teste de integração de rota (ambos automatizados no CI); 35 permanecem planejados/não implementados como roteiro; 8 sem cobertura; e 3 inviáveis via navegador automatizado (mas exercitáveis manualmente com dispositivo/SO reais). O UC-03 (recuperação de senha) nunca teve roteiro E2E e é validado por unidade e teste manual.

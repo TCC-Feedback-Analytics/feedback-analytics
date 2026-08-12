@@ -1,6 +1,6 @@
 # Escolha das Ferramentas de Teste: Vitest & Playwright
 
-Este documento explica de forma simples e direta por que escolhemos o **Vitest** e o **Playwright** como as ferramentas oficiais de teste para o ecossistema do projeto **Feedback Analytics**.
+Este documento explica de forma simples e direta por que escolhemos o **Vitest** (testes automatizados, em uso) e o **Playwright** (E2E, **hoje descontinuado** — a suíte foi removida e virou o [runbook manual de testes da Web](./manuais-web.md)) no ecossistema do projeto **Feedback Analytics**.
 
 ---
 
@@ -24,9 +24,12 @@ O **Vitest** é utilizado para testar a lógica isolada da aplicação (funçõe
 
 ---
 
-## 🎭 Playwright (Testes de Fim a Fim - E2E)
+## 🎭 Playwright (Testes de Fim a Fim - E2E) — descontinuado
 
-O **Playwright** é utilizado para realizar testes **End-to-End (E2E)** no frontend. Ele abre navegadores reais, simula interações reais de usuários (como cliques, preenchimento de formulários e navegação) e valida se os fluxos completos da aplicação (da tela até o banco de dados) funcionam sem erros.
+!!! warning "Suíte E2E removida — cobertura agora manual"
+    A suíte **E2E automatizada (Playwright)** do `feedback-analytics-web` (`e2e/*.spec.ts` + fixtures, `playwright.config.ts` e os scripts `test:e2e`/`:ui`/`:report`) foi **removida** do projeto e do CI. Ela rodava contra o ambiente **homolog** deployado, descontinuado com a virada do deploy para **main-only** (direto para produção). A cobertura ponta a ponta dos Casos de Uso passou a ser **manual** — veja **[Testes manuais — Web](./manuais-web.md)**. O restante desta seção fica como registro histórico do porquê de o Playwright ter sido escolhido na época.
+
+O **Playwright** era utilizado para realizar testes **End-to-End (E2E)** no frontend. Ele abre navegadores reais, simula interações reais de usuários (como cliques, preenchimento de formulários e navegação) e valida se os fluxos completos da aplicação (da tela até o banco de dados) funcionam sem erros.
 
 ### Por que escolhemos o Playwright?
 
@@ -53,4 +56,4 @@ O **Playwright** é utilizado para realizar testes **End-to-End (E2E)** no front
 | Testar funções puras, cálculos de IA, validações de schemas (Zod). | **Vitest** | `npm run test` |
 | Testar se um componente React renderiza corretamente isolado na tela. | **Vitest** | `npm run test` |
 | Testar se as rotas da API Express respondem com os status HTTP corretos. | **Vitest** | `npm run test` |
-| Testar o fluxo completo de cadastro, login ou geração de QR Codes no navegador. | **Playwright** | `npm run test:e2e` |
+| Testar o fluxo completo de cadastro, login ou geração de QR Codes no navegador. | **Manual** (runbook) | Seguir [Testes manuais — Web](./manuais-web.md) |

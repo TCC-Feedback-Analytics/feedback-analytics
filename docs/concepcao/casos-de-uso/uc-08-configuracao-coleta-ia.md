@@ -41,7 +41,7 @@
 
 ## Base para Teste E2E
 
-> Os testes E2E estão implementados no Playwright ([uc-08-configuracao-coleta-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-08-configuracao-coleta-ia.spec.ts)). O spec contém um smoke de carregamento e dois testes de salvamento condicionais (com `test.skip()` quando o campo correspondente não está visível). Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+> A suíte Playwright (e2e) deste UC foi **removida**; ela continha um smoke de carregamento e dois testes de salvamento condicionais (com `test.skip()` quando o campo correspondente não estava visível). Os cenários agora são executados manualmente — veja o [runbook de testes manuais do Web](../../guias/testes/manuais-web.md). Cada cenário abaixo possui a sua respectiva classificação e estratégia de execução mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
 
 **Cenários a cobrir:**
 

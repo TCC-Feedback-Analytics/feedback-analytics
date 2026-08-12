@@ -143,6 +143,8 @@ nav:
       - Testes:
           - Visão geral: guias/testes/visao-geral.md
           - Plano de teste estratégico: guias/testes/plano-estrategico.md
+          - Testes manuais — API Gateway: guias/testes/manuais-api-gateway.md
+          - Testes manuais — Web (UCs): guias/testes/manuais-web.md
           - Frontend (web): guias/testes/web.md
           - API Gateway: guias/testes/api-gateway.md
           - IA Analyze: guias/testes/ia-analyze.md
