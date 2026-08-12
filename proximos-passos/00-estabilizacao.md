@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Status** | 🔵 Planejado |
+| **Status** | 🟢 Em andamento — majoritariamente feita (diagnóstico do timeout confirmado; retry para de gastar cota; cache de "gerar insights"). Cura estrutural do timeout fica na [etapa 03](./03-analise-assincrona.md) |
 | **Quando** | Mês 1 |
 | **Esforço** | Médio |
 | **Prioridade** | 🔴 Essencial |
