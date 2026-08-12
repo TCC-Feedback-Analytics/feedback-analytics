@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Status** | 🔵 Planejado |
+| **Status** | ✅ Entregue em código (Drizzle adotado, cutover Better Auth concluído, migrations `0000`/`0001`, `tenantScope`) · ⏳ pendente Passo 8 do ADR-0001 (aplicar o baseline em produção) |
 | **Quando** | Mês 1–2 |
 | **Esforço** | Médio |
 | **Prioridade** | 🔴 Essencial |
