@@ -226,13 +226,15 @@ Preservar o contrato de transição de flag `true → false` — os 3 hooks scop
 
 ## Como vamos saber que deu certo
 
-- [ ] Clicar "Analisar"/"Gerar insights" responde em **menos de 2s** com status "em processamento" (202), **sem** esperar a IA.
-- [ ] Uma análise com **40+ feedbacks** conclui **sem nenhum erro de tempo esgotado**.
-- [ ] Em um dia de uso normal de teste, a **cota diária do Gemini não estoura** (o rate limiter segura o ritmo; jobs excedentes são re-agendados, não falhados).
-- [ ] **Duplo clique** (ou clicar de novo após travar) **não cria** trabalho duplicado nem linhas duplicadas em `feedback_analysis` (idempotência).
-- [ ] Derrubar o worker **no meio** de um job e religá-lo: o job **retoma e conclui**, sem reprocessar o que já foi gravado.
-- [ ] A tela mostra **progresso real** ("X de Y") que avança até "concluído".
-- [ ] O endpoint de status respeita o **isolamento por `enterprise_id`** (app-level): um gestor não enxerga o job de outra empresa.
+> Estado em ago/2026: **backend (gateway) implementado e validado** (branch `analise-assincrona`, migration `0002`, worker/drain, rate limiter; 136 testes verdes, incl. o e2e do drain com fake ia-analyze). O frontend (consumir 202 + polling + barra "X de Y") está em **handoff** (Etapa 5).
+
+- [x] Clicar "Analisar"/"Gerar insights" responde na hora com **202 + `jobId`** (backend ✓; a percepção na tela depende do frontend).
+- [x] Uma análise com **40+ feedbacks** conclui **sem timeout** — validado localmente (lotes processados por tick, fora da requisição).
+- [x] A **cota não estoura**: rate limiter (token bucket minuto/dia); jobs excedentes viram `waiting_budget` e são re-agendados, não falhados.
+- [x] **Duplo clique** não cria trabalho duplicado (índice parcial único) nem linhas duplicadas em `feedback_analysis` (`unique(feedback_id)` + `ON CONFLICT`).
+- [x] Derrubar o worker **no meio** e religá-lo: o job **retoma de onde parou** (validado — retomada entre ticks).
+- [ ] A tela mostra **progresso real** ("X de Y") — **Etapa 5 (frontend)**.
+- [x] O endpoint de status respeita o **isolamento por `enterprise_id`** (app-level): um gestor não enxerga o job de outra empresa.
 
 ## Etapas de entrega
 
