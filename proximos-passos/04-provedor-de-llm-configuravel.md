@@ -132,7 +132,13 @@ Com o modelo agora configurável (`LLM_MODEL`) e múltiplos provedores, dá para
 
 ## Plano de execução detalhado — sub-fase BYO-key por empresa (decidido em ago/2026)
 
-> Este plano detalha a **etapa 5** ("BYO-key por empresa") acima, com as decisões já travadas com a equipe. Foi validado contra o código real dos 4 repositórios em ago/2026. Enquanto não implementado, o Status geral desta etapa segue 🔵 Planejado.
+> Este plano detalha a **etapa 5** ("BYO-key por empresa") acima, com as decisões já travadas. **Atualizado em ago/2026, após a [etapa 03](./03-analise-assincrona.md) ter sido implementada** (backend no ar).
+
+> ⚠️ **Ajustes por causa da etapa 03 (já implementada):**
+> - A IA agora é chamada em **dois lugares** no gateway — o caminho **síncrono** (`analyzeRawFeedbacks`/`regenerate`, atrás da flag `IA_ASYNC_ENABLED`) **e o worker** (`runOneBatch`). Ambos passam por `runIaAnalyzeAnalysis`, então a injeção da chave por empresa (Camada 4) threda os **dois** call sites.
+> - O **rate limiter vira por empresa "de graça"**: a tabela `ia_rate_budget` (criada na 03) já tem a coluna `scope` (hoje `'global'`); o BYO-key passa a usar `scope = enterprise_id`.
+> - A próxima migration é a **`0003`** (a `0002` foi usada pela etapa 03).
+> - **Remoção do caminho síncrono = passo FINAL, não o primeiro.** Só depois do assíncrono validado em produção (frontend consumindo o polling + cron rodando). Até lá, o síncrono atrás da flag é a rede de segurança da transição — o assíncrono depende do worker/cron estar de pé. Quando sair, a injeção da chave passa a acontecer **só no worker** (um call site em vez de dois).
 
 ### Decisões travadas
 
@@ -148,9 +154,11 @@ Com o modelo agora configurável (`LLM_MODEL`) e múltiplos provedores, dá para
 [Config]  Web (perfil) → Gateway: PUT /api/protected/user/ia-config
             → valida no OpenRouter (/auth/key) → cifra AES-256-GCM → enterprise_ia_config
 
-[Análise] Web → Gateway (busca+decifra config do tenant)
-            → ia-analyze  [headers: x-ia-analyze-token, x-llm-api-key, x-llm-model, x-llm-provider]
-            → createProvider(headers ?? env)  → OpenRouter (ou Gemini)
+[Análise] Gateway resolve a config do tenant (busca+decifra) nos DOIS caminhos —
+            síncrono (analyzeRawFeedbacks/regenerate, flag off) e worker (runOneBatch, flag on):
+            → runIaAnalyzeAnalysis(payload, creds) → ia-analyze
+                [headers: x-ia-analyze-token, x-llm-provider, x-llm-api-key, x-llm-model]
+            → createProvider(headers ?? env) → OpenRouter (ou Gemini)
 ```
 
 Empresa sem chave configurada ⇒ o gateway não envia os headers de credencial ⇒ o ia-analyze usa a **chave global do env** (fallback). A flag `REQUIRE_USER_IA_KEY=true` desliga o fallback quando a migração terminar.
@@ -171,7 +179,7 @@ Empresa sem chave configurada ⇒ o gateway não envia os headers de credencial 
 
 **Camada 3 — Storage + endpoints (repo `feedback-analytics-api-gateway`):**
 - `[MODIFY] drizzle/schema/enterprise.ts` — tabela `enterpriseIaConfig` espelhando `collectingDataEnterprise` (1:1): `enterpriseId` unique + FK cascade; `provider`, `model`, `apiKeyCiphertext`, `apiKeyIv`, `apiKeyAuthTag`, timestamps. Re-exportar no barrel `drizzle/schema.ts`.
-- **Migration:** `db:generate` (gera `0002_*.sql`) → `db:migrate` → `db:check` (fluxo schema-first do ADR-0001; não usar `db:pull` cego).
+- **Migration `0003`** (a `0002` é da etapa 03): `db:generate` → `db:migrate` → `db:check` (fluxo schema-first do ADR-0001; não usar `db:pull` cego).
 - `[NEW] src/utils/crypto.ts` — AES-256-GCM (`node:crypto`), chave em `IA_CONFIG_ENCRYPTION_KEY`.
 - `[NEW] src/repositories/iaConfig.repository.ts` — get/upsert/delete filtrando por `enterprise_id` (`scopedByEnterprise`).
 - `[NEW] src/libs/iaConfig/validateOpenRouterKey.ts` — valida a chave no `/auth/key`.
@@ -179,9 +187,10 @@ Empresa sem chave configurada ⇒ o gateway não envia os headers de credencial 
 - `[MODIFY] src/config/errors.ts` — `ia_config_not_found`, `ia_config_invalid_key`, `ia_config_required`.
 
 **Camada 4 — Injeção no fluxo (repo `gateway`):**
-- `[MODIFY] src/services/iaAnalyze.service.ts` — antes de `runIaAnalyzeAnalysis`: buscar+decifrar a config do `enterpriseId`; se existe, passar creds; se não e `REQUIRE_USER_IA_KEY!=='true'`, chamar sem creds (fallback global); se exigido, lançar `ia_config_required`.
+- **Resolver a config por empresa** (`iaConfig.repository.get` + `crypto.decrypt`) e passá-la a `runIaAnalyzeAnalysis(payload, creds)`. Vale nos **dois** call sites (pós-etapa 03): o síncrono (`analyzeRawFeedbacks`/`regenerateFeedbackInsights`) **e** o worker (`runOneBatch` em `drainJobs`). Resolver uma vez por request/job (não decifrar por lote).
+- **Sem config + `REQUIRE_USER_IA_KEY!=='true'`** → chama sem creds (fallback à chave global do env do ia-analyze). **Sem config + flag ligada** → `ia_config_required` (no síncrono vira 422; no worker, job `failed`).
+- **Rate limiter por empresa:** trocar o `scope` da reserva no `ia_rate_budget` de `'global'` para o `enterprise_id` (coluna já existe desde a 03) — cada empresa passa a ter o próprio balde.
 - `[MODIFY] .env.example` — `IA_CONFIG_ENCRYPTION_KEY`, `REQUIRE_USER_IA_KEY=false`.
-- *(Opcional)* rate-limit por `enterprise_id` nos endpoints de análise.
 
 **Camada 5 — UI (repo `feedback-analytics-web`):**
 - `[NEW] src/services/serviceIaConfig.ts` (molde `serviceEnterprise.ts`, usa os helpers de `src/lib/utils/http.ts`).
@@ -196,7 +205,7 @@ Empresa sem chave configurada ⇒ o gateway não envia os headers de credencial 
 | Key em texto no DB | AES-256-GCM (`src/utils/crypto.ts`); segredo em `IA_CONFIG_ENCRYPTION_KEY` (env, nunca no repo) |
 | Key em logs | Não logar headers `x-llm-*`; revisar `describeError` do ia-analyze |
 | Endpoint interno aberto | `IA_ANALYZE_INTERNAL_TOKEN` segue obrigatório |
-| Gasto de créditos em loop | Rate-limit por `enterprise_id` (opcional) |
+| Gasto de créditos em loop | Rate limiter **por empresa** (`scope = enterprise_id` no `ia_rate_budget`, reusando a infra da etapa 03) |
 | Perda da `IA_CONFIG_ENCRYPTION_KEY` | Rotacioná-la exige re-cadastro de todas as chaves (ficam indecifráveis) |
 
 ### Verificação
@@ -211,11 +220,12 @@ Empresa sem chave configurada ⇒ o gateway não envia os headers de credencial 
 |---|---|
 | 1 — Fábrica + OpenRouter + modelo (ia-analyze) | ~6–8h |
 | 2 — Headers (ia-analyze + gateway) | ~2h |
-| 3 — Crypto + tabela + endpoints (gateway) | ~5–6h |
-| 4 — Injeção no fluxo + flag | ~2h |
+| 3 — Crypto + tabela `0003` + endpoints (gateway) | ~5–6h |
+| 4 — Injeção nos 2 caminhos + budget por empresa + flag | ~3h |
 | 5 — UI (web) | ~4–5h |
 | 6 — Docs + testes | ~4h |
-| **Total** | **~23–27h** |
+| Passo final (pós-validação em prod) — remover o síncrono e a flag | ~1–2h |
+| **Total** | **~25–30h** |
 
 ## O que isso demonstra no TCC
 
