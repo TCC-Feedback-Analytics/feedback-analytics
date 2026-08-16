@@ -92,7 +92,7 @@ erDiagram
 
 | Domínio | Tabelas | Responsabilidade |
 |---|---|---|
-| **Identidade** | `auth.users`, `enterprise` | Autenticação e raiz de autorização multi-tenant |
+| **Identidade** | `user`, `session`, `account`, `verification`, `enterprise` | Autenticação (Better Auth), sessões e raiz de autorização multi-tenant |
 | **Contexto Analítico** | `collecting_data_enterprise` | Dados estratégicos injetados nos prompts de IA |
 | **Catálogo** | `catalog_items`, `collection_points` | Produtos/Serviços/Departamentos e QR Codes |
 | **Formulário** | `questions_of_feedbacks`, `feedback_question_subquestions` | Perguntas dinâmicas exibidas no formulário público |
