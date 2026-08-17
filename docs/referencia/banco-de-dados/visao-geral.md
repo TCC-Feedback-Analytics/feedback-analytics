@@ -106,22 +106,25 @@ erDiagram
 
 > A coluna **Impacto no Projeto** indica qual parte do sistema consome cada campo e o que é afetado se ele for alterado ou removido.
 
-### `auth.users`
+### `public.user` (Better Auth)
 
-> Schema gerenciado pelo Supabase. Tabela central de autenticação.
+> Tabela central de usuários do Better Auth no schema `public`.
 
 | Coluna | Tipo | Descrição | Impacto no Projeto |
 |---|---|---|---|
-| `id` | uuid PK | Identificador único do usuário | **Crítico** — raiz do sistema; referenciado por `enterprise.auth_user_id`; base do JWT e de toda autenticação |
-| `email` | varchar | E-mail de login | **Crítico** — credencial de acesso do gestor; usado no login e na confirmação de conta |
-| `encrypted_password` | varchar | Senha hasheada | **Crítico** — gerenciado pelo Supabase Auth; alteração direta quebra autenticação |
-| `raw_user_meta_data` | jsonb | Metadados temporários | **Crítico no signup** — carrega `document`, `phone` e `account_type` para o trigger `create_enterprise_on_signup()`; é higienizado logo após (LGPD) |
-| `phone` | text | Telefone validado após signup | **Alto** — exibido na tela de perfil; validado por `phone_exists()` para evitar duplicatas |
-| `email_confirmed_at` | timestamptz | Data de confirmação do e-mail | **Alto** — determina se a conta está ativa; gestor sem e-mail confirmado não consegue fazer login |
-| `is_anonymous` | boolean | Indica usuário anônimo | **Não utilizado** — coluna nativa do Supabase presente em todo projeto; o sistema não implementa login anônimo |
+| `id` | uuid PK | Identificador único do usuário | **Crítico** — raiz de autenticação; referenciado como FK por `enterprise.auth_user_id` e tabelas de sessão |
+| `name` | text | Nome do gestor / empresa | **Crítico** — exibido no painel e na view pública `enterprise_public` no formulário de feedback |
+| `email` | text (unique) | E-mail de login do gestor | **Crítico** — credencial de acesso e canal de envio de e-mails transacionais |
+| `email_verified` | boolean | E-mail confirmado | **Alto** — `true` após validação do link de confirmação enviado no cadastro |
+| `phone` | text (unique) | Telefone de contato | **Alto** — contato exibido e gerenciado no perfil |
+| `image` | text | Imagem/Avatar do perfil | **Baixo** — opcional |
+| `created_at` | timestamptz | Data de criação | **Baixo** — auditoria |
+| `updated_at` | timestamptz | Última atualização | **Baixo** — auditoria |
 
-**Triggers:** `on_auth_user_created` → `create_enterprise_on_signup()` | `on_auth_user_metadata_before_update` → `clean_user_metadata_before_change()`
-
+> **Tabelas auxiliares do Better Auth:**
+> - `public.session`: Gerencia sessões ativas (`user_id`, `token`, `expires_at`, `ip_address`, `user_agent`).
+> - `public.account`: Guarda provedores e o hash da senha (`user_id`, `account_id`, `provider_id`, `password`).
+> - `public.verification`: Armazena tokens temporários de verificação e recuperação de senha (`identifier`, `value`, `expires_at`).
 ---
 
 ### `enterprise_public` (objeto público)
@@ -131,15 +134,14 @@ erDiagram
 | Coluna | Tipo | Descrição | Impacto no Projeto |
 |---|---|---|---|
 | `id` | uuid | Identificador da empresa (= `enterprise.id`) | **Crítico** — usado pelo formulário público para validar a empresa e carregar perguntas |
-| `name` | text | Nome público da empresa | **Crítico** — exibido no formulário de coleta; **derivado de `auth.users.raw_user_meta_data.full_name`** (a tabela `enterprise` não possui coluna `name`) |
+| `name` | text | Nome público da empresa | **Crítico** — exibido no formulário de coleta; **derivado de `public.user.name`** via JOIN com `enterprise.auth_user_id` |
 
 > **DDL versionado:** a definição vive em `database/sql/views/public.enterprise_public.sql`:
 > ```sql
 > CREATE OR REPLACE VIEW "public"."enterprise_public" AS
-> SELECT e.id, (u.raw_user_meta_data ->> 'full_name') AS name
-> FROM "public"."enterprise" e
-> JOIN "auth"."users" u ON u.id = e.auth_user_id;
-> GRANT SELECT ON "public"."enterprise_public" TO anon, authenticated;
+>SELECT e.id, pu.name AS name
+>FROM "public"."enterprise" e
+>LEFT JOIN "public"."user" pu ON pu.id = e.auth_user_id;
 > ```
 > A view roda com `security_invoker = off` (privilégios do **OWNER** — padrão do Postgres). Isso é **intencional e necessário** para o fluxo anônimo de coleta: o papel `anon` não tem policy de `SELECT` em `public.enterprise` nem acesso a `auth.users`. **Não** habilitar `security_invoker = on` aqui — quebraria o formulário público de feedback. Leitura liberada via `GRANT SELECT TO anon, authenticated`.
 
@@ -149,12 +151,12 @@ erDiagram
 
 > Cadastro da empresa vinculada ao usuário autenticado. **Entidade raiz de todo o isolamento multi-tenant.**
 >
-> **Atenção:** esta tabela **não tem coluna `name`**. O "nome" da empresa exibido publicamente (ex.: no formulário de coleta) **não** vem daqui — vem de `auth.users.user_metadata.full_name`, exposto via a relação [`enterprise_public`](#enterprise_public-objeto-público). O `full_name` é gravado no metadata no signup (`register.controller.ts`) e lido pelo serviço de IA (`iaAnalyze.repository.ts`).
+> **Atenção:** esta tabela **não tem coluna `name`**. O "nome" da empresa exibido publicamente (ex.: no formulário de coleta) **não** vem diretamente desta tabela — vem da coluna `name` da tabela `public.user` (cadastrada no Better Auth), exposto publicamente via a relação [`enterprise_public`](#enterprise_public-objeto-público).
 
 | Coluna | Tipo | Obrigatório | Descrição | Impacto no Projeto |
 |---|---|---|---|---|
 | `id` | uuid PK | Sim | Identificador único | **Crítico** — referenciado como `enterprise_id` em todas as demais tabelas; âncora do isolamento multi-tenant via RLS |
-| `auth_user_id` | uuid | Sim | FK para `auth.users.id` — vínculo 1:1 | **Crítico** — usado pela função `jwt_custom_claims()` para injetar `enterprise_id` no token JWT; sem ele o gestor não é associado a nenhuma empresa |
+| `auth_user_id` | uuid | Sim | FK para `public.user.id` (1:1, `ON DELETE CASCADE`) | **Crítico** — vincula a empresa ao usuário autenticado no Better Auth; âncora do escopo multi-tenant na aplicação (`tenantScope`) |
 | `document` | text | Sim | CPF ou CNPJ validado (Módulo 11) | **Alto** — exibido na tela de perfil; validado por `document_exists()` para unicidade no cadastro |
 | `account_type` | text | Não | Tipo de conta: `CPF` (pessoa física) ou `CNPJ` (pessoa jurídica) | **Médio** — exibido na tela de perfil; determina se o documento é CPF ou CNPJ. Constraint impede valores fora do enum |
 | `terms_version` | text | Não | Versão dos termos aceitos | **Médio** — registra qual versão dos termos foi aceita; usado para auditoria legal e conformidade |
@@ -386,19 +388,15 @@ erDiagram
 
 | Função | Schema | Tipo | Descrição |
 |---|---|---|---|
-| `create_enterprise_on_signup()` | public | Trigger (AFTER INSERT em `auth.users`) | Cria `enterprise` com `trial_ends_at = NOW() + 4 months` e `subscription_status = 'TRIAL'`, valida documento/telefone únicos, semeia as 3 perguntas padrão e higieniza metadados do JWT |
-| `clean_user_metadata_before_change()` | public | Trigger (BEFORE UPDATE em `auth.users`) | Remove chaves sensíveis (`document`, `phone`, `account_type`, etc.) do `raw_user_meta_data` antes de qualquer update (LGPD) |
 | `generate_device_fingerprint(user_agent, ip)` | public | Utilitária | Retorna `md5(user_agent \| ip \| dia_epoch)` — fingerprint diário rotativo |
-| `can_device_send_feedback(enterprise_id, fingerprint, collection_point_id?)` | public | Query | Retorna `boolean` — verifica se o dispositivo já enviou feedback no dia para o ponto informado (com fallback legado por empresa) |
+| `can_device_send_feedback(enterprise_id, fingerprint, collection_point_id?)` | public | Query | Retorna `boolean` — verifica se o dispositivo já enviou feedback no dia para o ponto informado |
 | `register_device_feedback(enterprise_id, fingerprint, user_agent, ip, customer_id?, collection_point_id?)` | public | Mutação | Upsert em `tracked_devices` com `pg_advisory_xact_lock` para serializar acessos concorrentes; incrementa `feedback_count` |
-| `jwt_custom_claims()` | public | Utilitária | Injeta `role: 'enterprise'` e `enterprise_id` no payload JWT — usado pelo Supabase para claims customizados |
 | `enterprise_public_documents_fn()` | public | Query | Retorna documentos distintos cadastrados — usada em validações públicas de duplicidade |
 | `document_exists(document)` | public | Query | Verifica se CPF/CNPJ já existe na base |
-| `phone_exists(phone)` | public | Query | Verifica se telefone já existe em `auth.users` |
-| `enterprise_public_ids_fn()` | public | Query | Retorna IDs públicos de empresas ativas |
-| `update_updated_at_column()` | public | Trigger genérico | Atualiza `updated_at = now()` em qualquer tabela antes de UPDATE |
+| `enterprise_public_ids_fn()` | public | Query | Retorna IDs públicos de empresas |
+| `update_updated_at_column()` | public | Trigger genérico | Atualiza `updated_at = now()` automaticamente em operações de UPDATE |
 | `validate_questions_of_feedbacks_context()` | public | Trigger | Valida coerência entre `scope_type` e `catalog_item_id` em `questions_of_feedbacks` |
-| `validate_feedback_insights_report_context()` | public | Trigger | Mesma validação de coerência em `feedback_insights_report` |
+| `validate_feedback_insights_report_context()` | public | Trigger | Valida coerência entre `scope_type` e `catalog_item_id` em `feedback_insights_report` |
 
 ---
 
