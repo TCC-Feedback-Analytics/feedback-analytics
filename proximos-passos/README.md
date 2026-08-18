@@ -49,17 +49,17 @@ O risco de um TCC parecer "duas listas soltas" (refatorações + funcionalidades
 
 ## Roadmap de 6 meses
 
-| Mês | Etapa | O que o usuário ganha | Profundidade (capítulo) | Prioridade |
-|---|---|---|---|---|
-| 1 | [00 — Estabilização](./00-estabilizacao.md) | Sistema para de quebrar | Diagnóstico, observabilidade, resiliência a limites | 🔴 Essencial |
-| 1–2 | [01 — Camada de dados e ORM](./01-camada-de-dados-e-orm.md) | (base para o resto) | Modelagem, ORM, migrations, multi-tenant | 🔴 Essencial |
-| 2 | [02 — Métricas por período + comparação](./02-metricas-por-periodo-e-comparacao.md) | Filtra e compara períodos no painel | Agregação em SQL, índices, UX de comparação | 🔴 Essencial |
-| 2–3 | [03 — Análise assíncrona (worker + fila)](./03-analise-assincrona.md) | IA deixa de dar timeout/estourar cota | Arquitetura assíncrona, filas, rate limiting, idempotência | 🔴 Essencial |
-| 3 | [04 — Provedor de IA configurável](./04-provedor-de-llm-configuravel.md) | IA mais barata e resiliente | Padrões de projeto (Strategy/Adapter), avaliação empírica de modelos | 🔴 Essencial |
-| 3–4 | [05 — Feedback por áudio](./05-feedback-por-audio.md) | Cliente grava áudio em vez de digitar | Armazenamento de mídia, IA multimodal, pipeline assíncrono | 🟡 Fase 1 essencial · Fase 2 stretch |
-| 4–5 | [06 — Coleta por NFC](./06-coleta-por-nfc.md) | Coleta por aproximação do celular | Arquitetura omnichannel, Web NFC/NDEF | 🔴 Essencial |
-| 5 | [07 — Segurança e LGPD](./07-seguranca-e-lgpd.md) | Confiança e conformidade | Análise de risco, LGPD, responsabilidade compartilhada | 🟡 Importante |
-| 5–6 | [08 — Infraestrutura e custo](./08-infraestrutura-e-custo.md) | Roda estável e barato/grátis | Deploy, containers, portabilidade entre provedores | 🟡 Importante |
+| Mês | Etapa | Status | O que o usuário ganha | Profundidade (capítulo) | Prioridade |
+|---|---|---|---|---|---|
+| 1 | [00 — Estabilização](./00-estabilizacao.md) | 🟢 | Sistema para de quebrar | Diagnóstico, observabilidade, resiliência a limites | 🔴 Essencial |
+| 1–2 | [01 — Camada de dados e ORM](./01-camada-de-dados-e-orm.md) | ✅ | (base para o resto) | Modelagem, ORM, migrations, multi-tenant | 🔴 Essencial |
+| 2 | [02 — Métricas por período + comparação](./02-metricas-por-periodo-e-comparacao.md) | 🔵 | Filtra e compara períodos no painel | Agregação em SQL, índices, UX de comparação | 🔴 Essencial |
+| 2–3 | [03 — Análise assíncrona (worker + fila)](./03-analise-assincrona.md) | ✅ | IA deixa de dar timeout/estourar cota | Arquitetura assíncrona, filas, rate limiting, idempotência | 🔴 Essencial |
+| 3 | [04 — Provedor de IA configurável](./04-provedor-de-llm-configuravel.md) | 🟢 | IA mais barata e resiliente | Padrões de projeto (Strategy/Adapter), avaliação empírica de modelos | 🔴 Essencial |
+| 3–4 | [05 — Feedback por áudio](./05-feedback-por-audio.md) | 🔵 | Cliente grava áudio em vez de digitar | Armazenamento de mídia, IA multimodal, pipeline assíncrono | 🟡 Fase 1 essencial · Fase 2 stretch |
+| 4–5 | [06 — Coleta por NFC](./06-coleta-por-nfc.md) | 🔵 | Coleta por aproximação do celular | Arquitetura omnichannel, Web NFC/NDEF | 🔴 Essencial |
+| 5 | [07 — Segurança e LGPD](./07-seguranca-e-lgpd.md) | 🔵 | Confiança e conformidade | Análise de risco, LGPD, responsabilidade compartilhada | 🟡 Importante |
+| 5–6 | [08 — Infraestrutura e custo](./08-infraestrutura-e-custo.md) | 🔵 | Roda estável e barato/grátis | Deploy, containers, portabilidade entre provedores | 🟡 Importante |
 
 **Legenda de prioridade:** 🔴 Essencial · 🟡 Importante · ⚪ Se sobrar tempo
 **Legenda de status (em cada etapa):** 🔵 Planejado · 🟢 Em andamento · ✅ Entregue · ⏸️ Pausado
