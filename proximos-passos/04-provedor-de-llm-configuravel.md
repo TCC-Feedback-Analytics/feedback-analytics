@@ -4,12 +4,14 @@
 
 | Campo | Valor |
 |---|---|
-| **Status** | 🔵 Planejado |
+| **Status** | 🟢 Em andamento — backend (Camadas 1–4) implementado, integrado e documentado; falta o frontend (Camada 5), a comparação empírica e a remoção do síncrono |
 | **Quando** | Mês 3 |
 | **Esforço** | Médio |
 | **Prioridade** | 🔴 Essencial |
 | **Depende de** | Idealmente da [03 — Análise assíncrona](./03-analise-assincrona.md) (para que a troca de provedor já rode fora da requisição HTTP) |
 | **Camadas afetadas** | Serviço de IA · Backend |
+
+> ✅ **Estado (ago/2026): backend implementado, integrado e documentado.** As **Camadas 1–4** já estão no código e testadas — fábrica `createProvider` (Strategy) + adaptador **OpenRouter** + modelo configurável (`ia-analyze`); transporte da chave por headers `x-llm-*`; tabela **cifrada** `enterprise_ia_config` + endpoints `/user/ia-config` (migration `0003`); injeção nos **dois** caminhos (síncrono + worker) com fallback global e *rate budget* por empresa. A doc técnica dos repos (`ia-analyze` e `api-gateway`) foi atualizada. **Falta:** a **Camada 5 — tela de configuração no frontend** (handoff pronto em `feedback-analytics-api-gateway/docs/etapa-04-frontend-handoff.md`), a **comparação empírica** de modelos (`eval-classifier`) e a **remoção do caminho síncrono** (passo final, pós-validação em produção). As seções abaixo mantêm o "antes" e o plano; o que já foi feito está marcado no checklist e no plano detalhado.
 
 ## Para qualquer leitor
 
@@ -113,22 +115,22 @@ Com o modelo agora configurável (`LLM_MODEL`) e múltiplos provedores, dá para
 
 ## Como vamos saber que deu certo
 
-- [ ] Existe `openrouter.provider.ts` implementando `IaApiClient`, reusando `buildIaPromptByScope` e `extractJsonFromText`.
-- [ ] Definindo `LLM_PROVIDER=openrouter` e `LLM_MODEL=<modelo>`, uma análise real roda **de ponta a ponta** e grava sentimento/categorias/keywords/aspectos corretamente.
-- [ ] Definindo `LLM_PROVIDER=gemini`, o comportamento atual continua **idêntico** (sem regressão).
-- [ ] O modelo do Gemini **não está mais hardcoded**: vem de `LLM_MODEL` (com fallback).
-- [ ] Erros do OpenRouter são mapeados para os mesmos códigos do contrato (`failed_ia_request` / `invalid_ai_response`) e o `Retry-After` é respeitado.
-- [ ] `.env.example` documenta `LLM_PROVIDER`, `LLM_MODEL` e `OPENROUTER_API_KEY`.
-- [ ] Existe ao menos **uma comparação medida** (kappa + macro-F1) entre Gemini e um modelo do OpenRouter sobre o mesmo gold set, via `eval-classifier`.
-- [ ] (BYO-key, se entrar) uma empresa cadastra a própria chave, ela é cifrada em repouso, protegida por RLS, e a análise passa a usá-la em vez da global.
+- [x] Existe `openrouter.provider.ts` implementando `IaApiClient`, reusando `buildIaPromptByScope` e `extractJsonFromText`.
+- [x] Definindo `LLM_PROVIDER=openrouter` e `LLM_MODEL=<modelo>`, a análise roda **de ponta a ponta** e grava sentimento/categorias/keywords/aspectos (fluxo validado por e2e com fake server + testes do adaptador).
+- [x] Definindo `LLM_PROVIDER=gemini`, o comportamento atual continua **idêntico** (sem regressão) — coberto por teste.
+- [x] O modelo do Gemini **não está mais hardcoded**: vem de `LLM_MODEL` (com fallback `gemini-2.5-flash`).
+- [x] Erros do OpenRouter são mapeados para os mesmos códigos do contrato (`failed_ia_request` / `invalid_ai_response`) e o `Retry-After` é respeitado.
+- [x] `.env.example` documenta `LLM_PROVIDER`, `LLM_MODEL` e `OPENROUTER_API_KEY`.
+- [ ] Existe ao menos **uma comparação medida** (kappa + macro-F1) entre Gemini e um modelo do OpenRouter sobre o mesmo gold set, via `eval-classifier`. **← pendente (ângulo acadêmico).**
+- [x] (BYO-key) uma empresa cadastra a própria chave, ela é **cifrada em repouso** (AES-256-GCM) e a análise passa a usá-la em vez da global — **backend pronto**; isolamento **app-level por `enterprise_id`** (a RLS foi removida no cutover), não por RLS. **Falta a UI (Camada 5).**
 
 ## Etapas de entrega
 
-1. **Fábrica + seletor por env (sem novo provedor ainda):** extrair o import fixo do `iaAnalyze.service.ts` para uma fábrica `createProvider(LLM_PROVIDER)` que, por ora, só conhece o Gemini. Extrair o modelo hardcoded para `LLM_MODEL`. Entrega valor: comportamento idêntico, mas já configurável e testável.
-2. **Adaptador OpenRouter:** criar `openrouter.provider.ts` (messages[], `max_tokens`, `response_format`, mapeamento de erro/`Retry-After`), reaproveitando o builder e o parser. Plugar na fábrica. Entrega valor: provedor alternativo funcionando, fora da cota do Gemini.
-3. **Cadeia de fallback + default gratuito:** ordenar provedores/modelos para tentar o próximo quando o atual esgota/recusa. Entrega valor: robustez contra limites dos modelos "free".
-4. **Comparação empírica:** montar um gold set, rodar `eval-classifier` contra ≥2 modelos, registrar kappa/macro-F1 e **escolher o default por evidência**. Entrega valor: decisão fundamentada + material de TCC.
-5. **(Posterior) BYO-key por empresa:** storage cifrado + RLS + propagação de chave por escopo + UI. Entrega valor: resolve a cota na raiz, distribuindo o limite por empresa.
+1. ✅ **Fábrica + seletor por env (sem novo provedor ainda):** extrair o import fixo do `iaAnalyze.service.ts` para uma fábrica `createProvider(LLM_PROVIDER)`. Extrair o modelo hardcoded para `LLM_MODEL`. **Feito.**
+2. ✅ **Adaptador OpenRouter:** `openrouter.provider.ts` (messages[], `max_tokens`, `response_format`, mapeamento de erro/`Retry-After`), plugado na fábrica. **Feito.**
+3. ⬜ **Cadeia de fallback + default gratuito:** ordenar provedores/modelos para tentar o próximo quando o atual esgota/recusa. **Pendente** (hoje é seleção única por provedor, sem cascata A→B→C).
+4. ⬜ **Comparação empírica:** montar um gold set, rodar `eval-classifier` contra ≥2 modelos, registrar kappa/macro-F1 e **escolher o default por evidência**. **Pendente.**
+5. 🟢 **BYO-key por empresa:** storage cifrado (AES-256-GCM) + isolamento app-level por `enterprise_id` + propagação de chave por header + UI. **Backend feito e integrado (Camadas 1–4); falta a UI (Camada 5).**
 
 ## Plano de execução detalhado — sub-fase BYO-key por empresa (decidido em ago/2026)
 

@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Status** | 🟢 Em andamento — planejamento detalhado concluído e verificado contra o código (ago/2026); ver "Plano de execução detalhado" no fim |
+| **Status** | ✅ Entregue em código — backend (gateway: migration `0002`, fila/worker, rate limiter, polling) + **frontend** (202 + polling + barra "X de Y") + docs; ⏳ pendente ativar o cron externo e `IA_ASYNC_ENABLED=true` em **produção** (operacional) |
 | **Quando** | Mês 2-3 |
 | **Esforço** | Alto |
 | **Prioridade** | 🔴 Essencial |
@@ -153,7 +153,7 @@ Implementação simples e durável: uma tabela `ia_rate_budget` (janela de minut
 
 ## Plano de execução detalhado (revisado ago/2026)
 
-> Verificado contra o código dos repositórios. Decisões travadas: **fila própria (SKIP LOCKED)** + **drain por cron**. Status geral: 🟢 Em andamento.
+> Verificado contra o código dos repositórios. Decisões travadas: **fila própria (SKIP LOCKED)** + **drain por cron**. Status geral: ✅ Entregue em código (backend + frontend + docs); falta só ativar o cron + a flag em produção.
 
 ### Arquitetura alvo
 
@@ -226,14 +226,14 @@ Preservar o contrato de transição de flag `true → false` — os 3 hooks scop
 
 ## Como vamos saber que deu certo
 
-> Estado em ago/2026: **backend (gateway) implementado e validado** (branch `analise-assincrona`, migration `0002`, worker/drain, rate limiter; 136 testes verdes, incl. o e2e do drain com fake ia-analyze). O frontend (consumir 202 + polling + barra "X de Y") está em **handoff** (Etapa 5).
+> Estado em ago/2026: **backend (gateway) + frontend implementados e validados.** Backend na branch `analise-assincrona` (migration `0002`, worker/drain, rate limiter; testes verdes, incl. o e2e do drain com fake ia-analyze); frontend com o consumo do 202 + polling + barra "X de Y" **concluído**. Resta o passo **operacional**: ligar o cron externo e virar `IA_ASYNC_ENABLED=true` em produção.
 
 - [x] Clicar "Analisar"/"Gerar insights" responde na hora com **202 + `jobId`** (backend ✓; a percepção na tela depende do frontend).
 - [x] Uma análise com **40+ feedbacks** conclui **sem timeout** — validado localmente (lotes processados por tick, fora da requisição).
 - [x] A **cota não estoura**: rate limiter (token bucket minuto/dia); jobs excedentes viram `waiting_budget` e são re-agendados, não falhados.
 - [x] **Duplo clique** não cria trabalho duplicado (índice parcial único) nem linhas duplicadas em `feedback_analysis` (`unique(feedback_id)` + `ON CONFLICT`).
 - [x] Derrubar o worker **no meio** e religá-lo: o job **retoma de onde parou** (validado — retomada entre ticks).
-- [ ] A tela mostra **progresso real** ("X de Y") — **Etapa 5 (frontend)**.
+- [x] A tela mostra **progresso real** ("X de Y") — **frontend concluído**.
 - [x] O endpoint de status respeita o **isolamento por `enterprise_id`** (app-level): um gestor não enxerga o job de outra empresa.
 
 ## Etapas de entrega
