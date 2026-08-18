@@ -36,7 +36,7 @@ erDiagram
 
 > Todas as tabelas possuem `enterprise_id` FK obrigatória (isolamento RLS multi-tenant), **exceto**: `feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis` — isolamento herdado via cascade da tabela pai.
 
-> **View `enterprise_public` (não é entidade física, por isso fora do `erDiagram`):** expõe apenas `id` e `name`, onde `name` deriva de `auth.users.raw_user_meta_data ->> 'full_name'` (a tabela `enterprise` não tem coluna `name`). Existe para o fluxo anônimo de coleta — o formulário público (QR Code) lê o nome da empresa sem login, via papel `anon`. Roda com os privilégios do OWNER (`security_invoker = off`), intencional e necessário, pois `anon` não tem policy de SELECT em `enterprise` nem acesso a `auth.users`.
+> **View `enterprise_public` (não é entidade física, por isso fora do `erDiagram`):** expõe apenas `id` e `name`, onde `name` deriva de `public.user.name` (a tabela `enterprise` não tem coluna `name`). Existe para o fluxo anônimo de coleta — o formulário público (QR Code) lê o nome da empresa sem login, via papel `anon`. Roda com privilégios do OWNER (`security_invoker = off`), intencional e necessário, pois `anon` não tem policy de SELECT direto em `enterprise` nem na tabela `user`.
 
 ---
 
@@ -44,17 +44,21 @@ erDiagram
 
 ### 1. Identidade e Empresa
 
-#### `auth.users` (schema `auth` — Supabase)
-Gerenciado pelo Supabase Auth. Registra o login do empresário.
+#### `public.user` (Better Auth)
+Gerenciado pelo Better Auth no schema `public`. Registra a conta do empresário/gestor.
 
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `id` | uuid | Chave primária |
-| `email` | text | E-mail de login |
-| `phone` | text | Telefone (promovido do metadata no signup) |
-| `raw_user_meta_data` | jsonb | Metadados temporários usados no signup (document, account_type, etc.) |
+| `name` | text | Nome do gestor / empresa (exibido no painel e na view pública) |
+| `email` | text | E-mail de login (único) |
+| `email_verified` | boolean | Status de confirmação do e-mail |
+| `phone` | text | Telefone de contato (único) |
+| `image` | text | Imagem/Avatar do perfil (opcional) |
 
-> O trigger `on_auth_user_created` dispara ao criar o usuário e automaticamente cria a `enterprise` com `trial_ends_at = NOW() + 4 months` e `subscription_status = 'TRIAL'`, semeia as 3 perguntas padrão (COMPANY) e limpa os metadados sensíveis do JWT.
+> O fluxo de cadastro (onboarding) é orquestrado pelo Gateway (`register.controller.ts`), que cria o usuário no Better Auth, cadastra a `enterprise` vinculada com trial de 4 meses (`subscription_status = 'TRIAL'`) e semeia as 3 perguntas padrão (`COMPANY`).
+> 
+> As sessões e credenciais são distribuídas nas tabelas auxiliares do Better Auth: `public.session` (sessões ativas), `public.account` (provedores/hash de senha) e `public.verification` (tokens temporários).
 
 ---
 
@@ -64,7 +68,7 @@ Empresa vinculada ao usuário autenticado. Âncora de todo o isolamento multi-te
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `id` | uuid | Chave primária |
-| `auth_user_id` | uuid | FK → `auth.users.id` (1:1) |
+| `auth_user_id` | uuid | FK → `public.user.id` (1:1, `ON DELETE CASCADE`) |
 | `document` | text | CPF ou CNPJ |
 | `account_type` | text | `CPF` ou `CNPJ` |
 | `terms_version` | text | Versão dos termos aceitos |
