@@ -77,6 +77,10 @@ MAIL_FROM=no-reply@feedback.local
 IA_ANALYZE_EXECUTION_MODE=local
 IA_ANALYZE_REMOTE_TOKEN=um_token_secreto_compartilhado
 IA_ANALYZE_REMOTE_URL=http://localhost:4100
+
+# OpenRouter por empresa (BYO-key)
+IA_CONFIG_ENCRYPTION_KEY=chave_mestra_aleatoria   # gere com: openssl rand -base64 32
+REQUIRE_USER_IA_KEY=true
 PORT=3000
 ```
 
@@ -92,10 +96,12 @@ PORT=3000
 ### `feedback-analytics-ia-analyze/.env`
 
 ```env
-GEMINI_API_KEY=sua_chave_gemini_aqui
 IA_ANALYZE_INTERNAL_TOKEN=um_token_secreto_compartilhado
+IA_LLM_CONCURRENCY=3
 PORT=4100
 ```
+
+O provedor, o modelo e a chave OpenRouter não ficam no `.env` do IA Analyze. Cada empresa configura sua chave no perfil; o Gateway a armazena cifrada e envia pelos headers internos `x-llm-*`.
 
 !!! warning "Token compartilhado (nomes diferentes nos dois lados)"
     No API Gateway o token interno se chama `IA_ANALYZE_REMOTE_TOKEN`; no IA Analyze, `IA_ANALYZE_INTERNAL_TOKEN`. Ambos devem ter o **mesmo valor** — o Gateway o envia no header `x-ia-analyze-token` e o serviço valida. Use uma string longa e aleatória (mínimo 32 caracteres).
@@ -167,7 +173,7 @@ Se ambos retornarem `ok: true`, o ambiente está funcionando.
 
 | Erro | Causa | Solução |
 |---|---|---|
-| `Missing Gemini API key` | `GEMINI_API_KEY` vazio | Verifique o `.env` do `ia-analyze` |
+| `400 ia_config_required` | Empresa sem chave OpenRouter | Configure a chave e o modelo em **Editar > Configuração de IA** |
 | `401 unauthorized_internal_request` | Tokens internos diferentes | Iguale `IA_ANALYZE_REMOTE_TOKEN` (gateway) e `IA_ANALYZE_INTERNAL_TOKEN` (ia-analyze) |
 | `422 collecting_data_required` | Empresa sem dados de contexto | Preencha **Objetivo** e **Resumo** em Configurações |
 | `422 insufficient_feedbacks` | Menos de 5 feedbacks disponíveis | Colete mais feedbacks antes de analisar |
