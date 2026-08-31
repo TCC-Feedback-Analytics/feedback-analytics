@@ -141,5 +141,7 @@ return { ok: false, error: 'update_failed', message: 'Mensagem para o usuário' 
 | `IA_ANALYZE_REMOTE_TOKEN` | API Gateway | Não |
 | `IA_ANALYZE_INTERNAL_TOKEN` | IA Analyze | Não |
 | `IA_ANALYZE_REMOTE_URL` | API Gateway | Sim |
-| `GEMINI_API_KEY` | IA Analyze | Sim |
+| `IA_CONFIG_ENCRYPTION_KEY` | API Gateway | Sim |
+| `REQUIRE_USER_IA_KEY` | API Gateway | Sim (`true`) |
+| `IA_LLM_CONCURRENCY` | IA Analyze | Não |
 | `PORT` | Gateway (3000) / IA (4100) | Não |
