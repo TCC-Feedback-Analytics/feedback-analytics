@@ -92,7 +92,7 @@ Isso garante que uma instabilidade do provedor externo não corrompa o painel co
 - O processamento é **assíncrono** — não bloqueia a interface do cliente durante a coleta
 - Limite padrão: 50 feedbacks por execução (máx. 100), com mínimo de 10 para análise relevante
 - Os resultados são persistidos em `feedback_analysis` (por feedback) e `feedback_insights_report` (por escopo)
-- O serviço usa o Google Gemini (`@google/genai`, modelo `gemini-2.5-flash` fixo no código), configurável via `GEMINI_API_KEY`; trocar de provedor exige alteração de código. A variável `IA_ANALYZE_REMOTE_URL` apenas aponta a URL do próprio serviço `ia-analyze`, não troca de fornecedor
+- O serviço usa o OpenRouter com a chave e o modelo configurados no perfil de cada empresa. O Gateway cifra a credencial no banco e a envia ao `ia-analyze` apenas nos headers internos `x-llm-*`; `IA_ANALYZE_REMOTE_URL` aponta somente a URL do serviço
 - Para proteger o teto de tokens do modelo, cada mensagem de feedback é truncada em **2000 caracteres** (`MAX_FEEDBACK_MESSAGE_CHARS`, com marca `… [truncado]`) e as respostas dinâmicas enviadas no payload são limitadas a **20** (`MAX_DYNAMIC_ANSWERS`) — o conteúdo útil de praticamente todo feedback real cabe nesses limites
 
 ---
