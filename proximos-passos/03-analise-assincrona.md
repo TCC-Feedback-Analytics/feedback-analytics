@@ -1,10 +1,27 @@
 # 03 — Análise assíncrona da IA (worker + fila)
 
+## Atualização de 04/09/2026 — fluxo sempre assíncrono
+
+O planejamento abaixo registra a transição original. A implementação agora não
+usa feature flag: os POSTs sempre respondem 202 + jobId. Fora da Vercel, o Gateway
+inicia o worker automaticamente. Na Vercel, continua necessário ativar o cron externo.
+
+Análise e relatório usam snapshots/checkpoints por lote, com lease e recuperação
+de worker interrompido. O botão unificado delega as duas etapas ao backend; fechar
+o modal, navegar e recarregar não interrompe o job. O frontend recupera trabalhos
+ativos por empresa. A síntese inclui todos os analisados, sem o corte em 100.
+
+Essas mudanças eliminam a espera longa do POST do usuário, mas não tornam o provedor
+infalível: cada chamada continua sujeita a timeout/cota e às retentativas limitadas.
+Estado operacional atual e comandos: [runbook do Gateway](../../feedback-analytics-api-gateway/docs/etapa-03-operacao-worker.md).
+
+## Planejamento e histórico da entrega
+
 > **Em uma frase:** em vez de fazer o usuário esperar a IA terminar (e travar no meio do caminho), o sistema passa a *anotar o pedido* e processá-lo em segundo plano, no ritmo certo.
 
 | Campo | Valor |
 |---|---|
-| **Status** | ✅ Entregue em código — backend (gateway: migration `0002`, fila/worker, rate limiter, polling) + **frontend** (202 + polling + barra "X de Y") + docs; ⏳ pendente ativar o cron externo e `IA_ASYNC_ENABLED=true` em **produção** (operacional) |
+| **Status** | ✅ Fluxo sempre assíncrono, worker local automático e acompanhamento independente do modal; ⏳ cron externo em produção/Vercel continua sendo configuração operacional |
 | **Quando** | Mês 2-3 |
 | **Esforço** | Alto |
 | **Prioridade** | 🔴 Essencial |
