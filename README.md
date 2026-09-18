@@ -17,13 +17,17 @@ O projeto adota metodologias ágeis, engenharia de software rigorosa e uma arqui
 
 | Repositório | Visibilidade | Papel |
 |---|---|---|
-| **[feedback-analytics](https://github.com/TCC-Feedback-Analytics/feedback-analytics)** (este) | Público | Documentação central (site MkDocs) + `database/` + roadmap |
+| **[feedback-analytics](https://github.com/TCC-Feedback-Analytics/feedback-analytics)** (este) | Público | Documentação central (site MkDocs) + `database/` |
 | **[feedback-analytics-web](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web)** | Privado | Frontend React — área pública (QR Code) e painel da empresa |
 | **[feedback-analytics-api-gateway](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway)** | Público | API Gateway / BFF — ponto único de entrada do backend |
 | **[feedback-analytics-ia-analyze](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze)** | Público | Serviço isolado de análise por IA (provedor LLM externo) |
 | **[feedback-analytics-contracts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts)** | Público | Pacote `@feedback/lib-shared` — tipos e contratos compartilhados |
 
 A **referência técnica** de cada serviço (arquitetura interna, endpoints, testes) vive no `docs/` do respectivo repositório de código. Este repositório concentra concepção, decisões arquiteturais, requisitos e o schema do banco.
+
+O roadmap e o acompanhamento dos próximos passos do TCC2 ficam no **Buraco Negro**, em
+`tarefas-e-lembretes/feedback-analytics/proximos-passos/README.md`. A pasta `proximos-passos/`
+foi transferida para lá; este repositório mantém a documentação do sistema.
 
 ---
 
