@@ -41,7 +41,7 @@ Um ORM, porém, conecta ao Postgres por uma **connection string com uma role adm
 1. **Drizzle nos caminhos AUTENTICADOS/INTERNOS** (onde o backend já sabe de qual empresa é a requisição), **sempre com filtro explícito por `enterprise_id`**.
 2. **O fluxo público anônimo (QR Code) permanece sob RLS**, que é a fronteira de segurança correta para um papel `anon` não confiável.
 3. **A RLS permanece LIGADA em todas as tabelas**, como **defesa em profundidade**: mesmo que um filtro de aplicação falhe, a policy do banco é a segunda barreira.
-4. **Adoção incremental, não migração total**: começamos por um caminho de leitura (as agregações de stats — fundação da [Etapa 02](https://github.com/TCC-Feedback-Analytics/feedback-analytics/blob/main/proximos-passos/02-metricas-por-periodo-e-comparacao.md)); o resto migra sob demanda, declarado como trabalho futuro.
+4. **Adoção incremental, não migração total**: começamos por um caminho de leitura (as agregações de stats — fundação das métricas por período e comparação); o resto migra sob demanda, declarado como trabalho futuro. O acompanhamento dessas etapas foi transferido para a área de tarefas do Buraco Negro.
 
 ## 4. Mitigações (como evitamos o vazamento entre empresas)
 
