@@ -102,7 +102,8 @@ Os passos concretos (steps, `npm ci`, config Vercel) vivem em cada repo, junto d
 
 - **CI (`ci.yml`)** — roda em push/PR nas branches protegidas (`main` e `developer`): instala dependências (incluindo o pacote `@feedback/lib-shared`), roda lint + typecheck (`tsc --noEmit` com `tsconfig.ci.json`, que exclui testes) + testes de unidade; no web, também `build`.
 - **Smoke de migrations (`schema-migrations.yml`, no api-gateway)** — em push/PR que tocam `db/`, `drizzle/` ou os scripts de banco: sobe um Postgres efêmero via docker-compose, aplica as migrations + seed e roda `drizzle-kit check` para garantir que `schema.ts` ↔ migrations batem. Não usa credenciais externas.
-- **Deploy (`deploy-*.yml`)** — `workflow_dispatch` manual com confirmação `ok`, aceito **apenas na branch `main`**; usa a Vercel CLI com `--local-config vercel.json` do repo, fazendo `vercel deploy --prod`. O `feedback-analytics-api-gateway` roda uma etapa de `esbuild` antes, empacotando o entrypoint no `_bundle.cjs` apontado pelo `vercel.json`.
+- **Deploy (`deploy-*.yml`)** — `workflow_dispatch` manual com confirmação `ok`, aceito **apenas na branch `main`**; usa a Vercel CLI com `--local-config vercel.json` do repo, fazendo `vercel deploy --prod`. O `feedback-analytics-api-gateway` gera o bundle com `esbuild` e executa `npm run db:migrate` com a `DATABASE_URL` de produção antes de publicar.
+- **Worker da fila de IA (`ia-worker.yml`, no api-gateway)** — roda automaticamente a cada cinco minutos e também aceita disparo manual. Envia `POST /api/internal/worker/tick` com o header `x-worker-token`; o secret `WORKER_TICK_TOKEN` do GitHub deve ter exatamente o mesmo valor da variável homônima no API Gateway publicado na Vercel.
 - **Deploy da documentação (`deploy-docs.yml`, este repo)** — publica o site MkDocs no GitHub Pages no push a `main`.
 
 Para os detalhes de cada workflow, veja o `.github/workflows/` do respectivo repositório (links no topo desta página).
@@ -117,8 +118,10 @@ Os secrets são configurados em cada repositório GitHub em **Settings → Secre
 |---|---|---|
 | `VERCEL_TOKEN` / `VERCEL_ORG_ID` | Deploys | Autenticação e organização na Vercel |
 | `VERCEL_PROJECT_ID_WEB` / `_API_GATEWAY` / `_IA_ANALYZE` | Deploy do respectivo serviço | ID do projeto na Vercel |
+| `DATABASE_URL` | Deploy do API Gateway | Conexão de produção usada por `drizzle-kit migrate` antes do deploy |
+| `WORKER_TICK_TOKEN` | `ia-worker.yml` do API Gateway | Autentica o agendador no endpoint interno; deve coincidir com a variável da Vercel |
 
-> Os secrets antes usados pelo e2e/homolog (`SUPABASE_*`, `E2E_TEST_*`, `E2E_DATABASE_URL_DEVELOPER`, `BETTER_AUTH_SECRET_DEVELOPER`) **não são mais necessários** no CI. As variáveis de ambiente de runtime de cada serviço continuam sendo configuradas no painel da Vercel do respectivo projeto.
+> Os secrets antes usados pelo e2e/homolog (`SUPABASE_*`, `E2E_TEST_*`, `E2E_DATABASE_URL_DEVELOPER`, `BETTER_AUTH_SECRET_DEVELOPER`) **não são mais necessários** no CI. `DATABASE_URL` permanece necessária no GitHub exclusivamente para aplicar migrations no deploy do Gateway, e `WORKER_TICK_TOKEN` para chamar o worker. As variáveis de runtime continuam configuradas no projeto correspondente da Vercel.
 
 ---
 

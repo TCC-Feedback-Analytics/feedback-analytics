@@ -133,15 +133,20 @@ return { ok: false, error: 'update_failed', message: 'Mensagem para o usuário' 
 
 | Variável | Serviço | Obrigatória |
 |---|---|---|
-| `VITE_SUPABASE_URL` | Frontend | Sim |
-| `VITE_SUPABASE_ANON_KEY` | Frontend | Sim |
 | `VITE_API_BASE_URL` | Frontend | Sim |
-| `VITE_SUPABASE_URL` | API Gateway | Sim |
-| `VITE_SUPABASE_ANON_KEY` | API Gateway | Sim |
-| `IA_ANALYZE_REMOTE_TOKEN` | API Gateway | Não |
-| `IA_ANALYZE_INTERNAL_TOKEN` | IA Analyze | Não |
+| `DATABASE_URL` | API Gateway | Sim |
+| `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` | API Gateway | Sim |
+| `PUBLIC_SITE_URL` / `CORS_ALLOWED_ORIGINS` | API Gateway | Sim |
+| `CORS_ALLOW_VERCEL_PROJECT_PAIR` | API Gateway | Sim (`false` em produção sem previews pareados) |
+| `CORS_VERCEL_WEB_PROJECT_SLUG` / `CORS_VERCEL_API_PROJECT_SLUG` | API Gateway | Somente com pareamento de previews habilitado |
+| `WORKER_TICK_TOKEN` | API Gateway e GitHub Actions | Sim em produção; mesmo valor nos dois lados |
+| `IA_ANALYZE_REMOTE_TOKEN` | API Gateway | Sim no modo remoto |
+| `IA_ANALYZE_INTERNAL_TOKEN` | IA Analyze | Sim; mesmo valor de `IA_ANALYZE_REMOTE_TOKEN` |
 | `IA_ANALYZE_REMOTE_URL` | API Gateway | Sim |
 | `IA_CONFIG_ENCRYPTION_KEY` | API Gateway | Sim |
 | `REQUIRE_USER_IA_KEY` | API Gateway | Sim (`true`) |
+| `SMTP_HOST` / `SMTP_PORT` / `MAIL_FROM` | API Gateway | Sim |
 | `IA_LLM_CONCURRENCY` | IA Analyze | Não |
 | `PORT` | Gateway (3000) / IA (4100) | Não |
+
+`VITE_API_BASE_URL` é a única fonte para o endereço do Gateway no frontend. Não mantenha slugs ou URLs da Vercel fixos no código. Em produção, use `https://feedback-analytics-api-gateway.vercel.app` e faça novo deploy do web após alterar a variável.

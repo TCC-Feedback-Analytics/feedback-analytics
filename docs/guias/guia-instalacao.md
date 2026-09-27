@@ -50,10 +50,18 @@ Cada serviço tem seu próprio `.env.example` — **copie-o para `.env` e preenc
 ### `feedback-analytics-web/.env`
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000   # em produção/preview na Vercel pode ficar vazio (derivação por hostname)
+VITE_API_BASE_URL=http://localhost:3000
 ```
 
 > O frontend fala **apenas com o API Gateway** — não acessa o Supabase diretamente.
+
+Em produção, configure a variável no projeto `feedback-analytics-web` da Vercel com a URL pública exata do Gateway:
+
+```env
+VITE_API_BASE_URL=https://feedback-analytics-api-gateway.vercel.app
+```
+
+O frontend não deriva a URL a partir do hostname ou do nome dos projetos. Como variáveis `VITE_*` são incorporadas ao bundle durante o build, qualquer alteração exige um novo deploy do web.
 
 ### `feedback-analytics-api-gateway/.env`
 
@@ -64,6 +72,9 @@ DATABASE_URL=postgresql://...@...pooler.supabase.com:6543/postgres   # Transacti
 # Autenticação — Better Auth
 BETTER_AUTH_SECRET=segredo_aleatorio_aqui   # gere com: openssl rand -base64 32 (SEM ele o app NÃO sobe)
 BETTER_AUTH_URL=http://localhost:3000        # URL pública do gateway
+PUBLIC_SITE_URL=http://localhost:5173
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+CORS_ALLOW_VERCEL_PROJECT_PAIR=false
 
 # E-mail (confirmação de cadastro, recuperação de senha) — local: Mailpit
 SMTP_HOST=127.0.0.1
@@ -77,12 +88,15 @@ MAIL_FROM=no-reply@feedback.local
 IA_ANALYZE_EXECUTION_MODE=local
 IA_ANALYZE_REMOTE_TOKEN=um_token_secreto_compartilhado
 IA_ANALYZE_REMOTE_URL=http://localhost:4100
+WORKER_TICK_TOKEN=outro_token_secreto
 
 # OpenRouter por empresa (BYO-key)
 IA_CONFIG_ENCRYPTION_KEY=chave_mestra_aleatoria   # gere com: openssl rand -base64 32
 REQUIRE_USER_IA_KEY=true
 PORT=3000
 ```
+
+Em produção, `CORS_ALLOWED_ORIGINS` deve conter `https://feedback-analytics-web.vercel.app`. Os slugs `CORS_VERCEL_WEB_PROJECT_SLUG` e `CORS_VERCEL_API_PROJECT_SLUG` são usados somente se `CORS_ALLOW_VERCEL_PROJECT_PAIR=true`; não há nomes de projetos Vercel definidos como fallback no código.
 
 !!! warning "`BETTER_AUTH_SECRET` é obrigatório"
     Sem `BETTER_AUTH_SECRET` o api-gateway **não sobe**. Gere um valor aleatório com `openssl rand -base64 32` e mantenha-o secreto.
