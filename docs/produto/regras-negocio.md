@@ -25,7 +25,7 @@
 
 > **Escopo:** a regra cobre apenas o identificador **e-mail**. As validações de telefone e documento no cadastro permanecem explícitas (`409 phone_taken` / `409 document_taken`) por serem decisões de UX de cadastro fora do escopo desta regra.
 
-> **Nota (frontend):** `formLogin.tsx` também não diferencia conta não confirmada — exibe a mesma mensagem genérica e não oferece reenvio nesse ponto. O reenvio de confirmação continua disponível nos fluxos de pós-cadastro (`registerEmailPendingNotice.tsx`) e de link de ativação expirado (`/auth/link-expired`).
+> **Nota (frontend):** `formLogin.tsx` também não diferencia conta não confirmada — exibe a mesma mensagem genérica. Depois de um `401 invalid_credentials`, mostra um aviso neutro ("se você acabou de se cadastrar e não recebeu o e-mail…") com link para `/resend-confirmation`, e o diálogo "Problemas para entrar?" oferece o mesmo caminho; nenhum dos dois revela se a conta existe. O reenvio também está disponível no pós-cadastro (`registerEmailPendingNotice.tsx`) e na página de link expirado (`/auth/link-expired`).
 
 ---
 
@@ -48,7 +48,7 @@ O campo `trial_ends_at` é uma timestamp com fuso horário (`timestamptz`). O c�
 
 Após o cadastro, o Better Auth envia um e-mail com link de confirmação (`emailVerification.sendOnSignUp`). O link expira em **1 hora** (padrão do Better Auth). O login só é liberado depois da confirmação (`requireEmailVerification`).
 
-Para pedir um novo link, a página `/auth/link-expired` usa o endpoint `POST /api/public/auth/resend-confirmation`, que chama `sendVerificationEmail` do Better Auth. A resposta é sempre genérica (RNE-014) e o reenvio é limitado por IP e por hash do e-mail, com intervalo mínimo entre envios; ao estourar o limite, responde `429 rate_limited` com o cabeçalho `Retry-After`.
+Se o link estiver expirado ou inválido, o Better Auth redireciona para `/auth/success?error=<código>` (ex.: `TOKEN_EXPIRED`, `INVALID_TOKEN`), e a página `AuthSuccess` encaminha o usuário para `/auth/link-expired` em vez de exibir a confirmação. Para pedir um novo link, essa página usa o endpoint `POST /api/public/auth/resend-confirmation`, que chama `sendVerificationEmail` do Better Auth. A resposta é sempre genérica (RNE-014) e o reenvio é limitado por IP e por hash do e-mail, com intervalo mínimo entre envios; ao estourar o limite, responde `429 rate_limited` com o cabeçalho `Retry-After`.
 
 #### Constraint de `account_type`
 
