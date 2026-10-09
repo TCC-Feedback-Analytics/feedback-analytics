@@ -36,7 +36,7 @@ foi transferida para lá; este repositório mantém a documentação do sistema.
 * **Frontend:** React 19 (TypeScript) + Vite + Tailwind CSS 4.x
 * **Backend:** Node.js (TypeScript) + Express
 * **Banco de Dados:** PostgreSQL (Supabase)
-* **IA/Analytics:** provedor LLM externo — atualmente Google Gemini API
+* **IA/Analytics:** provedor LLM externo — OpenRouter, com chave e modelo configurados por empresa no perfil (BYO-key)
 * **CI/CD & Infra:** GitHub Actions, Vercel Serverless Functions, Supabase
 
 ---
