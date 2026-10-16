@@ -20,8 +20,8 @@ Todas as métricas das telas seguem o escopo escolhido no cabeçalho. O escopo d
 Consequências que importam para a leitura:
 
 - **"Geral" ≠ empresa inteira.** O nome sugere o total, mas é só o canal geral da empresa. Hoje não há na interface uma visão do total da empresa.
-- **Nenhuma métrica diz, na tela, de qual escopo está falando.** O escopo só aparece no seletor do cabeçalho; os cards e gráficos não repetem essa informação.
-- O rótulo "Total acumulado no workspace", no card de feedbacks recebidos do Dashboard, é impreciso: o número é **do escopo selecionado**, não do workspace inteiro.
+- **Antes da reorganização, nenhuma métrica dizia na tela de qual escopo estava falando**: o escopo só aparecia no seletor do cabeçalho. Resolvido pela etiqueta de escopo (abaixo).
+- O rótulo "Total acumulado no workspace", no card de feedbacks recebidos do Dashboard, era impreciso (o número é do escopo selecionado). O card saiu na reorganização.
 
 ### Decisão: etiqueta de escopo em cada seção (16/10/2026)
 
@@ -43,7 +43,7 @@ Cada seção do Dashboard ("Avaliação por estrelas", "Perguntas do formulário
 
 ## Catálogo de métricas
 
-> **Situação (16/10/2026):** inventário conferido no código das branches `developer` da Web e do API Gateway. A coluna **Decisão** registra o que o dono do produto decidiu na revisão de 16/10/2026, métrica por métrica. **Nada foi implementado ainda**: as telas descritas na seção **Organização decidida**, logo após o catálogo, são o alvo da próxima etapa.
+> **Situação (16/10/2026):** inventário conferido no código das branches `developer` da Web e do API Gateway. A coluna **Decisão** registra o que o dono do produto decidiu na revisão de 16/10/2026, métrica por métrica. A coluna **Onde aparece hoje** descreve as telas **antes** da reorganização. As decisões foram **implementadas na Web** (só front-end, sem mudar API nem contratos) e as telas resultantes estão em **Organização decidida**, logo após o catálogo.
 
 Legenda: **Mantém** · **Funde** (mesma informação de outra métrica) · **Renomeia** · **Muda de lugar** · **Sai**.
 
@@ -89,7 +89,14 @@ Fonte: `GET /feedbacks/analysis` e `GET /feedbacks/insights/report`. **Só exist
 **Indicador de Precisão (decisão de 16/10/2026).** Faixa provável e selo de confiança respondem à mesma pergunta ("dá para confiar no número?") e passam a ser **um indicador só: Precisão alta, média ou baixa**.
 
 - **Vocabulário próprio**, para não confundir com o rótulo da nota (ex.: "4,2 Boa").
-- **Calculado pela largura da faixa provável**, que já considera a variação e a quantidade de respostas, com uma **quantidade mínima** como trava (poucas respostas iguais dariam uma faixa de largura zero). Os limites de largura para médias e para porcentagens são definidos na implementação.
+- **Calculado pela largura da faixa provável**, que já considera a variação e a quantidade de respostas, com uma **quantidade mínima** como trava (poucas respostas iguais dariam uma faixa de largura zero). Limites usados, pela meia-largura da faixa (o ± dela):
+
+    | Tipo de número | Alta | Média | Baixa |
+    |---|---|---|---|
+    | Médias (escala 1–5) | até ±0,25 | até ±0,5 | acima de ±0,5 |
+    | Porcentagens (e frações, como o tom dos comentários) | até ±5 p.p. | até ±10 p.p. | acima de ±10 p.p. |
+
+    Com **menos de 10 respostas**, a precisão é sempre **baixa** (mesmo corte do antigo selo "Dados insuficientes").
 - **Métricas sem faixa** (saldos, contagens) herdam a precisão da base de onde vêm.
 - **Representatividade** (se quem respondeu representa todos os clientes) não é medida por cálculo: aparece só como aviso no detalhe, nunca no rótulo.
 - O rótulo abre um **painel na mesma tela** com a faixa em linguagem simples, o número de respostas, por que aquele nível, como melhorar e o aviso de representatividade.
@@ -101,7 +108,7 @@ Calculados, mas **sem uso em nenhuma tela hoje**: `sentiment_score` (intensidade
 
 ## Organização decidida
 
-Resultado da revisão com o dono do produto em 16/10/2026. O princípio: o sistema separa **o que o cliente marcou** (estrelas e perguntas) de **o que o cliente escreveu** (comentários lidos pela IA). No Dashboard fica o resumo; o detalhe fica em páginas próprias. Ainda **não implementado**.
+Resultado da revisão com o dono do produto em 16/10/2026. O princípio: o sistema separa **o que o cliente marcou** (estrelas e perguntas) de **o que o cliente escreveu** (comentários lidos pela IA). No Dashboard fica o resumo; o detalhe fica em páginas próprias. **Implementado na Web** em cinco fases, uma PR por fase: fundações (rótulo da nota, Precisão e etiqueta de escopo), estrelas, perguntas, comentários e guia.
 
 ### Dashboard
 
@@ -116,7 +123,8 @@ Perguntas do formulário                             📍 QR geral da empresa
   (até 3 perguntas, na ordem do formulário)
 
 Análise dos comentários ✨IA                         📍 QR geral da empresa
-  Tom dos comentários · Assuntos que mais impactam · Resumo e recomendações da IA
+  Tom dos comentários: +45 · Positivo · 20 comentários analisados · Precisão
+  Resumo e recomendações da IA       Ver a análise completa dos comentários →
 ```
 
 - **Avaliação por estrelas.** O nome deixa claro que é só a nota de 1 a 5 ("feedback" sugeria tudo o que o cliente mandou). Os cards falam de **avaliações**. Saem do Dashboard o card "Feedbacks recebidos" e o bloco "Satisfação e sentimento".
@@ -125,7 +133,7 @@ Análise dos comentários ✨IA                         📍 QR geral da empresa
   - **Tipo sem item escolhido:** a seção não lista perguntas (elas seriam de itens diferentes, sem identificação). Mostra "Cada produto tem as suas perguntas. Escolha um para vê-las", com os itens como links.
   - **Item sem perguntas:** "Este item não tem perguntas no formulário".
   - **Perguntas excluídas do formulário:** um link "Perguntas que saíram do formulário" no fim da seção.
-- **Análise dos comentários ✨IA.** Novo nome da antiga seção "Insights": termo em português que diz de onde vêm os dados. O botão "Gerar Insights com IA", o "Relatório de Insights", os passos do guia e os títulos acompanham o nome.
+- **Análise dos comentários ✨IA.** Novo nome da antiga seção "Insights": termo em português que diz de onde vêm os dados. Acompanham o nome o botão "Gerar Insights com IA", que vira **"Analisar comentários com IA"**, o "Relatório de Insights", que vira **"Resumo e recomendações da IA"**, os passos do guia e os títulos. No Dashboard, o bloco mostra o **tom dos comentários** e o **resumo da IA**; os assuntos ficam na Visão geral.
 
 ### Páginas de detalhe (dinâmicas, pelo escopo)
 
@@ -136,8 +144,14 @@ Análise dos comentários ✨IA                         📍 QR geral da empresa
 
 Hoje: Relatórios, Emocional, Estatísticas e Feedbacks › Analisados (Todos, Positivos, Negativos). Passa a ser:
 
-- **Visão geral:** Tom dos comentários · Assuntos que mais impactam (categorias como reserva) · Resumo e recomendações da IA.
-- **Comentários (lista):** filtros Positivos · Neutros · Negativos · Nota e texto não combinam.
+- **Visão geral** (`/user/insights/overview`): Tom dos comentários · Assuntos que mais impactam (categorias como reserva) · Resumo e recomendações da IA.
+- **Comentários** (`/user/insights/comments`): a lista segue o escopo do cabeçalho (Feedbacks › Analisados o ignorava), com os filtros Todos · Positivos · Neutros · Negativos · Nota e texto não combinam. O filtro fica no endereço (`?filtro=`).
+
+Os endereços antigos redirecionam: Relatórios, Emocional e Estatísticas levam à Visão geral; Feedbacks › Analisados (Todos, Positivos, Negativos) leva à lista, já com o filtro do tom.
+
+### Guia do sistema
+
+Os passos do guia acompanham a nova estrutura, na ordem: Dashboard · **Avaliação por estrelas** · **Perguntas do formulário** · **Análise dos comentários** (Visão geral) · **Comentários** · Feedback geral · Catálogo · Configuração de IA · Perfil · Dados da empresa (10 passos). O guia que passa por cada métrica do Dashboard fica para depois.
 
 ### O que sai
 
@@ -194,7 +208,7 @@ A lente de **Sentimento** lê **o que o cliente escreveu**. Só aparece quando h
 ### Net Sentiment Score / NSS (`netSentimentScore`)
 
 - **O que é:** a principal métrica de **clima textual** — o saldo entre feedbacks positivos e negativos identificados pela IA.
-- **Como se lê:** resultado em **[-100, 100]**. No relatório, o NSS define o **clima** exibido — Clima Positivo, Neutro ou de Atenção — com uma **banda neutra de ±5** (não mais o voto majoritário de sentimento).
+- **Como se lê:** resultado em **[-100, 100]**. No bloco **"Tom dos comentários"**, o NSS aparece com um resumo em palavras: **Positivo**, **Neutro** ou **Atenção**, com uma **banda neutra de ±5** (ex.: "+45 · Positivo"). Esse resumo substitui o antigo "clima emocional" do relatório.
 - **Como é calculada:** `(positivos − negativos) / total × 100`. Referência: Net Sentiment Score (Thematic).
 
 ### Distribuição de emoções
@@ -208,7 +222,7 @@ A lente de **Sentimento** lê **o que o cliente escreveu**. Só aparece quando h
 - **O que é:** a **intensidade** do sentimento de cada texto, individualmente, além do rótulo categórico (positive/neutral/negative).
 - **Como se lê:** número em **[-1, 1]** — quanto mais próximo de -1, mais negativo; de +1, mais positivo. Refina o sentimento categórico com a magnitude.
 - **Como é calculada:** atribuído pela IA por feedback (coluna `sentiment_score` em `feedback_analysis`). Cada item também traz `confidence` em **[0, 1]**, indicando o grau de certeza da classificação.
-- **Onde aparece:** em nenhuma tela hoje (revisão de 16/10/2026). Os "Pontos de dor mais intensos" de Insights › Emocional são ordenados pela nota, não por este valor.
+- **Onde aparece:** em nenhuma tela hoje (revisão de 16/10/2026).
 
 ---
 
@@ -227,7 +241,7 @@ Cada métrica carrega uma camada derivada do tamanho da amostra (`n`), na base d
 | 30–99 | `moderate` (Confiança média) | Direcionamento confiável |
 | 100+ | `good` (Confiança alta) | Base sólida para decisão |
 
-Na interface, isso vira o **selo de confiança** (`ConfidenceBadge`): um badge clicável que abre uma explicação em linguagem simples. **"Amostra pequena"** significa, na prática, um `n` baixo (especialmente abaixo de 30): a métrica ainda é mostrada, mas a faixa provável fica larga e a leitura deve ser tratada como tendência, não como verdade fechada.
+Na interface, as camadas deram lugar ao indicador **Precisão** (`PrecisionBadge`), que usa a largura da faixa provável e mantém o corte de 10 respostas (ver [Operacionais e de confiabilidade](#operacionais-e-de-confiabilidade)). O rótulo é clicável e abre uma explicação em linguagem simples. **"Amostra pequena"** significa, na prática, um `n` baixo (especialmente abaixo de 30): a métrica ainda é mostrada, mas a faixa provável fica larga e a leitura deve ser tratada como tendência, não como verdade fechada.
 
 ### Intervalo de Wilson (proporções)
 
@@ -272,7 +286,7 @@ Quando a estrela e o texto contam histórias opostas, o item é marcado:
 - **`rating_misuse`** — nota baixa (1–2) com texto positivo: o cliente provavelmente errou a escala.
 - **`null`** — nota e texto coerentes entre si.
 
-Na interface, os itens marcados aparecem em Insights › Emocional, no grupo "Divergências (nota × texto)", com até 5 exemplos.
+Na interface, os itens marcados aparecem na lista de **Comentários**, no filtro **"Nota e texto não combinam"**, e cada um leva o selo com o mesmo nome.
 
 ---
 
