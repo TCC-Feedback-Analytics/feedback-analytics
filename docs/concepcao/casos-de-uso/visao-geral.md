@@ -30,7 +30,7 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 | [UC-08](uc-08-configuracao-coleta-ia.md) | Configuração de Dados de Coleta (IA) | Gestor | Preencher contexto do negócio para a IA |
 | [UC-09](uc-09-dashboard.md) | Visualização do Dashboard | Gestor | Visão geral e atualizada dos feedbacks |
 | [UC-10](uc-10-listagem-feedbacks.md) | Listagem e Filtragem de Feedbacks | Gestor | Navegar, filtrar e detalhar feedbacks |
-| [UC-11](uc-11-insights-ia.md) | Disparo e Visualização de Insights IA | Gestor | Gerar análise com IA e visualizar relatório |
+| [UC-11](uc-11-insights-ia.md) | Análise dos comentários com IA | Gestor | Analisar os comentários com IA e ver o tom, os assuntos, o resumo e a lista |
 | [UC-12](uc-12-gestao-perfil.md) | Gestão de Perfil | Gestor | Atualizar dados pessoais e de contato |
 
 ---
@@ -87,7 +87,7 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 |---|---|
 | UC-09 | Dashboard com métricas, gráficos, estratégia de coleta e últimos 5 feedbacks |
 | UC-10 | Listagem paginada com 4 filtros e modal de detalhes completo por feedback |
-| UC-11 | Disparo de análise de IA por escopo, visualização de relatório, análise emocional e estatísticas |
+| UC-11 | Análise dos comentários com IA por escopo: tom dos comentários, assuntos que mais impactam, resumo e recomendações e lista de comentários com filtros |
 
 ---
 
@@ -112,7 +112,7 @@ UC-05 (QR Code)
   └── UC-04 (Envio de feedback) — QR Code precisa estar ativo para aceitar envios
 
 UC-08 (Contexto IA)
-  └── UC-11 (Insights) — os 3 campos de contexto (objetivo, objetivo analítico, resumo) devem estar preenchidos
+  └── UC-11 (Análise dos comentários) — os 3 campos de contexto (objetivo, objetivo analítico, resumo) devem estar preenchidos
 
 UC-04 (Coleta de feedback)
   └── UC-09 (Dashboard) — dados úteis dependem de feedbacks coletados
