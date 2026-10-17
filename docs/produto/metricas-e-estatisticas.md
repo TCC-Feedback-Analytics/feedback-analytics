@@ -174,6 +174,47 @@ A configuração separa três coisas que o nome "Feedback geral" misturava (e qu
 - A página do item do Catálogo segue o mesmo desenho: dados do item, **Perguntas** e **Canais de coleta**.
 - Todas as respostas de um escopo entram nas mesmas métricas, seja qual for o canal. A comparação **por canal** ("o NFC trouxe mais respostas que o QR?") fica para depois, como filtro, junto com a etapa 02 (períodos). O canal não vira um escopo novo.
 
+### Período e comparação (etapa 02, 17/10/2026)
+
+As métricas deixam de mostrar sempre o histórico inteiro. O gestor escolhe um recorte de tempo e pode comparar o período com o anterior, ou dois itens entre si.
+
+**Seletor de período.** Fica ao lado do escopo, na barra abaixo do cabeçalho. As opções são:
+
+- Todo o período (padrão);
+- Últimos 7 dias, Últimos 30 dias, Últimos 3 meses, Últimos 6 meses;
+- Personalizado, com data inicial e final.
+
+Como o período funciona:
+
+- **Janelas móveis.** As janelas contam dias inteiros e incluem hoje: "Últimos 7 dias" é hoje e os 6 dias anteriores. No Personalizado, o dia final entra inteiro.
+- **Fuso do gestor.** A Web resolve o período no fuso do navegador e envia ao gateway instantes absolutos (`start_date`/`end_date`, com o início incluído e o fim excluído).
+- **Onde vale.** O período vale para o Dashboard, Todas as métricas de estrelas, as páginas de perguntas, o tom dos comentários e a lista de comentários.
+- **Etiqueta de escopo.** A etiqueta passa a dizer o período ("Produto · Pizza · Últimos 30 dias"). Os textos de vazio e de precisão também ("no produto Pizza nos últimos 30 dias").
+
+O que **não** segue o período:
+
+- **Contagens e regras de toda a história.** O aviso "aguardando análise", os marcos de feedback e o mínimo de feedbacks para a IA continuam contando o histórico inteiro do escopo.
+- **O resumo da IA.** Ele não é recortado por data. Com um período escolhido, aparece o aviso "O resumo considera todos os comentários analisados". O diagnóstico por período fica fora desta etapa.
+- **A lista de Feedbacks recebidos.** Ela não tem período.
+
+**Comparar com o período anterior.** Com um período escolhido, aparece o botão **Comparar com o período anterior**.
+
+- **Período de referência.** O anterior tem o mesmo tamanho e vem logo antes. Por exemplo: "30 dias anteriores", "3 meses anteriores" ou, no Personalizado, as datas.
+- **Onde aparecem as diferenças.** Cada métrica mostra a diferença com seta e cor: média, % positivas, % críticas (subir é piorar), nota de cada pergunta e tom dos comentários.
+- **Diferença incerta.** Quando as margens de erro dos dois períodos se sobrepõem, a diferença aparece em cinza como **Diferença incerta**, porque pode ser só acaso. As margens são:
+  - média e perguntas: o IC t que já vem do gateway;
+  - positivas e críticas: Wilson;
+  - tom: a margem do NSS, calculada pelas contagens de positivos, neutros e negativos.
+- **Sem referência.** Se não há avaliações no período anterior, aparece **Sem dados no período anterior**.
+
+**Comparar itens (A × B).** É uma página própria (`/user/compare`), no menu lateral e no link "Comparar dois itens" da Avaliação por estrelas.
+
+- **Quais itens.** Compara dois itens do **mesmo tipo** (dois produtos, dois serviços ou dois departamentos), no mesmo período. "Geral" e "Todos os…" não entram, porque não são um item. Um tipo só aparece quando tem pelo menos 2 itens.
+- **Quais métricas.** Mostra só as que os dois têm: nº de avaliações, média, % positivas, % críticas, tom e precisão da média. As perguntas ficam de fora, porque cada item tem as suas.
+- **Quem está melhor.** Esta coluna diz o item e a diferença. Usa as mesmas margens da comparação com o período anterior, então também pode dizer **Diferença incerta**.
+
+Ficam para depois: diagnóstico por período, comparar mais de 2 itens e o período na lista de Feedbacks recebidos.
+
 ---
 
 ## Problemas encontrados
