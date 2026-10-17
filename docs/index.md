@@ -76,13 +76,13 @@ A plataforma é **serverless** (Vercel Functions + CDN) e distribuída em **repo
 
     [:octicons-arrow-right-24: Ver métricas](produto/metricas-e-estatisticas.md)
 
-- :material-lightbulb-on: __Painel de insights__
+- :material-lightbulb-on: __Análise dos comentários__
 
     ---
 
-    Como a IA transforma centenas de feedbacks em um relatório com recomendações.
+    Como a IA lê centenas de comentários e mostra o tom, os assuntos que mais impactam e um resumo com recomendações.
 
-    [:octicons-arrow-right-24: Ver insights](produto/painel-insights-ia.md)
+    [:octicons-arrow-right-24: Ver a análise](produto/painel-insights-ia.md)
 
 - :material-qrcode-scan: __Coleta via QR Code__
 
