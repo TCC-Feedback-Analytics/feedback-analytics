@@ -68,11 +68,11 @@ Visão geral e Dashboard exibem o "Resumo e recomendações da IA" atualizado
 
 ## Seletor de Escopo
 
-O escopo é escolhido no **seletor do cabeçalho**, o mesmo do Dashboard. Cada seção mostra uma **etiqueta de escopo** clicável (ex.: "QR geral da empresa", "Produto · Pizza") que abre esse seletor.
+O escopo é escolhido no **seletor do cabeçalho**, o mesmo do Dashboard. Cada seção mostra uma **etiqueta de escopo** clicável (ex.: "Avaliação geral da empresa", "Produto · Pizza") que abre esse seletor.
 
 | Escopo | Disponível quando |
 |---|---|
-| Geral (só o QR geral da empresa) | Sempre |
+| Geral (só a avaliação geral da empresa) | Sempre |
 | Produto | `uses_company_products = true` **e** ≥ 1 item cadastrado |
 | Serviço | `uses_company_services = true` **e** ≥ 1 item cadastrado |
 | Departamento | `uses_company_departments = true` **e** ≥ 1 item cadastrado |

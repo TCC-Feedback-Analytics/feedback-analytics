@@ -13,12 +13,12 @@
 1. O gestor acessa o dashboard.
 2. O dashboard segue o **escopo selecionado** no topo (Empresa, Produto, Serviço ou Departamento, com o item escolhido quando aplicável); o sistema carrega em paralelo as estatísticas e as métricas por pergunta **dentro desse escopo**.
 3. Na **saudação** ("Olá, ..."), o sistema exibe a contagem de feedbacks aguardando análise no escopo selecionado (`pendingCount`) — por exemplo, "3 feedbacks aguardando análise neste escopo" ou "Tudo em dia — nenhum feedback aguardando análise neste escopo". Sem nenhum feedback ainda, convida o gestor a compartilhar o formulário pelo QR Code.
-4. O dashboard exibe três seções, cada uma com uma **etiqueta de escopo** clicável no topo (ex.: "QR geral da empresa", "Produto · Pizza") que abre o seletor de escopo:
+4. O dashboard exibe três seções, cada uma com uma **etiqueta de escopo** clicável no topo (ex.: "Avaliação geral da empresa", "Produto · Pizza") que abre o seletor de escopo:
    - **Avaliação por estrelas:** 3 cards — **Média** (`4,2 /5 ★ Boa · 128 avaliações`, com o indicador de **Precisão**), **Positivas (4–5★)** e **Críticas (1–2★)**, com contagem e %. O link **"Ver todas as métricas de estrelas"** abre `/user/ratings`, com a distribuição por nota e as neutras (3★).
    - **Perguntas do formulário:** as perguntas **atuais**, na ordem do formulário (até 3), cada uma com nota /5, rótulo, respostas, % de satisfeitos e Precisão, e o link **"Ver todas as métricas desta pergunta"** (`/user/questions/:questionId`). A pior pode ter destaque. Com um tipo escolhido sem item, a seção pede para escolher um item. No fim, o link **"Perguntas que saíram do formulário"** aparece quando houver alguma.
    - **Análise dos comentários ✨IA:** o bloco **Tom dos comentários** (barra positivo/neutro/negativo, saldo em palavras e Precisão) e o **Resumo e recomendações da IA**, com o link **"Ver a análise completa dos comentários"** (`/user/insights/overview`).
    - Um link **"Ver feedbacks"** na saudação que leva à listagem completa (`/user/feedbacks/all`).
-5. Um **cartão de compartilhamento do QR** (ShareQrCard) na saudação aponta para o formulário/QR do escopo selecionado (QR geral da empresa no escopo Empresa; QR do item quando há item escolhido; lista do catálogo do tipo quando o tipo está selecionado sem item).
+5. Um **cartão de compartilhamento do QR** (ShareQrCard) na saudação aponta para o formulário/QR do escopo selecionado (o QR geral da Avaliação da empresa no escopo Geral; QR do item quando há item escolhido; lista do catálogo do tipo quando o tipo está selecionado sem item).
 6. Ao acessar o dashboard logo após o login, o sistema exibe um toast de boas-vindas.
 
 ---

@@ -140,9 +140,9 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
 
 Rota: `/user/edit/feedback-general` · **Autenticado**.
 
-### CT-UC05-01 — Tela de Feedback geral carrega com o QR Code
+### CT-UC05-01 — Tela Avaliação da empresa carrega com o QR Code
 
-- **Objetivo:** confirmar que a tela de feedback geral exibe o QR Code da empresa (ou o controle de ativação).
+- **Objetivo:** confirmar que a tela Avaliação da empresa (antes "Feedback geral") exibe, na seção **Canais de coleta**, o QR Code da empresa (ou o controle de ativação).
 - **Pré-condições:** logado.
 - **Passos:**
   1. Navegue para `/user/edit/feedback-general`.
@@ -233,7 +233,7 @@ Rota: `/user/dashboard` · **Autenticado**.
 
 - **Passos:**
   1. No dashboard, localize a seção **"Avaliação por estrelas"**.
-- **Resultado esperado:** aparece o card **"Média"** com a nota /5, o rótulo (Ótima, Boa, Mediana, Ruim ou Péssima) e o número de avaliações, **ou** "Ainda sem avaliações" no escopo. A etiqueta de escopo aparece no canto da seção (ex.: "QR geral da empresa").
+- **Resultado esperado:** aparece o card **"Média"** com a nota /5, o rótulo (Ótima, Boa, Mediana, Ruim ou Péssima) e o número de avaliações, **ou** "Ainda sem avaliações" no escopo. A etiqueta de escopo aparece no canto da seção (ex.: "Avaliação geral da empresa").
 
 ### CT-UC09-03 — Dashboard exibe avaliações positivas e críticas
 
