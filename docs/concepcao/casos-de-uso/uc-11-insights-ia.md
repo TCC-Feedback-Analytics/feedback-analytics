@@ -11,7 +11,7 @@
 ## Fluxo Principal (Caminho Feliz)
 
 1. O gestor acessa a **Visão geral** da Análise dos comentários (`/user/insights/overview`). O endereço `/user/insights` e os antigos (Relatórios, Emocional, Estatísticas) levam para ela.
-2. O sistema carrega a análise e o resumo existentes (se houver) para o **escopo selecionado no cabeçalho**: Geral (só o QR geral da empresa), Produto, Serviço ou Departamento. Com um tipo escolhido, o seletor já escolhe o primeiro item.
+2. O sistema carrega a análise e o resumo existentes (se houver) para o **escopo selecionado no cabeçalho**: Geral (só a avaliação geral da empresa, sem os itens do Catálogo), Produto, Serviço ou Departamento. Com um tipo escolhido, o seletor já escolhe o primeiro item.
 3. O gestor clica em **"Analisar comentários com IA"**, na barra abaixo do cabeçalho. A janela mostra as duas etapas:
    - **1. Analisar novos feedbacks** — a IA lê os feedbacks ainda não analisados e classifica o tom (positivo, neutro, negativo), as categorias e os assuntos.
    - **2. Escrever o resumo e as recomendações** — a IA usa os feedbacks analisados para escrever o resumo estratégico e as recomendações.
@@ -33,7 +33,7 @@
 ## Confiança dos números e ajuda contextual
 
 - **Precisão:** o tom dos comentários traz um indicador **Precisão alta, média ou baixa**, calculado pela largura da faixa provável do % de positivos; com menos de 10 comentários analisados é sempre baixa. O rótulo é clicável e abre um painel que explica a faixa em linguagem simples, o número de comentários, o porquê do nível e como melhorar.
-- **Etiqueta de escopo:** cada seção diz de qual escopo está falando (ex.: "QR geral da empresa", "Produto · Pizza"); clicar nela abre o seletor.
+- **Etiqueta de escopo:** cada seção diz de qual escopo está falando (ex.: "Avaliação geral da empresa", "Produto · Pizza"); clicar nela abre o seletor.
 - **Ajuda contextual:** ícones de ajuda (`?`) espalhados pelas telas explicam cada métrica em linguagem acessível ao passar/clicar, evitando que o gestor precise sair da página para entender um número.
 
 ---

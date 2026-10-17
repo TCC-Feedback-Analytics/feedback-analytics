@@ -29,12 +29,13 @@ Cada seção do Dashboard ("Avaliação por estrelas", "Perguntas do formulário
 
 | Escolha no cabeçalho | Etiqueta |
 |---|---|
-| Geral | **QR geral da empresa** |
+| Geral | **Avaliação geral da empresa** |
 | Tipo sem item | **Todos os produtos (3)** · **Todos os serviços (2)** · **Todos os departamentos (4)** |
 | Item | **Produto · Pizza** · **Serviço · Entrega** · **Departamento · Cozinha** |
 
-- "Geral" vira "QR geral da empresa" só na etiqueta. A renomeação do seletor fica para a visão total da empresa (ver abaixo).
-- Textos de vazio e o painel de precisão citam o escopo (ex.: "Ainda sem avaliações no QR geral da empresa").
+- "Geral" vira "Avaliação geral da empresa" só na etiqueta. A renomeação do seletor fica para a visão total da empresa (ver abaixo).
+- **Ajuste de 17/10/2026:** a etiqueta dizia "QR geral da empresa". Ela não cita mais um canal, porque o escopo da empresa vai juntar mais de um canal de coleta (QR Code hoje, NFC depois). Veja **Configuração da coleta: escopo, perguntas e canais**, abaixo.
+- Textos de vazio e o painel de precisão citam o escopo (ex.: "Ainda sem avaliações na empresa (avaliação geral)").
 - Um componente só para todas as telas, para o texto nunca divergir.
 
 **Adiado:** a **visão total da empresa** (todos os escopos juntos) e a renomeação do "Geral" serão planejadas com cuidado mais à frente.
@@ -113,16 +114,16 @@ Resultado da revisão com o dono do produto em 16/10/2026. O princípio: o siste
 ### Dashboard
 
 ```
-Avaliação por estrelas                              📍 QR geral da empresa
+Avaliação por estrelas                              📍 Avaliação geral da empresa
   Média: 4,2 /5 ★ Boa · 128 avaliações   Positivas (4–5★): 82 · 64%
   Críticas (1–2★): 10 · 8%                    Ver todas as métricas de estrelas →
 
-Perguntas do formulário                             📍 QR geral da empresa
+Perguntas do formulário                             📍 Avaliação geral da empresa
   Pergunta 1 · "Como foi o atendimento?"  3,1 /5 Mediana · 64 respostas · 40% satisfeitos
                                           Ver todas as métricas desta pergunta →
   (até 3 perguntas, na ordem do formulário)
 
-Análise dos comentários ✨IA                         📍 QR geral da empresa
+Análise dos comentários ✨IA                         📍 Avaliação geral da empresa
   Tom dos comentários: +45 · Positivo · 20 comentários analisados · Precisão
   Resumo e recomendações da IA       Ver a análise completa dos comentários →
 ```
@@ -151,13 +152,27 @@ Os endereços antigos redirecionam: Relatórios, Emocional e Estatísticas levam
 
 ### Guia do sistema
 
-Os passos do guia acompanham a nova estrutura, na ordem: Dashboard · **Avaliação por estrelas** · **Perguntas do formulário** · **Análise dos comentários** (Visão geral) · **Comentários** · Feedback geral · Catálogo · Configuração de IA · Perfil · Dados da empresa (10 passos). O guia que passa por cada métrica do Dashboard fica para depois.
+Os passos do guia acompanham a nova estrutura, na ordem: Dashboard · **Avaliação por estrelas** · **Perguntas do formulário** · **Análise dos comentários** (o card do Dashboard) · **Visão geral da análise** · **Comentários** · Avaliação da empresa · Catálogo · Configuração de IA · Perfil · Dados da empresa (11 passos). O card do Dashboard vem antes das páginas da análise, para o guia não pular de página no meio do Dashboard. O guia que passa por cada métrica do Dashboard fica para depois.
 
 ### O que sai
 
 - Página **Insights › Perguntas** e o item do menu. O passo "Perguntas" do guia passa a apontar para as perguntas no Dashboard.
 - **Palavras-chave**, "Perguntas com menor nota", o bloco "Satisfação e sentimento" e o card "Feedbacks recebidos".
 - As páginas **Emocional** e **Estatísticas**, e o resumo de métricas de **Feedbacks › Analisados**, absorvidos pela nova estrutura.
+
+### Configuração da coleta: escopo, perguntas e canais (17/10/2026)
+
+A configuração separa três coisas que o nome "Feedback geral" misturava (e que parecia a lista de feedbacks recebidos):
+
+| Camada | Pergunta que responde | Onde fica |
+|---|---|---|
+| **Escopo** | O que o cliente avalia? | A empresa como um todo (**Avaliação da empresa**) ou um item do **Catálogo** (produto, serviço, departamento) |
+| **Perguntas** | O que se pergunta? | Seção **Perguntas** de cada escopo |
+| **Canais de coleta** | Por onde a resposta chega? | Seção **Canais de coleta** de cada escopo: hoje **QR Code e link**; o **NFC** (etapa 06 do roadmap) entra como mais um card |
+
+- A aba "Feedback geral" passou a se chamar **"Avaliação da empresa"**. O endereço continua `/user/edit/feedback-general`. No celular, o atalho se chama "Avaliação".
+- A página do item do Catálogo segue o mesmo desenho: dados do item, **Perguntas** e **Canais de coleta**.
+- Todas as respostas de um escopo entram nas mesmas métricas, seja qual for o canal. A comparação **por canal** ("o NFC trouxe mais respostas que o QR?") fica para depois, como filtro, junto com a etapa 02 (períodos). O canal não vira um escopo novo.
 
 ---
 
