@@ -138,7 +138,7 @@ Análise dos comentários ✨IA                         📍 Avaliação geral d
 
 ### Páginas de detalhe (dinâmicas, pelo escopo)
 
-- **Todas as métricas de estrelas:** distribuição das avaliações (1 a 5★), com as neutras (3★). No futuro, a evolução da nota no tempo (etapa de métricas por período).
+- **Todas as métricas de estrelas:** distribuição das avaliações (1 a 5★), com as neutras (3★), o movimento das avaliações no tempo, os dias e horários de pico e os clientes que voltam (veja **Métricas que não vêm só da nota**, abaixo).
 - **Página de uma pergunta:** a pergunta escolhida e **cada subpergunta dela**, com nota, distribuição de péssimo a ótimo, % de satisfeitos e precisão. No fim, histórico recolhido (versões antigas do texto e subperguntas desativadas).
 
 ### Seção "Análise dos comentários" ✨IA: de 6 páginas para 2
@@ -152,7 +152,25 @@ Os endereços antigos redirecionam: Relatórios, Emocional e Estatísticas levam
 
 ### Guia do sistema
 
-Os passos do guia acompanham a nova estrutura, na ordem: Dashboard · **Avaliação por estrelas** · **Perguntas do formulário** · **Análise dos comentários** (o card do Dashboard) · **Visão geral da análise** · **Comentários** · Avaliação da empresa · Catálogo · Configuração de IA · Perfil · Dados da empresa (11 passos). O card do Dashboard vem antes das páginas da análise, para o guia não pular de página no meio do Dashboard. O guia que passa por cada métrica do Dashboard fica para depois.
+Os passos do guia acompanham a nova estrutura. Com a etapa 02 e as métricas novas (18/10/2026), são 15 passos, na ordem:
+
+1. Dashboard;
+2. **Escopo e período**;
+3. **Avaliação por estrelas**;
+4. **Movimento das avaliações**;
+5. **Perguntas do formulário**, com o peso na nota e o "Melhore primeiro";
+6. **Análise dos comentários** (o card do Dashboard);
+7. **Visão geral da análise**;
+8. **Comentários**;
+9. **Comparar itens**;
+10. **Todas as métricas de estrelas**;
+11. Avaliação da empresa;
+12. Catálogo;
+13. Configuração de IA;
+14. Perfil;
+15. Dados da empresa.
+
+Na conta sem feedbacks, a prévia das boas-vindas tem um card de exemplo para cada seção do Dashboard, para o guia ter onde parar. O card do Dashboard vem antes das páginas da análise, para o guia não pular de página no meio do Dashboard. O guia que passa por cada métrica do Dashboard fica para depois.
 
 ### O que sai
 
@@ -214,6 +232,48 @@ O que **não** segue o período:
 - **Quem está melhor.** Esta coluna diz o item e a diferença. Usa as mesmas margens da comparação com o período anterior, então também pode dizer **Diferença incerta**.
 
 Ficam para depois: diagnóstico por período, comparar mais de 2 itens e o período na lista de Feedbacks recebidos.
+
+### Métricas que não vêm só da nota (18/10/2026)
+
+Até aqui, tudo o que não vinha da IA era **uma informação só, vista de vários jeitos**: a nota de 1 a 5 (estrelas) ou de Péssimo a Ótimo (perguntas). Média, positivas, críticas e satisfeitos saem da mesma distribuição de notas.
+
+As quatro métricas abaixo usam dados que o sistema já guardava e não aproveitava:
+
+- a data e a hora de cada avaliação;
+- a nota de cada pergunta junto com as estrelas do mesmo feedback;
+- o aparelho identificado pelo anti-spam.
+
+Todas seguem o escopo e o período do cabeçalho, e cada uma tem a ajuda (?) em linguagem simples.
+
+| Métrica | Pergunta que responde | Como é calculada | Onde aparece |
+|---|---|---|---|
+| **Movimento das avaliações** | Estou recebendo mais ou menos avaliações? A nota vem subindo ou caindo? | Quantidade e média por dia, semana ou mês, agrupadas no banco no fuso do gestor. Os intervalos sem avaliação contam como zero (`GET /feedbacks/timeline`) | Dashboard (compacta) e Todas as métricas de estrelas |
+| **O que mais pesa na nota** | Melhorar qual ponto muda mais a nota geral? | Correlação de Spearman entre a nota da pergunta e as estrelas do mesmo feedback, com IC 95% (`ratingWeight` em `/feedbacks/questions`) | Selo em cada pergunta e "Melhore primeiro" nas Perguntas do formulário e na página da pergunta |
+| **Dias e horários de pico** | Quando os clientes mais avaliam e em que horário a nota cai? | Quantidade e média por dia da semana × faixa de 6 horas (madrugada, manhã, tarde, noite), no fuso do gestor (`GET /feedbacks/heatmap`) | Todas as métricas de estrelas |
+| **Clientes que voltam** | Os clientes voltam? Quem volta está mais satisfeito? | % das avaliações de quem já tinha avaliado a empresa, pelo `row_number()` por aparelho, e a média de quem volta × primeira vez, com IC (`GET /feedbacks/customers`) | Todas as métricas de estrelas |
+
+Como cada métrica aparece e os cuidados de leitura:
+
+- **Movimento das avaliações.**
+  - **Gráfico:** barras com a quantidade e, embaixo, uma linha com a média, no mesmo eixo de tempo.
+  - **Agrupamento:** por dia nos períodos de 7 e 30 dias, por semana nos de 3 e 6 meses. Sem período, por semana, ou por mês quando o histórico passa de 6 meses.
+  - **Amostra pequena:** intervalos com menos de 5 avaliações aparecem com bolinha vazada, porque a média ali é pouco confiável.
+- **O que mais pesa na nota.**
+  - **Selos:** "Pesa muito na nota" (r ≥ 0,5), "Pesa na nota" (0,3 a 0,5) e "Pesa pouco na nota" (abaixo de 0,3).
+  - **Amostra pequena:** com menos de 30 respostas, o selo diz "Poucas respostas para saber o peso".
+  - **"Melhore primeiro":** aponta, entre as perguntas que pesam, a de menor nota, desde que ainda não seja Ótima.
+  - **Limite:** mostra o que anda junto com a nota, não prova a causa.
+- **Dias e horários de pico.**
+  - **Mapa:** 7 dias × 4 faixas. A cor mostra a quantidade e o número, a média. Faixas com menos de 5 avaliações ficam em cinza.
+  - **Por que faixas de 6 horas:** com pouco volume, a grade hora a hora ficaria vazia.
+  - **Resumo:** diz onde há mais avaliações e onde está a pior média. A pior média só considera faixas com 10 ou mais avaliações.
+- **Clientes que voltam.**
+  - **Quem é o cliente:** o aparelho usado para avaliar, sem dados pessoais. O número é aproximado, porque a mesma pessoa em outro celular conta como outro cliente.
+  - **Quando a avaliação conta como "de quem volta":** quando o mesmo aparelho já tinha avaliado a empresa antes, em qualquer escopo.
+  - **Sem aparelho identificado:** essas avaliações ficam de fora.
+  - **Comparação das notas:** usa a mesma regra de "Diferença incerta" da comparação de períodos.
+
+Ficam de fora: peso das subperguntas, comparação por canal (etapa 06) e gênero (dado opcional e sensível pela LGPD). Detalhes da API em `docs/endpoints.md` do API Gateway.
 
 ---
 
