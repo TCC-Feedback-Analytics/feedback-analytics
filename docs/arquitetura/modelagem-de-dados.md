@@ -11,8 +11,10 @@
 **Visualizar o código no site: https://mermaid.ai/** 
 ```mermaid
 erDiagram
-    AUTH_USERS ||--|| ENTERPRISE : "cria via trigger"
+    USER ||--|| ENTERPRISE : "auth_user_id (1:1 cascade)"
     ENTERPRISE ||--|| COLLECTING_DATA_ENTERPRISE : "contexto estratégico"
+    ENTERPRISE ||--o| ENTERPRISE_IA_CONFIG : "configuração BYO-key (1:1)"
+    ENTERPRISE ||--o{ IA_ANALYSIS_JOB : "enfileira jobs assíncronos"
     ENTERPRISE ||--o{ CATALOG_ITEMS : "possui"
     ENTERPRISE ||--o{ COLLECTION_POINTS : "possui"
     ENTERPRISE ||--|{ QUESTIONS_OF_FEEDBACKS : "possui (mín 3 no signup)"
@@ -23,6 +25,7 @@ erDiagram
     CATALOG_ITEMS ||--o{ COLLECTION_POINTS : "catalog_item_id (opcional)"
     CATALOG_ITEMS ||--o{ QUESTIONS_OF_FEEDBACKS : "catalog_item_id (condicional)"
     CATALOG_ITEMS ||--o{ FEEDBACK_INSIGHTS_REPORT : "catalog_item_id (condicional)"
+    CATALOG_ITEMS ||--o{ IA_ANALYSIS_JOB : "catalog_item_id (opcional)"
     QUESTIONS_OF_FEEDBACKS ||--o{ FEEDBACK_QUESTION_SUBQUESTIONS : "possui"
     CUSTOMER ||--o{ TRACKED_DEVICES : "customer_id (opcional)"
     COLLECTION_POINTS ||--o{ FEEDBACK : "collection_point_id"
@@ -255,7 +258,7 @@ Análise individual gerada pela IA para um feedback específico. Relação 1:1 c
 ---
 
 #### `feedback_insights_report`
-Relatório consolidado gerado pela IA sobre um conjunto de feedbacks. Pode cobrir a empresa inteira (`COMPANY`) ou um item específico do catálogo. É regenerável — um novo relatório sobrescreve o anterior para o mesmo escopo.
+Relatório consolidado gerado pela IA sobre um conjunto de feedbacks. Pode cobrir a empresa inteira (`COMPANY`) ou um item específico do catálogo. É regenerável - um novo relatório sobrescreve o anterior para o mesmo escopo.
 
 | Campo | Tipo | Descrição |
 |---|---|---|
@@ -269,9 +272,63 @@ Relatório consolidado gerado pela IA sobre um conjunto de feedbacks. Pode cobri
 
 ---
 
-## Enumerações
+### 7. Fila Assíncrona e Provedores de IA
 
-| Enum | Valores |
+#### `enterprise_ia_config`
+Configurações do provedor de inteligência artificial por empresa (BYO-key). Relação 1:1 com `enterprise`. Armazena a chave de API cifrada com AES-256-GCM.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | uuid | Chave primária |
+| `enterprise_id` | uuid | FK → `enterprise.id` (UNIQUE, `ON DELETE CASCADE`) |
+| `provider` | text | Provedor de IA selecionado (`openrouter` ou `gemini`) |
+| `model` | text | Identificador do modelo de linguagem configurado |
+| `api_key_ciphertext` | text | Texto cifrado da chave da API do provedor externo |
+| `api_key_iv` | text | Vetor de inicialização (IV) usado na cifra AES-256-GCM |
+| `api_key_auth_tag` | text | Tag de integridade/autenticação da criptografia |
+| `key_hint` | text | Sufixo da chave (últimos 4 caracteres) visível na UI |
+| `created_at` / `updated_at` | timestamptz | Carimbos de auditoria |
+
+---
+
+#### `ia_analysis_job`
+Fila durável e máquina de estados das operações assíncronas de IA. O worker realiza a captura concorrente via `SELECT ... FOR UPDATE SKIP LOCKED`.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | uuid | Chave primária do job |
+| `enterprise_id` | uuid | FK → `enterprise.id` (escopo multi-tenant obrigatório) |
+| `job_type` | text | Tipo da tarefa: `ANALYZE_FEEDBACKS` ou `GENERATE_INSIGHTS` |
+| `scope_type` | text | `COMPANY`, `PRODUCT`, `SERVICE` ou `DEPARTMENT` |
+| `catalog_item_id` | uuid | FK → `catalog_items.id` (opcional) |
+| `status` | text | Estado: `queued`, `processing`, `completed` ou `failed` |
+| `total` | integer | Total de feedbacks no lote |
+| `done` | integer | Total de feedbacks já processados no lote atual |
+| `options` | jsonb | Parâmetros e opções extras da operação |
+| `attempts` | integer | Contador de tentativas de processamento |
+| `next_run_at` | timestamptz | Data/hora elegível para execução pelo worker |
+| `error_code` | text | Código padronizado em caso de falha da operação |
+| `requested_by` | uuid | Identificador do usuário que disparou o job |
+| `created_at` / `updated_at` | timestamptz | Carimbos temporais de criação e leases de worker |
+
+---
+
+#### `ia_rate_budget`
+Token bucket persistente para controle de taxa e cota (back-pressure) por empresa e provedor de IA.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | uuid | Chave primária |
+| `enterprise_id` | uuid | FK → `enterprise.id` |
+| `window_type` | text | Janela temporal: `MINUTE` ou `DAY` |
+| `tokens_used` | integer | Contagem acumulada de tokens/requisições consumidas |
+| `reset_at` | timestamptz | Momento em que a janela corrente é zerada |
+
+---
+
+## Enumerações e Constantes
+
+| Enum / Check | Valores |
 |---|---|
 | `catalog_items.kind` | `PRODUCT`, `SERVICE`, `DEPARTMENT` |
 | `catalog_items.status` | `ACTIVE`, `INACTIVE` |
@@ -282,6 +339,10 @@ Relatório consolidado gerado pela IA sobre um conjunto de feedbacks. Pode cobri
 | `enterprise.account_type` | `CPF`, `CNPJ` |
 | `enterprise.subscription_status` | `TRIAL`, `ACTIVE`, `EXPIRED`, `CANCELED` |
 | `answer_value` (respostas) | `PESSIMO`, `RUIM`, `MEDIANA`, `BOA`, `OTIMA` |
+| `enterprise_ia_config.provider` | `gemini`, `openrouter` |
+| `ia_analysis_job.job_type` | `ANALYZE_FEEDBACKS`, `GENERATE_INSIGHTS` |
+| `ia_analysis_job.status` | `queued`, `processing`, `completed`, `failed` |
+| `ia_rate_budget.window_type` | `MINUTE`, `DAY` |
 
 ---
 
