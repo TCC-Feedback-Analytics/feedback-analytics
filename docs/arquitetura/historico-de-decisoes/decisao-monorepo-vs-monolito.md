@@ -27,13 +27,13 @@ A proposta do API Gateway é ser rápido, respondendo em milissegundos com baixo
 Para resolver isso, evoluímos para uma **arquitetura Serverless**: cada serviço roda de forma independente na Vercel, no seu próprio ritmo, sem interferências. E para manter a manutenção simples e produtiva, organizamos tudo em um **Monorepo**: o código das duas aplicações mora no mesmo lugar, mas na hora de ir para o ar (deploy), cada um vai para sua própria função Serverless.
 
 ### Timeout de função (evidência de infraestrutura)
-O Feedback Analytics hoje roda em Vercel Serverless Functions. Cada serviço pode ter configuração de timeout diferente.
+O Feedback Analytics roda em arquitetura Serverless (Vercel Functions + CDN). Cada serviço possui repositório e configurações de timeout dedicados.
 | Serviço | Arquivo | `maxDuration` necessário | Motivo |
 | :--- | :--- | :--- | :--- |
-| `api-gateway` | `backends/api-gateway/vercel.json` | 300s | Respostas rápidas (dashboard, login, feedbacks) |
-| `ia-analyze` | `services/ia-analyze/vercel.json` | 300s | Chamadas ao LLM (Gemini) podem demorar 30–60s |
+| `feedback-analytics-api-gateway` | `vercel.json` | 300s | Respostas rápidas HTTP (dashboard, autenticação, feedbacks e enfileiramento de jobs 202) |
+| `feedback-analytics-ia-analyze` | `vercel.json` | 300s | Processamento isolado de lotes para LLMs externos (OpenRouter / Gemini) |
 
-Na arquitetura monolítica: Um único `vercel.json`, teria que escolher um `maxDuration`. Se escolher 30s, a análise da IA expira, se escolher 300s, o dashboard e o login ficam 10x mais lentos. Com o Monorepo Serverless podemos ter um `vercel.json` para cada serviço e configurar o `maxDuration` para cada um.
+Na arquitetura monolítica, um único `vercel.json` forçaria uma escolha global arriscada. Com serviços separados e o processamento de IA desacoplado por worker em background, as requisições do usuário nunca sofrem com a latência de geração dos modelos de linguagem.
 
 ### Isolamento de falhas (testes automatizados)
 
@@ -130,11 +130,11 @@ Os três domínios do projeto usam modelos de deploy distintos, cada um adequado
 **`apps/web` — site estático**
 O frontend não é uma função — é um conjunto de arquivos estáticos (HTML, CSS, JavaScript) gerados uma única vez no momento do build e servidos direto pela CDN da Vercel. Não existe servidor, não existe tempo de execução, não existe `maxDuration`. O usuário baixa os arquivos e o React roda no próprio navegador dele.
 
-**`backends/api-gateway` — Serverless Function de curta duração**
-O Gateway é uma função Node.js que acorda a cada requisição, consulta o banco (Supabase), monta a resposta e encerra. A operação mais pesada é aguardar o banco responder — o que acontece em milissegundos. O timeout de 300s cobre com folga essas operações de I/O e a orquestração das chamadas à IA, mantendo o serviço responsivo.
+**`feedback-analytics-api-gateway` - Ponto único de entrada e orquestração**
+O Gateway é uma aplicação Node.js/Express que valida sessões (Better Auth), atende endpoints da empresa e da coleta pública, e enfileira requisições analíticas em segundo plano (`ia_analysis_job`). O processamento de IA é desacoplado por worker, respondendo `202 Accepted` de forma imediata à interface.
 
-**`services/ia-analyze` — Serverless Function de longa duração**
-A IA é também uma função Node.js, mas com um perfil completamente diferente: ela recebe os feedbacks, manda para o LLM (Gemini), aguarda a resposta — o que pode levar dezenas de segundos — e ainda processa o resultado antes de devolver. Por isso precisa de 300s de timeout. Rodar isso no mesmo projeto do Gateway seria inviável.
+**`feedback-analytics-ia-analyze` - Microserviço isolado de inferência**
+O serviço de IA recebe requisições protegidas internas originadas pelo worker do Gateway, conecta-se ao provedor LLM configurado (OpenRouter ou Google Gemini via headers `x-llm-*`), valida os dados contra esquemas Zod e retorna as classificações de sentimentos, categorias, aspectos e a síntese executiva.
 
 ### Escalabilidade automática
 
