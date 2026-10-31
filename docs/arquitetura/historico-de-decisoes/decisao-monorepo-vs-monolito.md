@@ -8,16 +8,15 @@ O projeto tem dois serviços com perfis de carga radicalmente diferentes. A arqu
 ## Por que o monolito falha para nosso projeto
 | Serviço | Tipo de carga | Latência esperada | Recursos necessários |
 | :--- | :--- | :--- | :--- |
-| API Gateway (dashboard, feedbacks) | I/O bound — queries rápidas ao Supabase | < 500ms | CPU baixa, timeout curto |
-| IA Analyze (análise de sentimentos) | CPU bound + latência externa (LLM) | 10–60 segundos | CPU alta, timeout longo |
+| API Gateway (dashboard, feedbacks) | I/O bound - queries rápidas ao Postgres via Drizzle | < 500ms | CPU baixa, timeout curto |
+| IA Analyze (análise e síntese LLM) | CPU bound + latência de rede externa (Gemini / OpenRouter) | 10-60 segundos por lote | CPU alta, timeout longo |
+| Worker Assíncrono (em background) | Orquestração contínua de lotes e persistência | Execução contínua em loop ou gatilho periódico | I/O bound + concorrência controlada |
 
-- I/O-bound: Significa que o tempo gasto em uma operação é dominado por espera, não por processamento. No caso do nosso API Gateway, a maior parte do tempo de uma requisição é esperando o banco de dados responder. O servidor não está fazendo cálculo nenhum. Ele manda a query, fica parado aguardando, recebe o resultado e devolve. CPU quase zerada.
+- I/O-bound: Significa que o tempo gasto em uma operação é dominado por espera, não por processamento. No caso do nosso API Gateway, a maior parte do tempo de uma requisição é esperando o banco de dados responder. O servidor não está fazendo cálculo pesado. Ele manda a query, fica aguardando, recebe o resultado e devolve. CPU quase zerada.
 
-- CPU-bound: Significa que o tempo de espera é denominado pelo processador calculando. No caso do nosso IA-Analyze, ele recebe os textos, manda pro LLM, pega a resposta e ainda precisa processar, estruturar e validar tudo isso. O processador trabalha de verdade.
+- CPU-bound + I/O de rede externa: No caso do nosso IA-Analyze, ele recebe lotes de textos, encaminha ao provedor LLM configurado (OpenRouter ou Gemini), valida schemas via Zod, aplica regras semânticas de antipoluição e sanitiza os resultados antes de devolver.
 
-- CPU-bound: O gargalo é o processador calculando. I/O-bound: O gargalo é a espera por algo externo (banco, rede, disco...).
-
-*No monolito, ambos competem pelo mesmo processo Node.js.*
+*No monolito síncrono, ambos competem pelo mesmo processo Node.js e requisições HTTP longas acabam derrubadas por timeouts de borda.*
 
 ### Traduzindo: 
 
