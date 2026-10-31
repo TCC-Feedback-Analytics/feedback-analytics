@@ -36,6 +36,8 @@ O **app web não mudou o jeito de chamar auth**: ele já chamava os endpoints do
 | `BETTER_AUTH_SECRET` | Segredo aleatório (`openssl rand -base64 32`). **Sem ele o app não sobe.** |
 | `BETTER_AUTH_URL` | URL pública do Gateway (local: `http://localhost:3000`) |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | Envio de e-mail. Prod: SendGrid (`smtp.sendgrid.net:587`, `SMTP_USER=apikey`). Local: Mailpit (`127.0.0.1:1025`). |
+| `IA_CONFIG_ENCRYPTION_KEY` | Chave mestra (`openssl rand -base64 32`) usada para cifrar chaves de IA (BYO-key) com AES-256-GCM em repouso no Postgres. |
+| `REQUIRE_USER_IA_KEY` | Flag booleana (`true`/`false`) que define se o uso de chave própria de IA pela empresa é mandatório ou se há fallback global. |
 
 Ver o passo a passo em [Guia de Instalação](../../guias/guia-instalacao.md).
 
