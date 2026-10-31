@@ -95,7 +95,7 @@ nav:
       - Privacidade e LGPD: produto/higienizacao-jwt-lgpd.md
       - Análise por IA: produto/filtro-semantico-ia.md
       - Métricas e estatísticas: produto/metricas-e-estatisticas.md
-      - Painel de insights: produto/painel-insights-ia.md
+      - Análise dos comentários: produto/painel-insights-ia.md
       - Regras de negócio: produto/regras-negocio.md
   - Concepção & Requisitos:
       - Personas: concepcao/personas.md
@@ -115,7 +115,7 @@ nav:
           - UC-08 — Configuração de coleta (contexto IA): concepcao/casos-de-uso/uc-08-configuracao-coleta-ia.md
           - UC-09 — Dashboard: concepcao/casos-de-uso/uc-09-dashboard.md
           - UC-10 — Listagem de feedbacks: concepcao/casos-de-uso/uc-10-listagem-feedbacks.md
-          - UC-11 — Insights com IA: concepcao/casos-de-uso/uc-11-insights-ia.md
+          - UC-11 — Análise dos comentários com IA: concepcao/casos-de-uso/uc-11-insights-ia.md
           - UC-12 — Gestão de perfil: concepcao/casos-de-uso/uc-12-gestao-perfil.md
       - Design (Figma):
           - Product: concepcao/figma/product.md

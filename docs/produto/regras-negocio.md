@@ -4,11 +4,11 @@
 
 ### Autenticação e Isolamento de Dados
 
-**Como funciona:** todo endpoint em `/protected/*` passa pelo middleware `requireAuth`, que valida o JWT via Supabase e injeta `req.user` e `req.supabase` na request.
+**Como funciona:** todo endpoint em `/protected/*` passa pelo middleware `requireAuth`, que valida a sessão do **Better Auth** a partir do cookie httpOnly, injeta `req.user` e resolve a empresa do usuário em `req.enterpriseId`.
 
-**Regra de isolamento:** o `userId` extraído do JWT é usado em todas as queries. Nenhum endpoint retorna dados de outra empresa — o isolamento é garantido em duas camadas: no nível de **repositório** (filtros no código) e diretamente no banco de dados via **RLS (Row Level Security)** do Supabase.
+**Regra de isolamento:** o `enterpriseId` resolvido a partir da sessão é usado em todas as queries. Nenhum endpoint retorna dados de outra empresa — o isolamento é garantido na **aplicação**, com filtro explícito por empresa nos repositórios. A **RLS (Row Level Security)** do Postgres continua ligada como defesa em profundidade, mas a conexão do Drizzle usa uma role que a ignora; quem barra o acesso nos caminhos autenticados é o filtro da aplicação (veja [ORM × RLS](../arquitetura/orm-rls-decisao.md)).
 
-> ⚠️ **Aviso:** Nunca passe `userId` como parâmetro de query string ou body em endpoints protegidos. O Gateway extrai o ID do JWT, não do payload da requisição.
+> ⚠️ **Aviso:** Nunca passe `userId` ou `enterpriseId` como parâmetro de query string ou body em endpoints protegidos. O Gateway extrai o usuário e a empresa da sessão, não do payload da requisição.
 
 ---
 
@@ -19,13 +19,13 @@
 | Fluxo | Endpoint | Comportamento |
 |---|---|---|
 | Login — credenciais inválidas | `POST /public/auth/login` | `401 invalid_credentials` — "E-mail ou senha incorretos." |
-| Login — e-mail não confirmado | `POST /public/auth/login` | **Mesma** resposta `401 invalid_credentials`. O erro `email_not_confirmed` do Supabase é remapeado em `auth.controller.ts` para não revelar que a conta existe porém está pendente. |
+| Login — e-mail não confirmado | `POST /public/auth/login` | **Mesma** resposta `401 invalid_credentials`. O erro `EMAIL_NOT_VERIFIED` do Better Auth é remapeado por `mapLoginError` (`auth/errorMap.ts`) para não revelar que a conta existe porém está pendente. |
 | Cadastro — e-mail já existente | `POST /public/auth/register` | `200 { ok: true, message: 'confirmation_required' }` — segue para a tela de sucesso sem indicar duplicidade. |
 | Recuperação de senha | `POST /public/auth/forgot-password` | `200` com "Se este e-mail estiver cadastrado, você receberá as instruções em breve." — independente de o e-mail existir. |
 
 > **Escopo:** a regra cobre apenas o identificador **e-mail**. As validações de telefone e documento no cadastro permanecem explícitas (`409 phone_taken` / `409 document_taken`) por serem decisões de UX de cadastro fora do escopo desta regra.
 
-> **Nota (frontend):** `formLogin.tsx` também não diferencia conta não confirmada — exibe a mesma mensagem genérica e não oferece reenvio nesse ponto. O reenvio de confirmação continua disponível nos fluxos de pós-cadastro (`registerEmailPendingNotice.tsx`) e de link de ativação expirado (`/auth/link-expired`).
+> **Nota (frontend):** `formLogin.tsx` também não diferencia conta não confirmada — exibe a mesma mensagem genérica. Depois de um `401 invalid_credentials`, mostra um aviso neutro ("se você acabou de se cadastrar e não recebeu o e-mail…") com link para `/resend-confirmation`, e o diálogo "Problemas para entrar?" oferece o mesmo caminho; nenhum dos dois revela se a conta existe. O reenvio também está disponível no pós-cadastro (`registerEmailPendingNotice.tsx`) e na página de link expirado (`/auth/link-expired`).
 
 ---
 
@@ -33,7 +33,7 @@
 
 #### Ciclo de Vida da Conta
 
-Todo novo cadastro tem `subscription_status = 'TRIAL'` e `trial_ends_at = NOW() + 4 meses`, inicializados automaticamente pelo trigger `on_auth_user_created` no banco de dados.
+Todo novo cadastro tem `subscription_status = 'TRIAL'` e `trial_ends_at = NOW() + 4 meses`, inicializados pelo Gateway em `enterpriseOnSignup.ts`, chamado pelo controller de cadastro logo após o Better Auth criar o usuário (substitui o antigo trigger `on_auth_user_created` do Supabase).
 
 | `subscription_status` | Significado |
 |---|---|
@@ -46,9 +46,9 @@ O campo `trial_ends_at` é uma timestamp com fuso horário (`timestamptz`). O c�
 
 #### Confirmação de E-mail
 
-Após o cadastro, o Supabase envia um e-mail com link de confirmação. O link expira em **1 hora**.
+Após o cadastro, o Better Auth envia um e-mail com link de confirmação (`emailVerification.sendOnSignUp`). O link expira em **1 hora** (padrão do Better Auth). O login só é liberado depois da confirmação (`requireEmailVerification`).
 
-Se o usuário clicar em um link expirado, o callback controller detecta o erro retornado pelo Supabase e redireciona para `/auth/link-expired`. Nessa página o usuário informa o e-mail e solicita um novo link — o reenvio usa o endpoint `POST /api/public/auth/resend-confirmation` (`supabase.auth.resend({ type: 'signup', email })`).
+Se o link estiver expirado ou inválido, o Better Auth redireciona para `/auth/success?error=<código>` (ex.: `TOKEN_EXPIRED`, `INVALID_TOKEN`), e a página `AuthSuccess` encaminha o usuário para `/auth/link-expired` em vez de exibir a confirmação. Para pedir um novo link, essa página usa o endpoint `POST /api/public/auth/resend-confirmation`, que chama `sendVerificationEmail` do Better Auth. A resposta é sempre genérica (RNE-014) e o reenvio é limitado por IP e por hash do e-mail, com intervalo mínimo entre envios; ao estourar o limite, responde `429 rate_limited` com o cabeçalho `Retry-After`.
 
 #### Constraint de `account_type`
 
@@ -108,7 +108,7 @@ Cada batch é enviado **separadamente** ao provedor LLM externo para manter o co
 
 Após agrupar por `(scope_type, catalog_item_id)`, `buildAnalysisBatches` chama `chunkBatchesBySize`, que **fatia cada lote** em sub-lotes de no máximo `IA_MAX_FEEDBACKS_PER_BATCH` feedbacks (**default 20**).
 
-- **Por quê:** o modelo emite um objeto JSON por feedback, então lotes grandes estouram o teto de tokens de **saída** do Gemini e truncam o JSON (→ erro de parse → `502`). Sub-lotes menores mantêm a saída pequena e previsível.
+- **Por quê:** o modelo emite um objeto JSON por feedback, então lotes grandes estouram o teto de tokens de **saída** do modelo e truncam o JSON (→ erro de parse → `502`). Sub-lotes menores mantêm a saída pequena e previsível.
 - **Exemplo:** um escopo com 100 feedbacks vira 5 chamadas de 20 — cada sub-lote preserva o `scope_type`/`catalog_item_id` do lote original.
 
 ---
@@ -301,7 +301,7 @@ Só três valores são aceitos:
 'positive' | 'neutral' | 'negative'
 ```
 
-Um item analisado pelo Gemini é **descartado silenciosamente** se:
+Um item analisado pelo LLM é **descartado silenciosamente** se:
 - `feedback_id` não for uma string
 - `sentiment` não estiver nos três valores válidos
 - `feedback_id` não existir no mapa de feedbacks do batch atual

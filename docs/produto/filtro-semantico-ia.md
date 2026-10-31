@@ -14,7 +14,7 @@ Imagine que a empresa pergunta: *"Como foi o atendimento?"*, *"Como foi a qualid
 
 Sem o filtro, as palavras **"atendimento"**, **"qualidade"** e **"custo-benefício"** aparecem em absolutamente todos os feedbacks — afinal, os clientes as leem nas perguntas. A IA identifica essas palavras como as mais frequentes e as coloca no topo de todas as nuvens de palavras e categorias.
 
-**Resultado**: o painel de insights mostra que os clientes falam muito de "atendimento" e "qualidade". Isso é verdade, mas é completamente inútil — são as palavras das perguntas, não a voz real do cliente.
+**Resultado**: a análise dos comentários mostra que os clientes falam muito de "atendimento" e "qualidade". Isso é verdade, mas é completamente inútil — são as palavras das perguntas, não a voz real do cliente.
 
 ### A solução com o filtro
 
@@ -115,6 +115,6 @@ Por que isso importa:
 
 ## Referência Técnica
 
-- [Painel de Insights → painel-insights-ia.md](./painel-insights-ia.md)
+- [Análise dos comentários → painel-insights-ia.md](./painel-insights-ia.md)
 - [Serviço IA Analyze](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/docs/visao-geral.md)
 - [Endpoints de Análise IA](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md)

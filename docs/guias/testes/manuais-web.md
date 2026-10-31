@@ -140,9 +140,9 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
 
 Rota: `/user/edit/feedback-general` · **Autenticado**.
 
-### CT-UC05-01 — Tela de Feedback geral carrega com o QR Code
+### CT-UC05-01 — Tela Avaliação da empresa carrega com o QR Code
 
-- **Objetivo:** confirmar que a tela de feedback geral exibe o QR Code da empresa (ou o controle de ativação).
+- **Objetivo:** confirmar que a tela Avaliação da empresa (antes "Feedback geral") exibe, na seção **Canais de coleta**, o QR Code da empresa (ou o controle de ativação).
 - **Pré-condições:** logado.
 - **Passos:**
   1. Navegue para `/user/edit/feedback-general`.
@@ -229,23 +229,23 @@ Rota: `/user/dashboard` · **Autenticado**.
   1. Navegue para `/user/dashboard` e aguarde o conteúdo principal.
 - **Resultado esperado:** a URL corresponde a `/user/dashboard` e a saudação **"Olá,"** está visível.
 
-### CT-UC09-02 — Dashboard exibe métrica de total de feedbacks
+### CT-UC09-02 — Dashboard exibe a Avaliação por estrelas
 
 - **Passos:**
-  1. No dashboard, localize a área de métricas.
-- **Resultado esperado:** aparece a métrica de **"Total"** (ou "Feedbacks recebidos" / "Feedbacks").
+  1. No dashboard, localize a seção **"Avaliação por estrelas"**.
+- **Resultado esperado:** aparece o card **"Média"** com a nota /5, o rótulo (Ótima, Boa, Mediana, Ruim ou Péssima) e o número de avaliações, **ou** "Ainda sem avaliações" no escopo. A etiqueta de escopo aparece no canto da seção (ex.: "Avaliação geral da empresa").
 
-### CT-UC09-03 — Dashboard exibe distribuição de sentimentos
-
-- **Passos:**
-  1. No dashboard, localize a seção de sentimentos.
-- **Resultado esperado:** aparece pelo menos um dos rótulos: **"Positivo"**, **"Neutro"** ou **"Negativo"**.
-
-### CT-UC09-04 — Dashboard exibe seção de relatório de insights
+### CT-UC09-03 — Dashboard exibe avaliações positivas e críticas
 
 - **Passos:**
-  1. No dashboard, localize a seção de insights.
-- **Resultado esperado:** aparece a seção **"Relatório de Insights"**.
+  1. Na seção **"Avaliação por estrelas"**, localize os cards de positivas e críticas.
+- **Resultado esperado:** aparecem **"Positivas (4–5★)"** e **"Críticas (1–2★)"**, cada um com contagem e %. O link **"Ver todas as métricas de estrelas"** leva a `/user/ratings`.
+
+### CT-UC09-04 — Dashboard exibe a Análise dos comentários
+
+- **Passos:**
+  1. No dashboard, localize a seção **"Análise dos comentários ✨ IA"**.
+- **Resultado esperado:** aparecem o bloco **"Tom dos comentários"** (ou "Ainda sem comentários analisados pela IA") e o card **"Resumo e recomendações da IA"** (ou "Ainda não há resumo da IA para este escopo"). O link **"Ver a análise completa dos comentários"** leva a `/user/insights/overview`.
 
 ### CT-UC09-05 — Clique em "Ver feedbacks" navega para a listagem completa
 
@@ -271,33 +271,33 @@ Rota: `/user/feedbacks/all` · **Autenticado**.
 
 ---
 
-## UC-11 — Insights de IA
+## UC-11 — Análise dos comentários com IA
 
-Rota: `/user/insights/reports` · **Autenticado**.
+Rotas: `/user/insights/overview` (Visão geral) e `/user/insights/comments` (Comentários) · **Autenticado**. Os endereços antigos (`/user/insights/reports`, `emotional`, `statistics` e `/user/feedbacks/analytics/*`) redirecionam para elas.
 
-### CT-UC11-01 — Relatório de insights carrega com sumário ou estado vazio
+### CT-UC11-01 — Visão geral carrega com a análise ou o estado vazio
 
 - **Passos:**
-  1. Navegue para `/user/insights/reports` e aguarde o conteúdo principal.
+  1. Navegue para `/user/insights/overview` e aguarde o conteúdo principal.
   2. Aguarde o carregamento assíncrono (até ~15s).
-- **Resultado esperado:** aparece **ou** o sumário/insights (**"Sumário"** / "Resumo" / "Insights") **ou** um estado vazio (**"Nenhum insight"** / "Sem dados" / "Gerar insights" / "Sem feedbacks").
+- **Resultado esperado:** aparecem **"Tom dos comentários"** e **"Resumo e recomendações da IA"**, com dados **ou** com os estados vazios ("Ainda sem comentários analisados pela IA" / "Ainda não há resumo da IA para este escopo").
 
-### CT-UC11-02 — Insights exibem análise de sentimentos e keywords
+### CT-UC11-02 — Visão geral exibe o tom e os assuntos
 
 - **Passos:**
-  1. Navegue para `/user/insights/reports` e aguarde o carregamento.
-- **Resultado esperado:** aparece **ou** a análise (**"Positivo"** / "Negativo" / "Neutro" / **"Palavra-chave"** / "Keywords") **ou** um estado vazio ("Nenhum insight" / "Sem dados" / "Gerar insights" / "Ainda não há relatório").
+  1. Navegue para `/user/insights/overview` e aguarde o carregamento.
+- **Resultado esperado:** com comentários analisados, o tom mostra a barra com **positivos**, **neutros** e **negativos**, o saldo em palavras (**"Positivo"**, **"Neutro"** ou **"Atenção"**) e a seção **"Assuntos que mais impactam"** (ou as categorias como reserva). Sem comentários analisados, aparece o estado vazio. Palavras-chave **não** aparecem mais.
 
-### CT-UC11-05 — Botão de regenerar insights solicita nova análise
+### CT-UC11-05 — Gerar o resumo de novo solicita nova análise
 
 - **Objetivo:** disparar a geração de nova análise.
-- **Pré-condições:** logado; o botão de regenerar deve estar **habilitado** — ele fica **desabilitado** quando não há análise nova a gerar (comportamento intencional). Se estiver desabilitado, o cenário **não se aplica**.
+- **Pré-condições:** logado; o botão "Apenas gerar o resumo" deve estar **habilitado** — ele fica **desabilitado** quando não há análise nova a gerar (comportamento intencional). Se estiver desabilitado, o cenário **não se aplica**.
 - **Observação:** no teste automatizado, a chamada `POST /api/protected/ia-analyze/**` era interceptada (mock) para não consumir créditos de IA. **No teste manual, o clique dispara a análise real** — execute com consciência do consumo.
 - **Passos:**
-  1. Navegue para `/user/insights/reports`.
-  2. Localize o botão **"Regenerar"** (ou "Gerar insights" / "Atualizar insights").
-  3. Se estiver habilitado, clique nele.
-- **Resultado esperado:** aparece indicação de progresso — **"Processando"** / "Gerando" / "Analisando" / "Aguarde" — ou a confirmação **"Insights atualizados"**.
+  1. Navegue para `/user/insights/overview`.
+  2. Clique em **"Analisar comentários com IA"**, na barra abaixo do cabeçalho.
+  3. Na janela, localize **"Apenas gerar o resumo"** e, se estiver habilitado, clique nele.
+- **Resultado esperado:** aparece indicação de progresso — **"Processando IA..."** / "Escrevendo o resumo" / "Escrevendo o resumo da IA em segundo plano" — ou a confirmação **"Análise atualizada!"**.
 
 ---
 

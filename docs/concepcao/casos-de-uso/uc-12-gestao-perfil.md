@@ -16,7 +16,7 @@ A tela abre com o `PageHeader` (breadcrumb + título **"Perfil"**). A identidade
 
 As três seções que antes ficavam no perfil **deixaram de existir aqui** e foram realocadas na nova área "Configuração da coleta":
 
-- **QR Code da Empresa** + **Perguntas Dinâmicas da Empresa** (as 3 perguntas gerais do tipo Empresa) foram fundidas na tela **"Feedback geral"** (`/user/edit/feedback-general`) — ver UC-05.
+- **QR Code da Empresa** + **Perguntas Dinâmicas da Empresa** (as 3 perguntas gerais do tipo Empresa) foram fundidas na tela **"Avaliação da empresa"** (antes "Feedback geral"; `/user/edit/feedback-general`), com as seções **Perguntas** e **Canais de coleta** — ver UC-05.
 - **Configuração de Coleta (IA)** (contexto do negócio) virou a tela **"Dados da empresa"** (`/user/edit/collecting-data-enterprise`) — ver UC-08.
 
 ---
