@@ -15,7 +15,7 @@
 3. Clica em "Criar conta".
 4. O sistema valida os dados e cria a conta pelo **Better Auth** (o api-gateway registra o usuário; as tabelas de auth ficam no Postgres).
 5. Na sequência, o onboarding cria a empresa (`enterprise`) com `trial_ends_at = NOW() + 4 meses` e `subscription_status = 'TRIAL'`, semeia as 3 perguntas padrão e higieniza os dados sensíveis do cadastro.
-6. O **api-gateway** envia um e-mail de confirmação para o endereço informado, via SMTP (SendGrid em produção, Mailpit no local).
+6. O **api-gateway** envia um e-mail de confirmação para o endereço informado, via SMTP (Brevo em produção, Mailpit no local).
 7. O visitante abre o e-mail e clica no link de ativação.
 8. O sistema redireciona para a tela de sucesso confirmando a ativação.
 9. A conta está ativa e o gestor já pode fazer login.
