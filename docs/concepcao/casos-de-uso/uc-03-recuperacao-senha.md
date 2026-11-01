@@ -16,7 +16,7 @@
 2. Informa o e-mail cadastrado.
 3. Clica em "Enviar".
 4. O sistema exibe uma mensagem genérica confirmando o envio (independente do e-mail existir ou não — por segurança).
-5. O **api-gateway** dispara, via **Better Auth**, o e-mail com o link de redefinição (enviado por SMTP — SendGrid em produção, Mailpit no local) e o gestor o recebe.
+5. O **api-gateway** dispara, via **Better Auth**, o e-mail com o link de redefinição (enviado por SMTP — Brevo em produção, Mailpit no local) e o gestor o recebe.
 
 **Etapa 2 — Redefinir a senha:**
 

@@ -110,7 +110,7 @@ Os tipos TypeScript que transitam entre Gateway e IA Analyze **não são duplica
 | Autenticação | Better Auth (sessão em cookie httpOnly) | — |
 | ORM / Acesso a dados | Drizzle ORM (SQL-first) | — |
 | Banco de Dados | PostgreSQL (hospedado no Supabase, acessado direto via `DATABASE_URL`) | — |
-| E-mail transacional | SMTP (SendGrid em produção · Mailpit no local) | — |
+| E-mail transacional | SMTP (Brevo em produção · Mailpit no local) | — |
 | IA | OpenRouter com chave e modelo configurados por empresa no perfil (BYO-key); credencial cifrada no Gateway e enviada ao IA Analyze por headers internos | — |
 | Testes | Vitest + Testing Library | — |
 | Distribuição | Multi-repo + pacote `@feedback/lib-shared` | — |
