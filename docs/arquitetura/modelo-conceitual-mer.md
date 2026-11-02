@@ -8,12 +8,7 @@
 
 ## Diagrama
 
-<figure markdown="span">
-  ![Modelo de Entidade e Relacionamento (MER) do Feedback Analytics, em notação de Chen](../assets/mer-conceitual.png)
-  <figcaption>MER — notação de Chen. Autores: Fernando Sergio e Rachel Alves.</figcaption>
-</figure>
-
-> **Como ler:** retângulos são **entidades**, losangos são **relacionamentos** e elipses são **atributos** (elipse preenchida = identificador). Os rótulos nas conexões (`1`, `N`, `0:1`, `1:N`) indicam a **cardinalidade** de participação de cada entidade no relacionamento.
+> **Diagrama em atualização.** A imagem anterior saiu por estar desatualizada; enquanto a nova não chega, a tabela abaixo descreve os relacionamentos e as cardinalidades.
 
 ---
 
