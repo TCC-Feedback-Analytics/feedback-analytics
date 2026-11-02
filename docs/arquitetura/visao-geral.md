@@ -71,7 +71,7 @@ O sistema tem uma topologia **hub-and-spoke**: o API Gateway é o hub central. O
 3. O middleware `requireAuth` valida a sessão via **Better Auth** (a partir do cookie) e injeta `req.user` na request
 4. O Gateway lê/escreve no banco (Postgres via Drizzle) e, quando necessário, chama o IA Analyze
 
-### Fluxo de Análise IA
+
 
 ### Fluxo de Análise IA (100% Assíncrono)
 
