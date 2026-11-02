@@ -10,9 +10,9 @@ A infraestrutura do projeto roda integralmente na **Vercel**, sem servidores ded
 | `feedback-analytics-api-gateway` | `@vercel/node` | Serverless Function | 300s |
 | `feedback-analytics-ia-analyze` | `@vercel/node` | Serverless Function | 300s |
 
-- **Frontend (web):** arquivos estáticos (HTML, CSS, JS) gerados no build e servidos diretamente pela CDN da Vercel. Não há servidor — o React roda no navegador do usuário.
-- **API-Gateway:** função Node.js que acorda a cada requisição, consulta o banco (Postgres, via Drizzle) e encerra. O timeout de 300s cobre com folga as operações de I/O e a orquestração das chamadas à IA — que, em lotes grandes, encadeia várias chamadas ao LLM por requisição.
-- **IA-Analyze:** função Node.js de longa duração — recebe feedbacks, chama o LLM externo (pode levar 30–60s) e processa o resultado. Precisa de 300s de timeout, inviável de rodar no mesmo projeto do Gateway.
+- **Frontend (web):** arquivos estáticos (HTML, CSS, JS) gerados no build e servidos diretamente pela CDN da Vercel. O React 19 consome o Gateway com estado assíncrono e polling resiliente de jobs via `useIaOperation`.
+- **API-Gateway:** ponto central em Node.js/Express. Além de tratar autenticação (Better Auth) e regras de negócio, hospeda o **Worker Assíncrono** (loop contínuo em desenvolvimento ou acionado por cron em produção) que consome a fila `ia_analysis_job` via `SELECT ... FOR UPDATE SKIP LOCKED`.
+- **IA-Analyze:** microsserviço isolado de inferência. Recebe lotes de feedbacks e requisições de síntese do Worker através de chamadas HTTP internas protegidas por token, conectando-se a provedores externos (Google Gemini ou OpenRouter) via padrão Strategy.
 
 > **Nota — bundle do Gateway:** antes do deploy, o workflow de deploy do repo `feedback-analytics-api-gateway` roda uma etapa de esbuild que empacota o entrypoint em um `_bundle.cjs`. É esse bundle que o `vercel.json` do Gateway aponta como `src`.
 
@@ -73,12 +73,30 @@ O sistema tem uma topologia **hub-and-spoke**: o API Gateway é o hub central. O
 
 ### Fluxo de Análise IA
 
-1. A empresa clica em "Analisar feedbacks" no painel de insights
-2. O Gateway busca feedbacks não analisados (máx. 100), remove IDs já presentes em `feedback_analysis` e agrupa em **batches por escopo** (`COMPANY`, `PRODUCT`, `SERVICE`, `DEPARTMENT`)
-3. Em seguida, **sub-divide cada batch por TAMANHO** (`chunkBatchesBySize`): cada lote é fatiado em sub-lotes de no máx. ~20 feedbacks por chamada ao LLM (configurável via `IA_MAX_FEEDBACKS_PER_BATCH`), evitando que a saída JSON estoure o teto de tokens do modelo e seja truncada
-4. Envia o payload `{ enterprise_context, batches[] }` ao IA Analyze via HTTP com token interno
-5. O IA Analyze chama o **provedor LLM externo** por batch, processa e sanitiza sentimentos, keywords e categorias
-6. O Gateway persiste as análises em `feedback_analysis` e os insights em `feedback_insights_report`
+### Fluxo de Análise IA (100% Assíncrono)
+
+1. **Enfileiramento imediato (POST -> 202 Accepted):**
+   - O gestor clica em *"Analisar feedbacks"* ou *"Gerar insights"* no painel.
+   - O Gateway cria um registro na tabela `ia_analysis_job` com status `queued` e retorna instantaneamente status HTTP `202 Accepted` acompanhado do `jobId`.
+   - O frontend libera a interface, exibe barra global de progresso e inicia polling resiliente de status, permitindo ao usuário navegar ou recarregar a tela sem cancelar a operação.
+
+2. **Consumo e Leases pelo Worker:**
+   - O Worker do Gateway faz a leitura de tarefas pendentes utilizando `SELECT ... FOR UPDATE SKIP LOCKED`, garantindo atomicidade sem concorrência destrutiva entre instâncias.
+   - O status é transicionado para `processing` e as datas de lease são atualizadas.
+
+3. **Fracionamento de Lotes e Headers Dinâmicos:**
+   - O Worker busca os feedbacks não analisados da empresa e os fatia em sub-lotes seguros (`IA_MAX_FEEDBACKS_PER_BATCH`, padrão ~20 feedbacks).
+   - O Gateway recupera as credenciais da empresa em `enterprise_ia_config` (decifrando a chave via AES-256-GCM) e envia ao `ia-analyze` através de headers internos (`x-llm-provider`, `x-llm-model`, `x-llm-api-key`).
+
+4. **Processamento no `ia-analyze` (Multi-Provedor):**
+   - A fábrica `createProvider` instancia o adaptador apropriado (**OpenRouter** ou **Gemini**).
+   - O modelo LLM classifica sentimento, intensidade, aspectos (ABSA), categorias e palavras-chave (com aplicação do Filtro Semântico Anti-Poluição em PT-BR).
+   - A resposta passa por validação estrita de integridade de esquema Zod com fallback automático.
+
+5. **Persistência Incremental e Conclusão:**
+   - O Worker salva os resultados parciais em `feedback_analysis` (checkpoints por lote) e atualiza o progresso (`done`/`total`) no job.
+   - Na etapa de síntese global (*"Gerar insights"*), o Worker processa todos os feedbacks analisados daquele escopo (sem corte em 100) e persiste o resumo e recomendações em `feedback_insights_report`.
+   - Ao finalizar, o job passa para `completed`, e a interface do frontend exibe os dados atualizados.
 
 ---
 

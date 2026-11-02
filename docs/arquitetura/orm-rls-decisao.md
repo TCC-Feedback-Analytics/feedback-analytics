@@ -8,12 +8,13 @@ Este documento responde, de frente, à crítica da banca *"usar Supabase não ex
 
 Artefatos relacionados:
 
-- Schema Drizzle **canônico** (introspectado do banco real via `db:pull`): [`drizzle/schema.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle/schema.ts) · tipos inferidos estáveis em [`src/db/types.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/types.ts)
-- Cliente Drizzle (lazy, pooler): [`src/db/client.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/client.ts)
+- Schema Drizzle **canônico e modular** (Fase 2): barrel em [`drizzle/schema.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle/schema.ts) agrupando módulos em `drizzle/schema/*.ts` (`auth`, `devices`, `enterprise`, `feedback`, `iaConfig`, `iaJobs`, `questions`, `views`) – tipos inferidos estáveis em [`src/db/types.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/types.ts)
+- Cliente Drizzle (lazy, pooler Supabase): [`src/db/client.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/client.ts)
 - Config do drizzle-kit: [`drizzle.config.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/drizzle.config.ts)
+- ADR-0001 (Decisão de Fonte Única): [`docs/adr/0001-fonte-unica-de-schema.md`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/adr/0001-fonte-unica-de-schema.md)
 - Convenção de migrations: [Migrations com Drizzle](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/migrations-drizzle.md)
-- Caminho migrado (stats via Drizzle, tenant-scoped): [`src/db/tenantScope.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/tenantScope.ts) + [`src/repositories/feedbackStats.repository.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/repositories/feedbackStats.repository.ts)
-- Modelagem existente: [Modelo Conceitual (MER)](modelo-conceitual-mer.md) · [Diagrama de Entidade e Relacionamento (DER)](modelagem-de-dados.md) · [Visão Geral do Banco](../referencia/banco-de-dados/visao-geral.md)
+- Camada de isolamento multi-tenant: [`src/db/tenantScope.ts`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/db/tenantScope.ts)
+- Modelagem existente: [Modelo Conceitual (MER)](modelo-conceitual-mer.md) – [Diagrama de Entidade e Relacionamento (DER)](modelagem-de-dados.md) – [Visão Geral do Banco](../referencia/banco-de-dados/visao-geral.md)
 
 ---
 
@@ -38,10 +39,10 @@ Um ORM, porém, conecta ao Postgres por uma **connection string com uma role adm
 
 ## 3. A decisão
 
-1. **Drizzle nos caminhos AUTENTICADOS/INTERNOS** (onde o backend já sabe de qual empresa é a requisição), **sempre com filtro explícito por `enterprise_id`**.
-2. **O fluxo público anônimo (QR Code) permanece sob RLS**, que é a fronteira de segurança correta para um papel `anon` não confiável.
-3. **A RLS permanece LIGADA em todas as tabelas**, como **defesa em profundidade**: mesmo que um filtro de aplicação falhe, a policy do banco é a segunda barreira.
-4. **Adoção incremental, não migração total**: começamos por um caminho de leitura (as agregações de stats — fundação das métricas por período e comparação); o resto migra sob demanda, declarado como trabalho futuro. O acompanhamento dessas etapas foi transferido para a área de tarefas do Buraco Negro.
+1. **Drizzle nos caminhos AUTENTICADOS/INTERNOS e no Worker** (onde o backend conhece a empresa autenticada ou processa jobs em lote), **sempre com filtro explícito por `enterprise_id`**.
+2. **O fluxo público anônimo (QR Code) permanece sob RLS**, garantindo a segurança estrita do papel `anon`.
+3. **A RLS permanece LIGADA nas tabelas legadas como defesa em profundidade**, enquanto novas tabelas de infraestrutura (`ia_analysis_job`, `enterprise_ia_config`) adotam isolamento estrito via tenant scope da aplicação e chaves estrangeiras com delete cascade.
+4. **Fonte única canônica (Fase 2 consolidada)**: o Drizzle assumiu a autoridade total do schema através de migrations versionadas (`0000_great_talisman.sql` a `0003_amusing_radioactive_man.sql`), substituindo definitivamente dumps SQL manuais paralelos (ADR-0001).
 
 ## 4. Mitigações (como evitamos o vazamento entre empresas)
 
