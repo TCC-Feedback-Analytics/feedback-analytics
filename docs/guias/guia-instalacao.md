@@ -104,8 +104,8 @@ Em produção, `CORS_ALLOWED_ORIGINS` deve conter `https://feedback-analytics-we
 !!! note "Autenticação saiu do Supabase Auth → Better Auth"
     O login/cadastro/sessão agora usam **Better Auth** (não mais o Supabase Auth). O **banco continua sendo o Postgres do Supabase** — apenas o Auth e o SDK do Supabase saíram. As tabelas do Better Auth (`user`, `session`, `account`, `verification`) ficam nesse mesmo Postgres. Não use mais `SUPABASE_URL`, `SUPABASE_ANON_KEY` nem `AUTH_PROVIDER`.
 
-!!! tip "E-mail em produção (SendGrid)"
-    Em produção, use SMTP do SendGrid: `SMTP_HOST=smtp.sendgrid.net`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER=apikey`, `SMTP_PASS=<sua API key SG.…>` e `MAIL_FROM=<remetente verificado no SendGrid>`.
+!!! tip "E-mail em produção (Brevo)"
+    Em produção, use SMTP da Brevo: `SMTP_HOST=smtp-relay.brevo.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER=<login SMTP da Brevo>`, `SMTP_PASS=<chave SMTP da Brevo, não a API key>` e `MAIL_FROM=<remetente verificado na Brevo>`.
 
 ### `feedback-analytics-ia-analyze/.env`
 
