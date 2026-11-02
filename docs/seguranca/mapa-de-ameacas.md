@@ -70,7 +70,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | **I** | Acessar o banco por fora do app | Data API do Supabase desligada desde 22/10/2026. RLS ligada, sem policies, nas 13 tabelas originais | ⚠️ Oito tabelas novas estão sem RLS |
 | **E** | Uma credencial do app vazar e dar acesso total | — | ❌ O gateway entra como `postgres` (superusuário). Com a senha vazada, dá para apagar ou ler tudo, inclusive a estrutura |
 | **I** | Ler a chave de IA de uma empresa no banco | Chave cifrada com AES-256-GCM (`utils/crypto.ts`), com a chave mestra fora do banco, nas variáveis da Vercel | ✅ |
-| **T** | Perder dados por erro ou ataque | Backups do Supabase | ⚠️ A confirmar no plano contratado e a documentar no roteiro de incidente |
+| **T** | Perder dados por erro ou ataque | Backups do Supabase | ⚠️ A confirmar no plano contratado; a restauração está no [roteiro de incidente](roteiro-de-incidente.md) |
 | **I** | Guardar dado além do necessário | Sem CPF/CNPJ (migration `0009`) | ⚠️ IP do cliente sem prazo de guarda |
 
 ## 5. Análise por IA
@@ -110,4 +110,4 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | 7 | IP do cliente sem prazo | Guardar além do necessário | Etapa 07, código, item 4 (opcional) |
 | 8 | Tokens do Google guardados sem uso | Dado sensível sem finalidade | Novo, pequeno |
 | 9 | Comentário com dado pessoal ou instrução para a IA | Dado saindo do sistema; resumo enviesado | Decisão em aberto |
-| 10 | Backups não confirmados | Recuperação depois de um incidente | Roteiro de incidente |
+| 10 | Backups não confirmados | Recuperação depois de um incidente | [Roteiro de incidente](roteiro-de-incidente.md) |
