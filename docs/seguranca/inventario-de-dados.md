@@ -2,7 +2,7 @@
 
 > **Em uma frase:** a lista de cada dado pessoal que o Feedback Analytics guarda ou repassa: de quem é, onde fica, para que serve, para quem sai e por quanto tempo fica.
 
-É a base da etapa de segurança e LGPD. O mapa de ameaças, o registro de controlador e operador e o roteiro de incidente partem desta lista. Ela foi levantada no schema do banco (`drizzle/schema/` do gateway) e no código em 02/11/2026.
+É a base da etapa de segurança e LGPD. O [mapa de ameaças](mapa-de-ameacas.md), o registro de controlador e operador e o roteiro de incidente partem desta lista. Ela foi levantada no schema do banco (`drizzle/schema/` do gateway) e no código em 02/11/2026.
 
 ## De quem são os dados
 

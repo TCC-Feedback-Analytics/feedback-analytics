@@ -133,6 +133,7 @@ nav:
           - ORM vs. RLS: arquitetura/orm-rls-decisao.md
   - Segurança e LGPD:
       - Inventário de dados pessoais: seguranca/inventario-de-dados.md
+      - Mapa de ameaças (STRIDE): seguranca/mapa-de-ameacas.md
   - Referência Técnica:
       - Banco de dados (schema): referencia/banco-de-dados/visao-geral.md
       - Padrões de projeto: referencia/padroes-projeto.md
