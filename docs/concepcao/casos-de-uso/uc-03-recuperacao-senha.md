@@ -4,7 +4,7 @@
 |---|---|
 | **Ator** | Gestor |
 | **Objetivo** | Redefinir a senha da conta quando o acesso for perdido |
-| **Gatilho** | Gestor clica em "Esqueci minha senha" na tela de login |
+| **Gatilho** | Gestor clica em "Esqueci minha senha" na tela de login (ou em "Redefinir senha", no dialog "Problemas para entrar?") |
 
 ---
 
@@ -12,19 +12,19 @@
 
 **Etapa 1 — Solicitar redefinição:**
 
-1. O gestor acessa a tela de recuperação de senha.
+1. O gestor acessa a tela de recuperação de senha (`/forgot-password`, "Recupere seu acesso").
 2. Informa o e-mail cadastrado.
-3. Clica em "Enviar".
-4. O sistema exibe uma mensagem genérica confirmando o envio (independente do e-mail existir ou não — por segurança).
+3. Clica em "Enviar instruções".
+4. O sistema exibe o toast "E-mail enviado!" com a mensagem genérica "Se este e-mail estiver cadastrado, você receberá as instruções em breve." (independente do e-mail existir ou não — por segurança).
 5. O **api-gateway** dispara, via **Better Auth**, o e-mail com o link de redefinição (enviado por SMTP — Brevo em produção, Mailpit no local) e o gestor o recebe.
 
 **Etapa 2 — Redefinir a senha:**
 
 1. O gestor clica no link recebido por e-mail.
-2. O link abre a tela de redefinição de senha com uma sessão temporária ativa.
-3. O gestor digita a nova senha e confirma.
-4. O sistema valida e salva a nova senha.
-5. O gestor é redirecionado para o login para acessar com a nova senha.
+2. O link passa pelo `GET /api/public/auth/callback` do gateway, que grava o token no cookie httpOnly `ba_reset` (vale 1 h e só é enviado para a troca de senha) e abre direto a tela de redefinição (`/auth/reset-password`, "Redefina sua senha").
+3. O gestor digita a nova senha (mínimo de 10 caracteres) e a confirmação e clica em "Redefinir senha".
+4. O sistema valida a senha com a mesma regra do cadastro e salva usando o cookie `ba_reset`, não a sessão; com sucesso, o cookie é apagado.
+5. O gestor é redirecionado para o login (`/login?reset=success`) para acessar com a nova senha. Hoje a tela de login não lê esse parâmetro: não aparece aviso de "senha alterada".
 
 ---
 
@@ -33,9 +33,9 @@
 | Situação | O que o sistema faz |
 |---|---|
 | E-mail informado não está cadastrado | Exibe a mesma mensagem genérica de sucesso (não revela se o e-mail existe) |
-| Muitas tentativas de solicitação (rate limit) | Bloqueia temporariamente e exibe mensagem pedindo para aguardar |
-| Link de redefinição expirado ou inválido | Exibe mensagem informando que o link não é mais válido e orienta a solicitar um novo |
-| Nova senha não atende aos requisitos mínimos | Bloqueia o envio e indica o que precisa ser corrigido |
+| Muitas tentativas, falha do servidor, sem conexão ou e-mail malformado | Exibe o toast "Não foi possível enviar" com o motivo |
+| Link de redefinição expirado ou inválido | A tela de redefinição abre normalmente; ao enviar a nova senha, o gateway recusa (`401 reset_password_invalid_token`) e a tela mostra o toast "Erro ao redefinir senha" com "O link de redefinição expirou ou é inválido. Solicite um novo." |
+| Nova senha não atende aos requisitos mínimos | Bloqueia o envio e indica o que precisa ser corrigido (menos de 10 caracteres no formulário; senha fácil de adivinhar, recusada pelo gateway com `reset_password_weak`) |
 | Campos de senha e confirmação não coincidem | Bloqueia o envio e destaca a inconsistência |
 
 ---

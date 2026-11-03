@@ -3,21 +3,21 @@
 | Campo | Valor |
 |---|---|
 | **Ator** | Gestor |
-| **Objetivo** | Atualizar os dados pessoais e de contato da conta |
-| **Gatilho** | Gestor acessa a tela de perfil no dashboard |
+| **Objetivo** | Atualizar os dados pessoais e de contato da conta, consultar os dados da empresa e, se quiser, excluir a conta |
+| **Gatilho** | Gestor abre "Minha conta" no menu da conta, no cabeçalho |
 
 ---
 
 ## Visão Geral da Tela
 
-A tela de perfil (`/user/profile`) foi enxugada e concentra **apenas as Informações pessoais** — nome, e-mail e telefone (componente `Information`). É a única seção deste UC.
+A tela de perfil (`/user/profile`) abre com o `PageHeader` (breadcrumb + título **"Perfil"**) e tem quatro seções:
 
-A tela abre com o `PageHeader` (breadcrumb + título **"Perfil"**). A identidade da empresa e o **logout** não ficam mais no corpo da tela: migraram para o **menu de conta no topo do layout** (`AccountMenu`), onde o gestor encontra "Minha conta" (atalho de volta para `/user/profile`) e "Sair".
+- **Dados pessoais e acesso** — nome completo, e-mail e telefone (componente `Information`), com o atalho "Ver dados da empresa".
+- **Dados e configurações da empresa** (`#dados-da-empresa`) — o cadastro da empresa: "Conta criada em" e "Status da conta" (Período de teste, Conta ativa, Teste encerrado ou Conta cancelada). Não há CPF/CNPJ: o sistema não usa nem guarda esse dado (LGPD).
+- **Contexto da empresa para IA** — o card "Contexto e LLM da empresa", com "Editar contexto e LLM" (ver UC-08).
+- **Excluir minha conta** — a exclusão definitiva da conta (LGPD, art. 18).
 
-As três seções que antes ficavam no perfil **deixaram de existir aqui** e foram realocadas na nova área "Configuração da coleta":
-
-- **QR Code da Empresa** + **Perguntas Dinâmicas da Empresa** (as 3 perguntas gerais do tipo Empresa) foram fundidas na tela **"Avaliação da empresa"** (antes "Feedback geral"; `/user/edit/feedback-general`), com as seções **Perguntas** e **Canais de coleta** — ver UC-05.
-- **Configuração de Coleta (IA)** (contexto do negócio) virou a tela **"Dados da empresa"** (`/user/edit/collecting-data-enterprise`) — ver UC-08.
+O **logout** e o **Guia do Sistema** ficam no **menu de conta no topo do layout** (`AccountMenu`), com "Minha conta" (atalho para `/user/profile`) e "Sair". As perguntas gerais da empresa, o campo de comentário e os canais de coleta ficam na tela **"Avaliação da empresa"** (`/user/edit/feedback-general`) — ver UC-05.
 
 ---
 
@@ -25,27 +25,32 @@ As três seções que antes ficavam no perfil **deixaram de existir aqui** e for
 
 **Atualizar nome:**
 
-1. O gestor clica no campo de nome e edita o valor.
+1. O gestor clica em "Editar" no campo "Nome completo" e altera o valor.
 2. Confirma a alteração.
-3. O sistema valida que o nome não está vazio e salva.
-4. O nome atualizado aparece imediatamente no perfil.
-
-**Atualizar e-mail:**
-
-1. O gestor clica no campo de e-mail e informa o novo endereço.
-2. Confirma a alteração.
-3. O sistema envia uma solicitação de confirmação para **os dois endereços** — o antigo e o novo.
-4. O gestor confirma em ambos os e-mails para que a alteração seja efetivada.
+3. O sistema valida o nome (de 2 a 120 caracteres) e salva.
+4. O sistema confirma com o toast "Nome atualizado!" e o nome atualizado aparece no perfil.
 
 **Atualizar telefone (dois passos):**
 
-1. O gestor clica no campo de telefone — a tela muda para o modo de edição.
-2. Informa o novo número no formato `+55 DDD NÚMERO` e clica em "Enviar SMS".
-3. O sistema envia o código de verificação de 6 dígitos por SMS.
-4. A tela muda para o modo de verificação.
-5. O gestor digita o código recebido e clica em "Confirmar".
-6. O telefone é atualizado na conta e a tela volta ao modo de visualização.
-7. O gestor pode cancelar a qualquer momento (modo edição ou verificação) para voltar ao valor anterior sem alterar nada.
+1. O gestor clica em "Editar" no campo de telefone — a tela muda para o modo de edição.
+2. Informa o novo número no formato `+55` seguido do DDD e do número e clica em "Enviar SMS".
+3. O gateway já grava o novo número nesse passo e a tela mostra o toast "Código enviado!". **Não há provedor de SMS:** nenhum código é enviado de fato.
+4. A tela muda para o modo de verificação ("Digite o código de 6 dígitos que você recebeu").
+5. O gestor digita um código e clica em "Confirmar" (ver a limitação abaixo).
+6. O gestor pode cancelar no modo de edição ou de verificação para voltar ao modo de visualização. Depois de "Enviar SMS", o número novo já está salvo.
+
+**Excluir a conta:**
+
+1. No fim do Perfil, o gestor clica em "Excluir minha conta" ("Apaga a conta, a empresa e todos os feedbacks. Não dá para desfazer.").
+2. O dialog lista o que será apagado e pede a senha, se a conta tem login por senha, e a palavra **EXCLUIR** para liberar o botão "Excluir para sempre".
+3. O gateway apaga a conta, a empresa e todos os dados dela (feedbacks, análises, catálogo, perguntas, pontos de coleta, aparelhos, configuração de IA, jobs e diagnósticos) e limpa o cookie de sessão.
+4. O dialog mostra "Sua conta foi excluída." e o botão "Ir para o início", que recarrega a página em `/`.
+
+> **Limitações conhecidas.**
+>
+> - **Troca de e-mail:** o campo "Email" é editável e diz "Após alterar, confirme nos dois emails (antigo e novo)", mas a troca **não acontece**. O gateway sempre responde `400 update_failed`, porque o `changeEmail` do Better Auth não está ligado. A action do Perfil não trata o erro: a falha sobe para a tela de erro da área logada, que hoje não renderiza nada, e a área logada fica **em branco** até recarregar a página.
+> - **Confirmação do telefone:** a Web envia só o código para `POST /api/protected/user/phone/verify`, e o gateway exige também o telefone, então responde `400 invalid_payload`. A falha cai na mesma tela em branco. O número já foi gravado no passo "Enviar SMS".
+> - **Falhas ao salvar o nome:** também não são tratadas pela action e levam à mesma tela em branco, em vez de um toast de erro.
 
 ---
 
@@ -53,11 +58,13 @@ As três seções que antes ficavam no perfil **deixaram de existir aqui** e for
 
 | Situação | O que o sistema faz |
 |---|---|
-| Nome vazio ao salvar | Rejeita o envio — o campo é obrigatório |
-| Código de verificação do telefone inválido | Exibe toast de erro "Código inválido" — o gestor pode tentar novamente |
-| Erro ao enviar o SMS | Exibe toast de erro "Erro ao enviar código" com mensagem de detalhes |
-| Telefone fora do padrão (`+55 DDD NÚMERO`) | A validação do formulário bloqueia o envio antes de chamar a API |
-| Erro de rede ao salvar nome ou e-mail | Exibe toast de erro — o valor anterior permanece no campo |
+| Nome vazio ou com menos de 2 caracteres | A validação do campo bloqueia o envio |
+| Telefone fora do padrão (`+55` + DDD + número) | A validação do formulário bloqueia o envio antes de chamar a API |
+| Troca de e-mail | Sempre falha no gateway (`400 update_failed`) e a área logada fica em branco (ver as limitações acima) |
+| Confirmação do código do telefone | Falha no gateway (`400 invalid_payload`) e a área logada fica em branco (ver as limitações acima) |
+| Exclusão com senha errada | O dialog mostra "Senha incorreta. Confira e tente de novo." |
+| Exclusão sem senha (conta só com Google) e entrada há mais de 24 h | O dialog mostra "Por segurança, saia, entre de novo e volte aqui para excluir a conta." |
+| Outra falha na exclusão | O dialog mostra "Não foi possível excluir a conta agora. Tente de novo em instantes." |
 
 ---
 
@@ -75,9 +82,9 @@ As três seções que antes ficavam no perfil **deixaram de existir aqui** e for
 - **[CT-UC12-06]** ✅ *Coberto E2E* - Logout: o logout redireciona para a página de login. (Spec: `[CT-UC12-06] Logout redireciona para página de login`.)
 - **[CT-UC12-07]** ✅ *Coberto E2E* - Rota protegida: usuário não autenticado é redirecionado para o login ao acessar rota protegida. (Spec: `[CT-UC12-07] Usuário não autenticado é redirecionado para login ao acessar rota protegida`.)
 - **[CT-UC12-08]** 📝 *Planejado / não implementado* - Caminho feliz — nome: gestor edita o nome, salva e confirma que o novo nome aparece no perfil.
-- **[CT-UC12-09]** 📝 *Planejado / não implementado* - Caminho feliz — e-mail: gestor informa novo e-mail válido e recebe a mensagem de sucesso (a confirmação nos dois e-mails é feita fora do app).
-- **[CT-UC12-10]** 📝 *Planejado / não implementado* - Caminho feliz — telefone: gestor informa novo número, recebe o SMS, insere o código de 6 dígitos e o telefone é atualizado.
+- **[CT-UC12-09]** 📝 *Planejado / não implementado* - Caminho feliz — e-mail: gestor informa novo e-mail válido e recebe a mensagem de sucesso (a confirmação nos dois e-mails é feita fora do app). **Hoje falha:** o gateway responde `400 update_failed` e a área logada fica em branco (ver as limitações conhecidas).
+- **[CT-UC12-10]** 📝 *Planejado / não implementado* - Caminho feliz — telefone: gestor informa novo número, clica em "Enviar SMS", insere o código e o telefone é atualizado. **Hoje:** não há SMS, o número é gravado no primeiro passo e a confirmação falha com `400 invalid_payload` (ver as limitações conhecidas).
 - **[CT-UC12-11]** 📝 *Planejado / não implementado* - Caminho feliz — cancelar telefone: durante o modo de edição ou verificação, clicar em "Cancelar" deve voltar ao modo de visualização sem alterar o número.
 - **[CT-UC12-12]** 🔵 *Unidade já atende* - Exceção — nome vazio: tentar salvar com campo de nome vazio deve bloquear o envio.
 - **[CT-UC12-13]** 🔵 *Unidade já atende* - Exceção — telefone inválido: informar número fora do padrão `+55 DDD NÚMERO` deve bloquear o formulário antes de enviar o SMS.
-- **[CT-UC12-14]** 📝 *Planejado / não implementado* - Exceção — código inválido: inserir código errado na verificação deve exibir toast de erro sem sair do modo de verificação.
+- **[CT-UC12-14]** ⛔ *Obsoleto* - Exceção — código inválido: sem provedor de SMS, o gateway não confere o código (`/phone/verify` é um no-op), então não existe código errado a testar.

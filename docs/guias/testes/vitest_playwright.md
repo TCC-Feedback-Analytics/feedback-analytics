@@ -1,5 +1,8 @@
 # Escolha das Ferramentas de Teste: Vitest & Playwright
 
+!!! warning "Situação em 03/11/2026: só o Vitest está em uso"
+    O **Vitest** roda nos três repositórios de código (Web, API Gateway e IA Analyze) e no CI de cada um. O **Playwright** não existe mais no projeto: a suíte E2E, o `playwright.config.ts` e a dependência saíram da Web em 08/08/2026, e os casos de uso passaram a ter um [runbook de teste manual](./manuais-web.md). A seção do Playwright abaixo fica como registro da escolha feita na época.
+
 Este documento explica de forma simples e direta por que escolhemos o **Vitest** (testes automatizados, em uso) e o **Playwright** (E2E, **hoje descontinuado** — a suíte foi removida e virou o [runbook manual de testes da Web](./manuais-web.md)) no ecossistema do projeto **Feedback Analytics**.
 
 ---
@@ -34,7 +37,7 @@ O **Playwright** era utilizado para realizar testes **End-to-End (E2E)** no fron
 ### Por que escolhemos o Playwright?
 
 1. **Multinavegador Nativo:**
-   O Playwright suporta nativamente três grandes motores de renderização: **Chromium** (Chrome, Edge), **Firefox** e **WebKit** (Safari), o que permite ampliar a cobertura entre navegadores quando necessário. Atualmente, porém, o projeto está configurado (`feedback-analytics-web/playwright.config.ts`) para executar a suíte E2E apenas em **Chromium** (Desktop Chrome).
+   O Playwright suporta nativamente três grandes motores de renderização: **Chromium** (Chrome, Edge), **Firefox** e **WebKit** (Safari), o que permite ampliar a cobertura entre navegadores quando necessário. Enquanto existiu, porém, a suíte foi configurada (no `playwright.config.ts` da Web, hoje removido) para executar apenas em **Chromium** (Desktop Chrome).
 
 2. **Redução de Testes Intermitentes (Flaky Tests):**
    Um dos maiores problemas em testes E2E é a instabilidade (testes que passam uma hora e falham na outra por lentidão na rede). O Playwright resolve isso com **Auto-Waiting** (espera automática): ele aguarda os elementos estarem visíveis, clicáveis e estáveis antes de interagir com eles.

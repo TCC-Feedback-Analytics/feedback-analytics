@@ -7,7 +7,7 @@
     [web](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/tree/main/.github/workflows) ·
     [api-gateway](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/.github/workflows) ·
     [ia-analyze](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/tree/main/.github/workflows).
-    A publicação **desta documentação** é o único workflow deste repositório (`deploy-docs.yml`).
+    A publicação **desta documentação** é o único workflow deste repositório (`deploy-docs.yml`). O repositório de contratos (`feedback-analytics-contracts`) não tem workflows.
 
 ---
 
@@ -26,14 +26,16 @@
 
 O projeto utiliza GitHub Actions com **deploy totalmente manual e confirmado** na Vercel. **Só a branch `main` é deployada para produção** — os workflows de deploy exigem disparo manual via `workflow_dispatch`, aceitam apenas `main` e pedem confirmação explícita digitando `ok`.
 
-O CI automático (lint, typecheck, testes de **unidade** e build) roda em push e Pull Requests nas branches protegidas de cada repo (`main` e `developer`), bloqueando merges quando falha. Os testes que exigem **banco de dados ou ambiente deployado** — integração do API Gateway e e2e (Playwright) do web — **não são mais automatizados**: foram convertidos em **testes manuais** (ver [runbook do API Gateway](testes/manuais-api-gateway.md) e [runbook do Web](testes/manuais-web.md)).
+O CI automático (lint, typecheck e testes de **unidade**; na Web, também o build) roda em push e Pull Requests nas branches protegidas de cada repo (`main` e `developer`), bloqueando merges quando falha. Os testes que exigem **banco de dados ou ambiente deployado** — integração do API Gateway e e2e (Playwright) do web — **não são mais automatizados**: foram convertidos em **testes manuais** (ver [runbook do API Gateway](testes/manuais-api-gateway.md) e [runbook do Web](testes/manuais-web.md)).
 
 | Serviço (repo) | CI | Deploy | Alvo |
 |---|---|---|---|
-| `feedback-analytics-web` | lint + typecheck + testes unitários + build | `deploy-web.yml` (manual, só `main`) | Site estático (CDN) |
-| `feedback-analytics-api-gateway` | lint + typecheck + testes unitários + bundle · smoke de migrations | `deploy-api.yml` (manual, só `main`) | Serverless Function |
-| `feedback-analytics-ia-analyze` | lint + typecheck + testes unitários | `deploy-ia-analyze.yml` (manual, só `main`) | Serverless Function |
-| `feedback-analytics` (docs) | build MkDocs `--strict` | `deploy-docs.yml` (push a `main`) | GitHub Pages |
+| `feedback-analytics-web` | lint + typecheck + build + testes unitários (Node 24) | `deploy-web.yml` (manual, só `main`, Node 20) | Site estático (CDN) |
+| `feedback-analytics-api-gateway` | lint + typecheck + testes unitários · smoke de migrations (Node 20) | `deploy-api.yml` (manual, só `main`, aplica as migrations antes) | Serverless Function |
+| `feedback-analytics-ia-analyze` | lint + typecheck + testes unitários (Node 20) | `deploy-ia-analyze.yml` (manual, só `main`) | Serverless Function |
+| `feedback-analytics` (docs) | — (o build MkDocs `--strict` roda dentro do deploy) | `deploy-docs.yml` (push a `main` que mexe na doc, ou manual) | GitHub Pages |
+
+Além deles, o API Gateway tem o `ia-worker.yml`, que chama o worker da fila de IA em produção a cada 5 minutos.
 
 ---
 
@@ -62,14 +64,14 @@ Evitar cliques acidentais no botão "Run workflow" da interface do GitHub. Sem a
 
 O CI executa a base da pirâmide — **testes de unidade (Vitest)** — em **toda** PR, em jobs paralelos. São testes herméticos (100% mockados, sem rede nem secrets), rápidos e determinísticos: o lugar certo para bloquear cedo. No API Gateway há ainda um **smoke de migrations** (`schema-migrations.yml`) que sobe um Postgres efêmero no próprio runner (sem credenciais externas) e verifica que as migrations Drizzle aplicam limpo e batem com o `schema.ts`.
 
-O meio e o topo da pirâmide — **integração** (API Gateway, contra Postgres local) e **e2e** (web, Playwright, contra ambiente deployado) — exigiam um banco semeado ou um ambiente homolog no ar, com o respectivo conjunto de credenciais. Esse custo de infraestrutura e de manutenção de secrets passou a superar o retorno para o tamanho do time, então essas suítes foram **removidas do código e do CI** e viraram **roteiros de teste manual**:
+O meio e o topo da pirâmide — **integração** (API Gateway, contra Postgres local) e **e2e** (web, Playwright, contra ambiente deployado) — exigiam um banco semeado ou um ambiente homolog no ar, com o respectivo conjunto de credenciais. Esse custo de infraestrutura e de manutenção de secrets passou a superar o retorno para o tamanho do time, então essas suítes foram **removidas do código e do CI** e viraram **roteiros de teste manual** (no Gateway sobrou um único teste contra Postgres real, `onboarding.database.test.ts`, que só roda com `ONBOARDING_TEST_DATABASE_URL` definida e fica pulado no CI):
 
 - [Testes manuais — API Gateway](testes/manuais-api-gateway.md) — reproduz os cenários de integração/e2e via a UI e/ou `curl` aos endpoints, contra o banco local semeado.
 - [Testes manuais — Web (UCs)](testes/manuais-web.md) — reproduz os casos de uso UC-01…UC-12 clicando na aplicação.
 
 ### Vantagens e limites
 
-- **CI nunca pode ser bypassado** — lint, typecheck, testes unitários e build são obrigatórios em qualquer PR.
+- **CI nunca pode ser bypassado** — lint, typecheck e testes unitários (e o build, na Web) são obrigatórios em qualquer PR.
 - **Serviços independentes** — deploya-se só o frontend sem tocar a API ou o serviço de IA, e vice-versa. Janela de risco menor a cada deploy.
 - **Deploy consciente** — nada vai para produção sem ação intencional, e só a partir de `main`.
 - **Menos superfície de configuração** — sem ambiente homolog paralelo, some um conjunto inteiro de secrets e um passo de deploy por serviço.
@@ -100,11 +102,14 @@ feature → developer → main
 
 Os passos concretos (steps, `npm ci`, config Vercel) vivem em cada repo, junto do código que validam. Em linhas gerais:
 
-- **CI (`ci.yml`)** — roda em push/PR nas branches protegidas (`main` e `developer`): instala dependências (incluindo o pacote `@feedback/lib-shared`), roda lint + typecheck (`tsc --noEmit` com `tsconfig.ci.json`, que exclui testes) + testes de unidade; no web, também `build`.
-- **Smoke de migrations (`schema-migrations.yml`, no api-gateway)** — em push/PR que tocam `db/`, `drizzle/` ou os scripts de banco: sobe um Postgres efêmero via docker-compose, aplica as migrations + seed e roda `drizzle-kit check` para garantir que `schema.ts` ↔ migrations batem. Não usa credenciais externas.
-- **Deploy (`deploy-*.yml`)** — `workflow_dispatch` manual com confirmação `ok`, aceito **apenas na branch `main`**; usa a Vercel CLI com `--local-config vercel.json` do repo, fazendo `vercel deploy --prod`. O `feedback-analytics-api-gateway` gera o bundle com `esbuild` e executa `npm run db:migrate` com a `DATABASE_URL` de produção antes de publicar.
-- **Worker da fila de IA (`ia-worker.yml`, no api-gateway)** — roda automaticamente a cada cinco minutos e também aceita disparo manual. Envia `POST /api/internal/worker/tick` com o header `x-worker-token`; o secret `WORKER_TICK_TOKEN` do GitHub deve ter exatamente o mesmo valor da variável homônima no API Gateway publicado na Vercel.
-- **Deploy da documentação (`deploy-docs.yml`, este repo)** — publica o site MkDocs no GitHub Pages no push a `main`.
+- **CI (`ci.yml`)** — roda em push/PR nas branches protegidas (`main` e `developer`), em dois jobs paralelos. Os dois reescrevem `ssh→https` no git (para o `npm ci` baixar o `@feedback/lib-shared`, repositório público, sem token) e instalam as dependências. O job de qualidade roda lint + typecheck (`tsc -p tsconfig.ci.json --noEmit`, que exclui os testes) e, na Web, também `npm run build`; o job `unit-tests` roda o Vitest (`npm test` no Gateway e no IA Analyze, `npm run test -- run` na Web). Node 20 no Gateway e no IA Analyze, Node 24 na Web.
+- **Smoke de migrations (`schema-migrations.yml`, no api-gateway)** — em push/PR para `main` e `developer` que tocam `db/**`, `drizzle/**`, `scripts/db-local.mjs`, `docker-compose.yml`, `package.json`, `package-lock.json` ou o próprio workflow: sobe o Postgres do docker-compose no runner, roda `node scripts/db-local.mjs` (migrations + seed) e `npm run db:check` (`drizzle-kit check`) para garantir que `schema.ts` ↔ migrations batem. Não usa credenciais externas.
+- **Deploy (`deploy-*.yml`)** — `workflow_dispatch` manual com o campo `confirm_deploy` = `ok`, aceito **apenas na branch `main`**; roda `npm ci` e publica com a Vercel CLI (`npx vercel deploy --yes --prod --local-config vercel.json`), em Node 20. Por serviço:
+    - **API Gateway (`deploy-api.yml`)** — gera o bundle com `esbuild` (`index.ts → _bundle.cjs`) e executa `npm run db:migrate` com o secret `DATABASE_URL` antes de publicar; secret ausente ou migration com erro interrompem o deploy. Execuções na mesma branch ficam em fila, sem cancelar a que está em andamento.
+    - **Web (`deploy-web.yml`)** — o workflow não builda: envia o código e a Vercel faz o build, por isso as variáveis `VITE_*` ficam no projeto da Vercel. Um deploy novo cancela o anterior.
+    - **IA Analyze (`deploy-ia-analyze.yml`)** — sem bundle: o `@vercel/node` roda `src/index.ts` direto. Um deploy novo cancela o anterior.
+- **Worker da fila de IA (`ia-worker.yml`, no api-gateway)** — roda automaticamente a cada cinco minutos (cron `2-59/5 * * * *`, evitando o minuto zero) e também aceita disparo manual. Envia `POST https://feedback-analytics-api-gateway.vercel.app/api/internal/worker/tick` com o header `x-worker-token`; o secret `WORKER_TICK_TOKEN` do GitHub deve ter exatamente o mesmo valor da variável homônima no API Gateway publicado na Vercel. Uma execução por vez, com limite de 6 minutos.
+- **Deploy da documentação (`deploy-docs.yml`, este repo)** — no push a `main` que mexe em `docs/**`, `mkdocs.yml`, `requirements-docs.txt` ou no próprio workflow (ou por disparo manual): instala o MkDocs Material com Python 3.12, roda `mkdocs build --strict` e publica no GitHub Pages. Não roda em Pull Request: um link ou âncora quebrada só aparece depois do push a `main`, quando derruba a publicação.
 
 Para os detalhes de cada workflow, veja o `.github/workflows/` do respectivo repositório (links no topo desta página).
 
@@ -118,10 +123,10 @@ Os secrets são configurados em cada repositório GitHub em **Settings → Secre
 |---|---|---|
 | `VERCEL_TOKEN` / `VERCEL_ORG_ID` | Deploys | Autenticação e organização na Vercel |
 | `VERCEL_PROJECT_ID_WEB` / `_API_GATEWAY` / `_IA_ANALYZE` | Deploy do respectivo serviço | ID do projeto na Vercel |
-| `DATABASE_URL` | Deploy do API Gateway | Conexão de produção usada por `drizzle-kit migrate` antes do deploy |
+| `DATABASE_URL` | Deploy do API Gateway | Conexão de produção usada por `drizzle-kit migrate` antes do deploy, com o `postgres` (dono das tabelas), não com o `feedback_app` que o app usa na Vercel |
 | `WORKER_TICK_TOKEN` | `ia-worker.yml` do API Gateway | Autentica o agendador no endpoint interno; deve coincidir com a variável da Vercel |
 
-> Os secrets antes usados pelo e2e/homolog (`SUPABASE_*`, `E2E_TEST_*`, `E2E_DATABASE_URL_DEVELOPER`, `BETTER_AUTH_SECRET_DEVELOPER`) **não são mais necessários** no CI. `DATABASE_URL` permanece necessária no GitHub exclusivamente para aplicar migrations no deploy do Gateway, e `WORKER_TICK_TOKEN` para chamar o worker. As variáveis de runtime continuam configuradas no projeto correspondente da Vercel.
+> Os secrets antes usados pelo e2e/homolog (`SUPABASE_*`, `E2E_TEST_*`, `E2E_DATABASE_URL_DEVELOPER`, `BETTER_AUTH_SECRET_DEVELOPER`) **não são mais necessários** no CI. `DATABASE_URL` permanece necessária no GitHub exclusivamente para aplicar migrations no deploy do Gateway, e `WORKER_TICK_TOKEN` para chamar o worker. As variáveis de runtime continuam configuradas no projeto correspondente da Vercel. O `deploy-docs.yml` deste repositório não usa secrets: publica no GitHub Pages com as permissões `pages: write` e `id-token: write` do próprio workflow.
 
 ---
 
@@ -130,9 +135,9 @@ Os secrets são configurados em cada repositório GitHub em **Settings → Secre
 | Etapa | Branch | O que acontece |
 |---|---|---|
 | 1 | `feature/*` | Desenvolvimento local |
-| 2 | PR → `developer` | CI roda automaticamente: lint + typecheck + testes unitários + build. Merge bloqueado se falhar. |
+| 2 | PR → `developer` | CI roda automaticamente: lint + typecheck + testes unitários (+ build na Web; + smoke de migrations no Gateway, quando a PR mexe no banco). Merge bloqueado se falhar. |
 | 3 | `developer` (integração) | Código integrado. Antes de promover, o time roda os [runbooks manuais](testes/manuais-web.md) conforme necessário. |
-| 4 | PR → `main` | CI roda novamente (lint + typecheck + unit + build). Merge bloqueado se falhar. |
-| 5 | `main` (produção) | Deploy manual via `workflow_dispatch` com confirmação `ok` → deploy `--prod` na Vercel do serviço alterado |
+| 4 | PR → `main` | CI roda novamente (lint + typecheck + unit, + build na Web). Merge bloqueado se falhar. |
+| 5 | `main` (produção) | Deploy manual via `workflow_dispatch` com confirmação `ok` → deploy `--prod` na Vercel do serviço alterado (no Gateway, depois de aplicar as migrations pendentes) |
 
 > **Cada serviço é deployado independentemente** — deploya-se somente o frontend sem tocar o API Gateway ou o serviço de IA.

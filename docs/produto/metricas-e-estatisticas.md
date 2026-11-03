@@ -22,6 +22,7 @@ Consequências que importam para a leitura:
 - **"Geral" ≠ empresa inteira.** O nome sugere o total, mas é só o canal geral da empresa. Hoje não há na interface uma visão do total da empresa.
 - **Antes da reorganização, nenhuma métrica dizia na tela de qual escopo estava falando**: o escopo só aparecia no seletor do cabeçalho. Resolvido pela etiqueta de escopo (abaixo).
 - O rótulo "Total acumulado no workspace", no card de feedbacks recebidos do Dashboard, era impreciso (o número é do escopo selecionado). O card saiu na reorganização.
+- **Feedbacks de teste ficam de fora.** Os enviados pelo "Testar o formulário" (canal `TEST`) não entram em nenhuma métrica, nem no mínimo de feedbacks e na análise da IA. Só a lista de Feedbacks recebidos os mostra, com a marca "Teste" (`notTestFeedback`, em `src/db/tenantScope.ts` do gateway).
 
 ### Decisão: etiqueta de escopo em cada seção (16/10/2026)
 
@@ -34,7 +35,7 @@ Cada seção do Dashboard ("Avaliação por estrelas", "Perguntas do formulário
 | Item | **Produto · Pizza** · **Serviço · Entrega** · **Departamento · Cozinha** |
 
 - "Geral" vira "Avaliação geral da empresa" só na etiqueta. A renomeação do seletor fica para a visão total da empresa (ver abaixo).
-- **Ajuste de 17/10/2026:** a etiqueta dizia "QR geral da empresa". Ela não cita mais um canal, porque o escopo da empresa vai juntar mais de um canal de coleta (QR Code hoje, NFC depois). Veja **Configuração da coleta: escopo, perguntas e canais**, abaixo.
+- **Ajuste de 17/10/2026:** a etiqueta dizia "QR geral da empresa". Ela não cita mais um canal, porque o escopo junta mais de um canal de coleta (hoje QR Code, link e etiqueta NFC). Veja **Configuração da coleta: escopo, perguntas e canais**, abaixo.
 - Textos de vazio e o painel de precisão citam o escopo (ex.: "Ainda sem avaliações na empresa (avaliação geral)").
 - Um componente só para todas as telas, para o texto nunca divergir.
 
@@ -82,7 +83,7 @@ Fonte: `GET /feedbacks/analysis` e `GET /feedbacks/insights/report`. **Só exist
 
 | Métrica (nome na tela) | O que mede | Onde aparece hoje | Decisão (16/10/2026) |
 |---|---|---|---|
-| **Aguardando análise** (`pendingCount`) | Feedbacks do escopo ainda não lidos pela IA | Dashboard (cabeçalho) | **Mantém** como aviso, não como métrica. |
+| **Aguardando análise** (`pendingCount`) | Feedbacks do escopo **com comentário** ainda não lidos pela IA (`comentados − analisados`) | Dashboard (cabeçalho) | **Mantém** como aviso, não como métrica. |
 | **Total analisado** (`totalAnalyzed`) | Feedbacks do escopo já lidos pela IA | Analisados › Todos; selos de confiança da lente Comentários | **Mantém** como contexto da lente Comentários. |
 | **Selo de confiança** (`confidenceTier`) | Quão sólida é a amostra pelo tamanho `n` | Dashboard, Estatísticas, Emocional, Perguntas | **Funde** com a faixa provável no indicador **Precisão** (ver abaixo). |
 | **Faixa provável** (intervalos de confiança) | Intervalo onde o valor real provavelmente está | Dashboard (média); Perguntas; Estatísticas (tom dos comentários) | **Funde** com o selo no indicador **Precisão** (ver abaixo). |
@@ -152,23 +153,26 @@ Os endereços antigos redirecionam: Relatórios, Emocional e Estatísticas levam
 
 ### Guia do sistema
 
-Os passos do guia acompanham a nova estrutura. Com a etapa 02 e as métricas novas (18/10/2026), são 15 passos, na ordem:
+Os passos do guia acompanham a nova estrutura. Com a etapa 02, as métricas novas (18/10/2026) e o diagnóstico do escopo, são 16 passos, na ordem:
 
 1. Dashboard;
 2. **Escopo e período**;
-3. **Avaliação por estrelas**;
-4. **Movimento das avaliações**;
-5. **Perguntas do formulário**, com o peso na nota e o "Melhore primeiro";
-6. **Análise dos comentários** (o card do Dashboard);
-7. **Visão geral da análise**;
-8. **Comentários**;
-9. **Comparar itens**;
-10. **Todas as métricas de estrelas**;
-11. Avaliação da empresa;
-12. Catálogo;
-13. Configuração de IA;
-14. Perfil;
-15. Dados da empresa.
+3. **Diagnóstico do escopo ✨IA**;
+4. **Avaliação por estrelas**;
+5. **Movimento das avaliações**;
+6. **Perguntas do formulário**, com o peso na nota e o "Melhore primeiro";
+7. **Análise dos comentários** (o card do Dashboard);
+8. **Visão geral da análise**;
+9. **Comentários**;
+10. **Comparar itens**;
+11. **Todas as métricas de estrelas**;
+12. Avaliação da empresa;
+13. Catálogo;
+14. Configuração de IA;
+15. Perfil;
+16. Dados da empresa.
+
+O guia não abre sozinho: o Dashboard convida o gestor (no primeiro feedback ou numa próxima sessão), e ele segue disponível no menu da conta.
 
 Na conta sem feedbacks, a prévia das boas-vindas tem um card de exemplo para cada seção do Dashboard, para o guia ter onde parar. O card do Dashboard vem antes das páginas da análise, para o guia não pular de página no meio do Dashboard. O guia que passa por cada métrica do Dashboard fica para depois.
 
@@ -186,11 +190,12 @@ A configuração separa três coisas que o nome "Feedback geral" misturava (e qu
 |---|---|---|
 | **Escopo** | O que o cliente avalia? | A empresa como um todo (**Avaliação da empresa**) ou um item do **Catálogo** (produto, serviço, departamento) |
 | **Perguntas** | O que se pergunta? | Seção **Perguntas** de cada escopo |
-| **Canais de coleta** | Por onde a resposta chega? | Seção **Canais de coleta** de cada escopo: hoje **QR Code e link**; o **NFC** (etapa 06 do roadmap) entra como mais um card |
+| **Canais de coleta** | Por onde a resposta chega? | Seção **Canais de coleta** de cada escopo: **QR Code**, **link** e **etiqueta NFC** (esta desde a etapa 06), um card cada |
 
 - A aba "Feedback geral" passou a se chamar **"Avaliação da empresa"**. O endereço continua `/user/edit/feedback-general`. No celular, o atalho se chama "Avaliação".
 - A página do item do Catálogo segue o mesmo desenho: dados do item, **Perguntas** e **Canais de coleta**.
-- Todas as respostas de um escopo entram nas mesmas métricas, seja qual for o canal. A comparação **por canal** ("o NFC trouxe mais respostas que o QR?") fica para depois, como filtro, junto com a etapa 02 (períodos). O canal não vira um escopo novo.
+- Cada escopo também configura o **campo de comentário**: o convite padrão, uma pergunta própria ou oculto (ver [Coleta via QR Code](coleta-qrcode.md)).
+- Todas as respostas de um escopo entram nas mesmas métricas, seja qual for o canal. O canal não vira um escopo novo nem filtro: desde a etapa 06, o Dashboard mostra **"Por onde chegaram"** (ver **Canais e comentários**, abaixo).
 
 ### Período e comparação (etapa 02, 17/10/2026)
 
@@ -212,7 +217,7 @@ Como o período funciona:
 O que **não** segue o período:
 
 - **Contagens e regras de toda a história.** O aviso "aguardando análise", os marcos de feedback e o mínimo de feedbacks para a IA continuam contando o histórico inteiro do escopo.
-- **O resumo da IA.** Ele não é recortado por data. Com um período escolhido, aparece o aviso "O resumo considera todos os comentários analisados". O diagnóstico por período fica fora desta etapa.
+- **O resumo da IA.** Ele não é recortado por data. Com um período escolhido, aparece o aviso "O resumo considera todos os comentários analisados". A leitura da IA por período veio depois, com o **Diagnóstico do escopo** (ver [Análise dos comentários](painel-insights-ia.md)).
 - **A lista de Feedbacks recebidos.** Ela não tem período.
 
 **Comparar com o período anterior.** Com um período escolhido, aparece o botão **Comparar com o período anterior**.
@@ -231,7 +236,7 @@ O que **não** segue o período:
 - **Quais métricas.** Mostra só as que os dois têm: nº de avaliações, média, % positivas, % críticas, tom e precisão da média. As perguntas ficam de fora, porque cada item tem as suas.
 - **Quem está melhor.** Esta coluna diz o item e a diferença. Usa as mesmas margens da comparação com o período anterior, então também pode dizer **Diferença incerta**.
 
-Ficam para depois: diagnóstico por período, comparar mais de 2 itens e o período na lista de Feedbacks recebidos.
+Ficam para depois: comparar mais de 2 itens e o período na lista de Feedbacks recebidos.
 
 ### Métricas que não vêm só da nota (18/10/2026)
 
@@ -270,10 +275,26 @@ Como cada métrica aparece e os cuidados de leitura:
 - **Clientes que voltam.**
   - **Quem é o cliente:** o aparelho usado para avaliar, sem dados pessoais. O número é aproximado, porque a mesma pessoa em outro celular conta como outro cliente.
   - **Quando a avaliação conta como "de quem volta":** quando o mesmo aparelho já tinha avaliado a empresa antes, em qualquer escopo.
+  - **Limite do aparelho por dia:** o registro do aparelho vem do anti-spam, cujo fingerprint inclui o dia (`MD5(userAgent | IP | dia)`). O mesmo celular vira um registro novo a cada dia, então hoje a métrica só reconhece quem avaliou de novo **no mesmo dia** (em outro ponto de coleta, porque no mesmo o anti-spam barra). Quem volta noutro dia conta como primeira vez (ver [Anti-spam por fingerprint](anti-spam-fingerprint.md)).
   - **Sem aparelho identificado:** essas avaliações ficam de fora.
   - **Comparação das notas:** usa a mesma regra de "Diferença incerta" da comparação de períodos.
 
-Ficam de fora: peso das subperguntas, comparação por canal (etapa 06) e gênero (dado opcional e sensível pela LGPD). Detalhes da API em `docs/endpoints.md` do API Gateway.
+Ficam de fora: peso das subperguntas e gênero (dado opcional e sensível pela LGPD). A comparação por canal entrou depois, na etapa 06 (abaixo). Detalhes da API em `docs/endpoints.md` do API Gateway.
+
+### Canais e comentários
+
+Duas métricas vêm do `GET /feedbacks/stats` e seguem o escopo e o período:
+
+| Métrica | Pergunta que responde | Como é calculada | Onde aparece |
+|---|---|---|---|
+| **Por onde chegaram** | Qual canal traz mais respostas, e a nota muda de um para outro? | Quantidade e média das estrelas, com IC t, por canal: QR Code, link e etiqueta NFC (`channelBreakdown`). Avaliações sem a marca de canal (anteriores a ela ou de QR Codes antigos) ficam à parte | Dashboard |
+| **Quem escreve comentário** | Quanto o tom dos comentários e o resumo da IA representam os clientes? | % das avaliações com comentário, com IC de Wilson, e a média de estrelas de quem comentou × quem não comentou (`commentParticipation`) | Visão geral da análise e, numa linha, no bloco de comentários do Dashboard |
+
+- **Por onde chegaram:** com um canal só, a seção vira uma linha. O "Testar o formulário" não aparece.
+- **Quem escreve comentário:**
+  - Com 10 avaliações ou mais e menos de 30% de comentários, a tela avisa que o tom fala de uma parte pequena dos clientes.
+  - Com 20 avaliações ou mais, a tela sugere mudar o campo de comentário do escopo quando menos de 15% comentam, ou quando, com 10 comentários ou mais, 60% deles são curtos (menos de 20 caracteres). A mesma regra vai para o diagnóstico da IA. Com o campo oculto em todo o recorte, não há sugestão.
+  - A comparação das notas usa a mesma regra de "Diferença incerta" da comparação de períodos.
 
 ---
 
@@ -408,7 +429,7 @@ Na interface, os itens marcados aparecem na lista de **Comentários**, no filtro
 
 ## Métricas determinísticas por pergunta/subpergunta
 
-Respondem a outra pergunta: **"como cada pergunta do meu formulário está sendo avaliada?"**. São **100% determinísticas** — calculadas só sobre as respostas estruturadas (escala 1–5) e **independem da IA**. Alimentam a aba **Perguntas** (endpoint `/feedbacks/questions`), no escopo selecionado, com cada pergunta e suas subperguntas aninhadas.
+Respondem a outra pergunta: **"como cada pergunta do meu formulário está sendo avaliada?"**. São **100% determinísticas** — calculadas só sobre as respostas estruturadas (escala 1–5) e **independem da IA**. Alimentam a seção **Perguntas do formulário** do Dashboard e as páginas de cada pergunta (endpoint `/feedbacks/questions`; a antiga aba Insights › Perguntas saiu), no escopo selecionado, com cada pergunta e suas subperguntas aninhadas.
 
 Os rótulos de resposta mapeiam para uma nota: `PESSIMO` = 1, `RUIM` = 2, `MEDIANA` = 3, `BOA` = 4, `OTIMA` = 5.
 
@@ -420,6 +441,7 @@ Os rótulos de resposta mapeiam para uma nota: `PESSIMO` = 1, `RUIM` = 2, `MEDIA
 | `distribution` | Mini-distribuição por rótulo: PESSIMO / RUIM / MEDIANA / BOA / OTIMA |
 | `confidenceTier` | Selo de confiança pelo `n` de respostas |
 | `status` | Estado da redação: `current` (atual), `deactivated` (desativada), `past` (antiga) |
+| `ratingWeight` | Só nas perguntas: correlação de Spearman entre a nota da pergunta e as estrelas do mesmo feedback, com IC 95% e `n` (ver **O que mais pesa na nota**, acima). `null` com menos de 4 pares ou sem variação |
 
 A lista vem ordenada **pior → melhor** (menor nota no topo), para o gestor atacar primeiro o que mais incomoda. Escopo sem feedbacks (ou item inexistente) retorna `{ questions: [] }`.
 
@@ -429,4 +451,4 @@ A lista vem ordenada **pior → melhor** (menor nota no topo), para o gestor ata
 
 ## Para detalhes da API
 
-Os formatos completos de requisição e resposta dos endpoints que expõem essas métricas — `GET /feedbacks/stats`, `GET /feedbacks/questions` e `GET /feedbacks/analysis` — estão na [Referência de Endpoints](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md).
+Os formatos completos de requisição e resposta dos endpoints que expõem essas métricas — `GET /feedbacks/stats`, `/questions`, `/analysis`, `/timeline`, `/heatmap` e `/customers` — estão na [Referência de Endpoints](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md).

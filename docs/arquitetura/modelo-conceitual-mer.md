@@ -16,8 +16,11 @@
 
 | Entidade A | Card. | Entidade B | Descrição |
 | --- | --- | --- | --- |
-| `user` | 1 - 1 | `enterprise` | Cada usuário autenticado (Better Auth) possui exatamente uma empresa vinculada (`auth_user_id`), criada no cadastro. |
-| `enterprise` | 1 - 1 | `collecting_data_enterprise` | Uma empresa tem exatamente um registro de dados estratégicos de contexto. |
+| `user` | 1 - 1 | `enterprise` | Cada usuário autenticado (Better Auth) possui exatamente uma empresa vinculada (`auth_user_id`), criada no cadastro ou na primeira entrada com o Google. |
+| `user` | 1 - N | `session` | Um usuário pode ter várias sessões ativas (Better Auth). |
+| `user` | 1 - N | `account` | Um usuário entra por um ou mais provedores (senha, Google). |
+| `user` | 1 - N | `user_onboarding` | Um usuário conclui ou pula cada versão do guia do sistema. |
+| `enterprise` | 1 - 0..1 | `collecting_data_enterprise` | Uma empresa tem no máximo um registro de dados estratégicos de contexto, criado quando ela preenche o contexto. |
 | `enterprise` | 1 - 0..1 | `enterprise_ia_config` | Uma empresa possui opcionalmente configurações próprias de provedor e chave de IA (BYO-key). |
 | `enterprise` | 1 - N | `ia_analysis_job` | Uma empresa enfileira múltiplas operações de análise e síntese assíncrona. |
 | `enterprise` | 1 - N | `catalog_items` | Uma empresa cadastra múltiplos itens de catálogo (produtos, serviços, departamentos). |
@@ -27,10 +30,14 @@
 | `enterprise` | 1 - N | `feedback` | Uma empresa recebe múltiplos feedbacks. |
 | `enterprise` | 1 - N | `questions_of_feedbacks` | Uma empresa define múltiplas perguntas dinâmicas por escopo/contexto. |
 | `enterprise` | 1 - N | `feedback_insights_report` | Uma empresa possui múltiplos relatórios de insights consolidados (um por escopo/item). |
+| `enterprise` | 1 - N | `scope_diagnosis` | Uma empresa acumula o histórico de diagnósticos do escopo gerados pela IA. |
+| `enterprise` | 1 - N | `feedback_comment_field` | Uma empresa configura o campo de comentário do formulário por escopo (sem registro = convite padrão). |
 | `catalog_items` | 0..1 - N | `collection_points` | Um ponto de coleta pode estar vinculado a um item do catálogo (opcional). |
 | `catalog_items` | 0..1 - N | `questions_of_feedbacks` | Uma pergunta pode ser contextualizada por um item do catálogo (null = escopo COMPANY). |
 | `catalog_items` | 0..1 - N | `feedback_insights_report` | Um relatório pode ser contextualizado por um item do catálogo (null = escopo COMPANY). |
 | `catalog_items` | 0..1 - N | `ia_analysis_job` | Um job assíncrono pode ser delimitado para processar um item de catálogo específico. |
+| `catalog_items` | 0..1 - N | `scope_diagnosis` | Um diagnóstico pode ser de um item do catálogo (null = escopo COMPANY). |
+| `catalog_items` | 0..1 - 0..1 | `feedback_comment_field` | Cada item do catálogo tem no máximo uma configuração própria do campo de comentário. |
 | `collection_points` | 1 - N | `feedback` | Cada ponto de coleta recebe múltiplos feedbacks. |
 | `tracked_devices` | 0..1 - N | `feedback` | Um feedback pode estar associado a um dispositivo rastreado (opcional). |
 | `customer` | 0..1 - N | `tracked_devices` | Um dispositivo pode ser atribuído a um cliente (opcional). |
@@ -40,9 +47,11 @@
 | `questions_of_feedbacks` | 1 - N | `feedback_question_subquestions` | Cada pergunta pode ter até 3 subperguntas de detalhamento. |
 | `questions_of_feedbacks` | 1 - N | `feedback_question_answers` | Cada pergunta pode receber múltiplas respostas (uma por feedback). |
 | `feedback_question_subquestions` | 1 - N | `feedback_subquestion_answers` | Cada subpergunta pode receber múltiplas respostas (uma por feedback). |
-| `user` (via `blocked_by`) | 0..1 - N | `tracked_devices` | Um dispositivo pode ser bloqueado manualmente por um usuário gestor (opcional). |
+| `user` (via `blocked_by`) | 0..1 - N | `tracked_devices` | Um dispositivo pode ser marcado como bloqueado por um usuário (opcional). Hoje não há tela nem rota que faça isso: o bloqueio só é gravado direto no banco. |
 
-> A entidade raiz de autorização é `enterprise`: quase todas as tabelas carregam `enterprise_id` para o isolamento multi-tenant (RLS). As exceções (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`) herdam o isolamento por cascata da entidade-pai.
+> A entidade raiz de autorização é `enterprise`: os dados de negócio carregam `enterprise_id`, e o gateway filtra cada query por ele (o isolamento multi-tenant fica na aplicação; a RLS barra os papéis que não são o do app). As tabelas filhas (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`) chegam à empresa pela entidade-pai. Algumas relações desta tabela são só lógicas, sem FK no banco (como `feedback` → `collection_points` e `tracked_devices` → `customer`); a [Modelagem de Dados (DER)](modelagem-de-dados.md) marca quais.
+>
+> Ficam fora da tabela, por não se relacionarem com outras entidades: `verification` (tokens do Better Auth), `auth_rate_limit` (limite de reenvio de e-mail) e `ia_rate_budget` (orçamento de chamadas à IA por empresa, guardado por chave de texto).
 
 ---
 

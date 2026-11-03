@@ -1,5 +1,8 @@
 # Documentação de Assets e Componentes (Design System)
 
+!!! note "Material de concepção (jun/2026)"
+    Este documento registra a biblioteca de componentes feita no Figma na fase de concepção e não foi atualizado com o produto. Os componentes da interface atual não seguem necessariamente estes padrões.
+
 Esta seção documenta exclusivamente a biblioteca de componentes visuais reutilizáveis (Assets) desenvolvidos no Figma para o projeto **Feedback Analytics**. Esses elementos promovem a consistência visual da aplicação e centralizam os padrões de interação, estados e animações.
 
 ---

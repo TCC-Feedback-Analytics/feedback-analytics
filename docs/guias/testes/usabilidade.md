@@ -3,7 +3,7 @@
 ### Este documento descreve o plano de execução para os **Testes de Campo / Testes de Aceitação do Usuário (UAT)** do Feedback Analytics. Esses testes serão conduzidos em um cenário de uso real com usuários finais (Pequenas e Médias Empresas — PMEs e profissionais autônomos).
 ---
 ## 1. Informações Gerais
-* **Objetivo:** Validar a usabilidade prática do sistema, a estabilidade da arquitetura técnica (API Gateway/BFF e Supabase) e a eficácia/assertividade da inteligência artificial (Gemini) em um ambiente real e cotidiano de operação.
+* **Objetivo:** Validar a usabilidade prática do sistema, a estabilidade da arquitetura técnica (API Gateway/BFF e o Postgres hospedado no Supabase) e a eficácia/assertividade da inteligência artificial (o LLM que cada empresa configura pelo OpenRouter) em um ambiente real e cotidiano de operação.
 * **Duração:** _[Data de Início]_ a _[Data de Término]_ (a definir).
 * **Empresas Participantes:** _[Inserir nomes das empresas participantes]_ (a definir).
 * **Responsáveis:** Cada membro da equipe é responsável direto pelo suporte técnico, monitoramento e comunicação constante com os gestores das empresas que trouxe para o projeto de teste.
@@ -11,7 +11,7 @@
 ## 2. Fase Pré-Teste
 Ações que devem ser obrigatoriamente concluídas **antes** de disponibilizar o sistema para uso comercial das empresas parceiras:
 * **Limpeza e Higienização de Dados:** Zerar completamente as tabelas de dados de operação (`feedback` e `feedback_analysis`) no ambiente de **produção** (não há mais ambiente de homologação — o deploy é main-only) para garantir que métricas antigas ou testes de desenvolvimento não poluam os relatórios reais das empresas.
-* **Auditoria de Variáveis de Ambiente:** Confirmar se as variáveis cruciais (como a chave da API do Gemini e credenciais de acesso ao Supabase) estão seguras, ativas e configuradas no servidor Express (API Gateway).
+* **Auditoria de Variáveis de Ambiente:** Confirmar se as variáveis cruciais estão seguras, ativas e configuradas nos projetos da Vercel — no API Gateway, `DATABASE_URL`, `BETTER_AUTH_SECRET`, o SMTP da Brevo, `IA_CONFIG_ENCRYPTION_KEY`, `WORKER_TICK_TOKEN` e o token interno do IA Analyze (o mesmo valor em `IA_ANALYZE_REMOTE_TOKEN` e, no IA Analyze, em `IA_ANALYZE_INTERNAL_TOKEN`) — e se o secret `WORKER_TICK_TOKEN` do GitHub bate com o da Vercel, para a fila da IA andar. A chave do LLM não é variável de ambiente: cada empresa participante configura a própria chave OpenRouter em **Configuração de IA**.
 * **Termo de Consentimento (Aspectos Éticos):** Obter o aceite formal ou a assinatura dos gestores parceiros no Termo de Consentimento Livre e Esclarecido (TCLE) que regulamenta a participação no teste de usabilidade.
 * **Kit de Coleta (SUS):** Garantir que o link do formulário (Google Forms) contendo o questionário estruturado da escala SUS (*System Usability Scale*) esteja pronto, revisado e operacional.
 ---
@@ -19,7 +19,7 @@ Ações que devem ser obrigatoriamente concluídas **antes** de disponibilizar o
 Acompanhamento passivo e técnico para identificar anomalias sem interferir na experiência direta do cliente e do gestor:
 * **Saúde do Banco de Dados (Diário):** Verificar ao final de cada dia no painel do Supabase se novas linhas de feedbacks estão sendo inseridas na tabela `feedback` com integridade relacional.
 * **Monitoramento Anti-Spam (Diário):** Analisar a tabela `tracked_devices` para medir a eficiência do bloqueio por fingerprint de dispositivos. É importante registrar a quantidade de tentativas abusivas bloqueadas diariamente.
-* **Auditoria das Análises de IA (A cada 2 dias):** Sempre que os gestores rodarem novas análises consolidadas de IA em lote, consultar a tabela `feedback_analysis` para assegurar que a API do Gemini gerou o JSON estruturado adequadamente (com chaves corretas de `Sentimento`, `Categorias` e `Palavras-chave`) e verificar se não houve retornos nulos ou erros de alucinação.
+* **Auditoria das Análises de IA (A cada 2 dias):** Sempre que os gestores rodarem novas análises consolidadas de IA em lote, consultar a tabela `feedback_analysis` para assegurar que o LLM gerou o JSON estruturado adequadamente (com chaves corretas de `Sentimento`, `Categorias` e `Palavras-chave`) e verificar se não houve retornos nulos ou erros de alucinação.
 ---
 ## 4. Fase de Encerramento (Coleta de Dados)
 Ações consolidadas no último dia do período de testes em campo:

@@ -6,6 +6,9 @@ Cada regra aqui é uma decisão consciente de produto ou de segurança. O códig
 
 O detalhamento técnico de como cada regra é implementada está em [regras-negocio.md](../produto/regras-negocio.md).
 
+!!! note "Conferido contra o código (03/11/2026)"
+    As decisões foram escritas em junho de 2026. Nesta revisão, cada uma foi conferida no código. As que o sistema deixou de seguir estão marcadas como **decisão substituída**, com o que vale hoje; as que valem com uma ressalva ganharam um parágrafo **Hoje**.
+
 ---
 
 ## Segurança e Privacidade
@@ -22,7 +25,9 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 
 ### A conta só pode ser de CPF ou CNPJ
 
-**Decisão:** ao cadastrar uma conta, o tipo de documento deve ser CPF (pessoa física) ou CNPJ (pessoa jurídica). Outros formatos não são aceitos.
+**Decisão substituída (migration `0009` do gateway).** O sistema não pede nem guarda mais CPF ou CNPJ: o cadastro pede o **nome do negócio**, que vale para pessoa física e jurídica. Nada no sistema usava o documento, e não guardar o que não é necessário é regra da LGPD (necessidade). A decisão original fica abaixo como registro.
+
+**Decisão original:** ao cadastrar uma conta, o tipo de documento deve ser CPF (pessoa física) ou CNPJ (pessoa jurídica). Outros formatos não são aceitos.
 
 **Por quê:** o produto atende tanto profissionais autônomos quanto empresas formais. Dois tipos cobrem todos os casos de uso previstos. Aceitar formatos abertos criaria inconsistências nos dados e dificultaria processos futuros de cobrança ou conformidade legal.
 
@@ -34,7 +39,7 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 
 **Por quê:** se o sistema dissesse "essa conta existe mas não foi confirmada" ou "esse e-mail já está cadastrado", um atacante poderia testar listas de e-mails em massa e descobrir quem tem conta na plataforma — o primeiro passo para ataques direcionados. Mensagens genéricas tornam essa varredura inviável. O custo é pequeno: um gestor legítimo com conta não confirmada ainda consegue reenviar o e-mail de ativação pelos fluxos de cadastro e de link expirado.
 
-**Observação:** por enquanto a regra vale para o e-mail. Telefone e documento ainda são validados de forma explícita no cadastro.
+**Observação:** por enquanto a regra vale para o e-mail. O telefone ainda é validado de forma explícita no cadastro (telefone de outra conta é recusado); o documento deixou de ser pedido.
 
 ---
 
@@ -54,6 +59,8 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 | Ativa (ACTIVE) | Assinatura paga em vigor |
 | Expirada (EXPIRED) | O trial encerrou sem conversão para plano pago |
 | Cancelada (CANCELED) | O gestor encerrou a assinatura manualmente |
+
+**Hoje:** o trial de 4 meses e o status `TRIAL` são gravados no cadastro, e o painel mostra o status com os dias restantes. Ainda não há cobrança: nada no código muda o status depois do cadastro nem bloqueia o acesso quando o trial termina.
 
 ---
 
@@ -75,6 +82,8 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 
 **Por quê:** feedbacks duplicados do mesmo dispositivo distorcem as análises. Uma empresa não deve tomar decisões baseadas em respostas repetidas da mesma pessoa no mesmo dia. O bloqueio é por dia corrido (meia-noite a meia-noite), não por janela de 24 horas — quem enviou às 23h de hoje pode enviar novamente às 0h de amanhã.
 
+**Hoje:** a meia-noite é a do relógio do servidor, que em produção roda em UTC. No horário de Brasília, o dia vira às 21h.
+
 ---
 
 ### Cada escopo tem até 3 perguntas configuráveis
@@ -90,6 +99,8 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 ### Se um item não tem perguntas próprias, o formulário coleta só a nota
 
 **Decisão:** quando um item de catálogo (produto, serviço ou departamento) não tem perguntas ativas configuradas, o formulário daquele item exibe **apenas a nota geral (estrelas) e o campo de mensagem** — **não** há fallback para as perguntas gerais da empresa.
+
+**Hoje:** o campo de mensagem segue a configuração do escopo, que pode mostrar o convite padrão, uma pergunta própria ou ficar oculto.
 
 **Por quê:** cada escopo deve refletir exatamente o que foi configurado para ele. Aproveitar as perguntas gerais da empresa em um item específico distorceria as métricas por escopo, atribuindo respostas a perguntas que não pertencem àquele item. Coletar só a nota mantém o dado limpo e ainda assim não bloqueia a coleta enquanto o gestor não configura perguntas próprias.
 
@@ -144,6 +155,8 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 **Decisão:** a análise de IA exige um mínimo de 10 feedbacks não analisados. Com menos do que isso, o sistema não executa.
 
 **Por quê:** análises com pouquíssimos feedbacks produzem conclusões estatisticamente frágeis — uma única resposta negativa pode parecer um padrão quando não é. Dez feedbacks é o piso mínimo para que os padrões identificados tenham algum significado.
+
+**Hoje:** o piso de 10 vale para o escopo, não só para os pendentes. Só contam feedbacks com comentário e fora do "Testar o formulário". Se o escopo já tem 10 ou mais, os pendentes podem ser menos de 10; o relatório exige pelo menos 10 feedbacks já analisados no escopo.
 
 ---
 
@@ -207,6 +220,8 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 
 ### Um sentimento inválido descarta só aquele feedback, não cancela a análise inteira
 
-**Decisão:** se a IA classificar um sentimento de um feedback com um valor desconhecido (qualquer coisa que não seja positivo, neutro ou negativo), aquele feedback específico é descartado — mas os demais do mesmo lote continuam sendo processados normalmente.
+**Decisão substituída.** Hoje o `ia-analyze` exige um resultado válido para cada feedback do lote (`iaBatchResponse.validation.ts`). Um sentimento fora de positivo, neutro ou negativo invalida o lote inteiro (`invalid_ai_response_schema`), e a análise falha sem gravar resultado parcial. Os lotes já gravados numa execução anterior continuam salvos, e uma nova tentativa busca só os pendentes. A troca evita que o relatório avance com feedbacks faltando. A decisão original fica abaixo como registro.
+
+**Decisão original:** se a IA classificar um sentimento de um feedback com um valor desconhecido (qualquer coisa que não seja positivo, neutro ou negativo), aquele feedback específico é descartado — mas os demais do mesmo lote continuam sendo processados normalmente.
 
 **Por quê:** cancelar toda a análise por causa de um único feedback com dado inválido seria desproporcional. O ideal é aproveitar o que for válido e descartar silenciosamente o que não for.

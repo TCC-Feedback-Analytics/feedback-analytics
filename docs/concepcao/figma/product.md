@@ -1,5 +1,8 @@
 # Documentação de Produto — Branding & Design Tokens
 
+!!! note "Material de concepção (jun/2026)"
+    Este documento registra as diretrizes de marca definidas no Figma na fase de concepção e não foi atualizado com o produto. A interface atual não segue necessariamente estes valores.
+
 Esta seção detalha as diretrizes da marca **Feedback Analytics** e o sistema de Design Tokens que fundamenta toda a interface visual (UI) da plataforma. O uso consistente de tipografia, paleta de cores e aplicações de marca busca proporcionar uma experiência mais sólida, coesa e profissional para os usuários corporativos e finais.
 
 ---

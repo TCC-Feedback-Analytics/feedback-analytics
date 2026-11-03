@@ -1,5 +1,8 @@
 # Design de Alta Fidelidade — Feedback Analytics
 
+!!! note "Material de concepção (jun/2026)"
+    Este documento registra o protótipo feito no Figma na fase de concepção e não foi atualizado com o produto. As telas, as rotas e os campos descritos aqui não refletem necessariamente a interface atual (por exemplo, o CPF/CNPJ mostrado no Perfil não existe mais no sistema). O que o sistema faz hoje está em [Requisitos e Funcionalidades](../requisitos-e-funcionalidades.md).
+
 ## Visão Geral
 
 Este documento descreve o protótipo de alta fidelidade do **Feedback Analytics**, cobrindo todas as telas do sistema, fluxos de navegação, estados de UI e comportamentos esperados para guiar a implementação front-end.

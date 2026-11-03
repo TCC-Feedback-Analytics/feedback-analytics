@@ -1,5 +1,7 @@
 # Descrições dos objetos SQL
 
+> **Legado.** Estas descrições acompanham os dumps desta pasta, da época do Supabase Auth, e não são mais a fonte do schema. A fonte única é o [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema) do gateway, com as migrations em [`drizzle/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle). Vários objetos abaixo já não existem — `auth.users` como tabela de usuários do sistema, as funções de cadastro, de JWT, de telefone e de CPF/CNPJ, os triggers de `auth.users` e todas as policies listadas no fim (hoje cada tabela tem só a policy `feedback_app_all`). A descrição atual está em [Banco de Dados — Visão Geral](../../docs/referencia/banco-de-dados/visao-geral.md) e no [README desta pasta](README.md).
+
 ## Tabelas
 - `auth.users`: tabela base de usuários de autenticação (credenciais, metadados e estado de conta).
 - `public.enterprise`: cadastro da empresa vinculada ao usuário autenticado (`auth_user_id`).

@@ -1,17 +1,20 @@
 # Testes — IA Analyze (`feedback-analytics-ia-analyze`)
 
-Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço Serverless **IA Analyze**. O serviço é responsável por se conectar aos modelos de linguagem da Google (Gemini API) para extrair sentimentos estruturados, palavras-chave de feedback e recomendações automáticas para os gestores.
+Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço Serverless **IA Analyze**. O serviço recebe pedidos do API Gateway, chama o LLM da empresa (provedor, chave e modelo chegam nos headers `x-llm-*`; o Gateway configura o **OpenRouter**, e há também um adaptador **Gemini**) e devolve sentimentos estruturados, palavras-chave, aspectos, a síntese dos insights, o diagnóstico do escopo e sugestões de perguntas.
+
+!!! info "Conferido em 03/11/2026"
+    Inventário refeito contra o repositório: **13 arquivos** de teste. A versão anterior listava 6 arquivos e 46 testes e tratava o Gemini como único provedor. O número de testes muda a cada PR; o total atual sai no fim do `npm test`.
 
 ---
 
 ## Status da Cobertura
 
-Os testes do serviço IA utilizam o **Vitest** como motor de execução e o **Supertest** para validar os endpoints locais simulando chamadas HTTP internas vindas da API Gateway. A comunicação externa com as APIs do Gemini é mockada em tempo de teste para evitar latência e custos de infraestrutura.
+Os testes do serviço IA utilizam o **Vitest** como motor de execução (`vitest.config.ts`: ambiente `node`, arquivos `src/tests/**/*.test.ts`) e o **Supertest** para validar os endpoints locais simulando chamadas HTTP internas vindas da API Gateway. Nenhum teste chama um LLM de verdade: as rotas mockam os serviços, os serviços mockam a fábrica de provedores, e os testes dos provedores mockam o `fetch` (OpenRouter) e o `@google/genai` (Gemini).
 
-> **Total geral de testes do IA Analyze: 46 testes distribuídos em 6 arquivos**
+> **Total: 13 arquivos de teste em `src/tests/`**
 
 !!! note "Sem suíte dependente de ambiente"
-    Todas as suítes do IA Analyze são **unitárias/de rota mockadas** (Gemini mockado) e **seguem automatizadas no CI**. O serviço não possui testes de integração ou e2e que dependam de banco/ambiente real, portanto não foi afetado pela conversão dessas camadas em runbooks manuais — mudança que atingiu apenas o [API Gateway](./manuais-api-gateway.md) e o [Web (Playwright)](./manuais-web.md).
+    Todas as suítes do IA Analyze são **unitárias/de rota mockadas** e **seguem automatizadas no CI** (job `unit-tests` do `ci.yml`). O serviço não tem banco e não possui testes de integração ou e2e que dependam de ambiente real, portanto não foi afetado pela conversão dessas camadas em runbooks manuais — mudança que atingiu apenas o [API Gateway](./manuais-api-gateway.md) e o [Web (Playwright)](./manuais-web.md).
 
 ---
 
@@ -20,33 +23,44 @@ Os testes do serviço IA utilizam o **Vitest** como motor de execução e o **Su
 No repositório do serviço de IA (`feedback-analytics-ia-analyze`):
 
 ```bash
-npm test
-# ou, explicitamente:
-npx vitest run
+npm test                # vitest run (execução única)
+npm run test:watch      # modo watch
+npm run test:coverage   # com cobertura (V8)
 ```
 
 ---
 
 ## Testes Automatizados
 
-Abaixo está o detalhamento sistemático de cada arquivo de teste presente no serviço, especificando sua finalidade e a quantidade de asserções executadas.
+Abaixo, os 13 arquivos agrupados pelo que cobrem. Todos ficam em [`src/tests/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/tree/main/src/tests).
 
-| Arquivo de Teste | Propósito Técnico | Qtd. Testes |
-| :--- | :--- | :---: |
-| [termProcessing.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/lib/termProcessing.test.ts) | **Sanitização e Processamento de Termos:** Valida exaustivamente os algoritmos que limpam e qualificam os termos e tags sugeridos pela IA. Cobre funções como `normalizeForComparison` (remoção de acentos/pontuações e colapso de espaços), `isGroundedInMessage` (garantia de que as palavras extraídas existem no comentário real para prevenir alucinações), `sanitizeTermList` (limpeza de duplicatas e limites de contagem) e `buildForbiddenTerms` (geração de blacklist contendo termos estruturados). | **14** |
-| [sentiment.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/services/sentiment.test.ts) | **Validação de Sentimento e Integridade de Dados:** Garante que a classificação qualitativa atende ao padrão esperado pelo banco (`positive`, `neutral`, `negative`). Valida se o ID de feedback fornecido é válido, rejeita tipos incompatíveis e impede o processamento de registros cujos identificadores não estejam no mapa de cache. | **9** |
-| [categoryTaxonomy.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/lib/categoryTaxonomy.test.ts) | **Canonicalização da Taxonomia de Categorias:** Valida a função `canonicalizeCategories`, que mapeia as categorias saneadas ao termo canônico da taxonomia fixa de cada escopo (`COMPANY`/`PRODUCT`/`SERVICE`/`DEPARTMENT`). Cobre o mapeamento de sinônimos ao canônico, o casamento por token quando não há match exato, a deduplicação de termos que recaem no mesmo canônico, a preservação de termos sem match como "emergentes" (normalizados) e o respeito ao escopo. Verifica também `getTaxonomyLabels`, que retorna os rótulos canônicos usados no nudge do prompt. | **7** |
-| [aspectExtraction.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/services/aspectExtraction.test.ts) | **Extração de Aspectos (ABSA):** Valida a função `extractAspects`, garantindo que os aspectos permaneçam ancorados no texto da mensagem (anti-alucinação), com descarte de aspectos ausentes, duplicados ou com sentimento inválido, aplicação do clamp de `sentiment_score` e respeito ao limite máximo de 6 aspectos. Cobre ainda os helpers `clampScore` (limita ao intervalo `[-1, 1]`), `normalizeConfidence` (limita ao intervalo `[0, 1]`) e `scoreFromSentiment` (mapeia a classe de sentimento ao escore numérico). | **6** |
-| [analyze.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/routes/analyze.test.ts) | **Endpoint de Análise de Lotes (/analyze):** Testa a rota principal do serviço (`POST /internal/ia-analyze/analyze`). Cobre a segurança de cabeçalhos por token de autenticação interna, validações Zod do payload, processamento bem-sucedido com chamadas mockadas à IA do Gemini, resposta a lotes sem feedback e o repasse correto de erros da API do Gemini (status 502) ou erros inesperados (status 500). | **8** |
-| [health.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/routes/health.test.ts) | **Verificação de Integridade (Healthcheck):** Valida as rotas de checagem do serviço (`GET /internal/health` e `GET /internal/ia-analyze/health`), garantindo que o servidor Express responda status 200 com `{ ok: true, service: "ia-analyze" }`. | **2** |
+| Arquivo de Teste | O que cobre |
+| :--- | :--- |
+| [routes/analyze.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/routes/analyze.test.ts) | Rotas `POST /internal/ia-analyze/analyze` e `POST /internal/ia-analyze/synthesize-insights`: token interno (`x-ia-analyze-token`), validação do payload, sucesso com o serviço mockado e repasse dos erros. |
+| [routes/diagnoseScope.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/routes/diagnoseScope.test.ts) | Rota `POST /internal/ia-analyze/diagnose-scope`. |
+| [routes/health.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/routes/health.test.ts) | `GET /internal/health` e `GET /internal/ia-analyze/health` respondem `{ ok: true, service: "ia-analyze" }`. |
+| [providers/openrouter.provider.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/providers/openrouter.provider.test.ts) | Adaptador OpenRouter (`analyzeBatch`), com o `fetch` mockado: respostas 2xx e erros HTTP, inclusive `Retry-After`. |
+| [providers/gemini.provider.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/providers/gemini.provider.test.ts) | Adaptador Gemini: distinção entre cota diária esgotada e erro que vale nova tentativa. |
+| [services/iaAnalyzeCompletion.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/services/iaAnalyzeCompletion.test.ts) | Conclusão integral da análise, síntese final e schema do lote, que recusa campos inválidos e IDs de feedback que não foram enviados. |
+| [services/scopeDiagnosis.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/services/scopeDiagnosis.test.ts) | Prompt do diagnóstico do escopo e validação do pedido e da resposta. |
+| [services/sentiment.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/services/sentiment.test.ts) | `isValidSentiment` e `canProcessAnalyzedItem`: sentimento no padrão esperado e item com ID conhecido. |
+| [services/aspectExtraction.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/services/aspectExtraction.test.ts) | Extração de aspectos (ABSA) ancorada no texto, com `clampScore`, `normalizeConfidence` e `scoreFromSentiment`. |
+| [lib/termProcessing.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/lib/termProcessing.test.ts) | Saneamento dos termos sugeridos pela IA: `normalizeForComparison`, `isGroundedInMessage` (anti-alucinação), `sanitizeTermList` e `buildForbiddenTerms`. |
+| [lib/categoryTaxonomy.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/lib/categoryTaxonomy.test.ts) | `canonicalizeCategories` e `getTaxonomyLabels`: categorias mapeadas para a taxonomia fixa de cada escopo. |
+| [lib/iaAnalyzePrompt.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/lib/iaAnalyzePrompt.test.ts) | Prompt da análise dos comentários. |
+| [validations/ptBrLanguage.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze/blob/main/src/tests/validations/ptBrLanguage.test.ts) | Validação do idioma (português) do relatório. |
 
 ---
 
 ## Estrutura de Mocks
 
-Para evitar dependências de rede externas durante os testes automatizados, o motor Gemini é mockado no controlador de rotas:
+Para evitar dependências de rede externas durante os testes automatizados:
 
-* **Mock do Orquestrador (`iaAnalyze.service.js`):** O módulo orquestrador de IA é interceptado via `vi.mock('../../services/iaAnalyze.service.js')` para substituir o método `runIaAnalyzeService` por um resolvedor simulado. Isso permite testar todos os cenários de sucesso, erro de infraestrutura (`IaAnalyzeServiceError`) ou falha inesperada na chamada da API da Google sem enviar requisições reais à internet.
+* **Rotas** — `vi.mock('../../services/iaAnalyze.service.js')` e `vi.mock('../../services/scopeDiagnosis.service.js')` trocam os serviços por resolvedores simulados, para testar sucesso, erro tipado (`IaAnalyzeServiceError`) e falha inesperada sem chamar a IA.
+* **Serviços** — `vi.mock('../../providers/createProvider.js')` troca a fábrica de provedores.
+* **Provedores** — o teste do OpenRouter substitui o `fetch` por um mock; o do Gemini mocka o `@google/genai`.
+
+O `vitest.config.ts` define `IA_ANALYZE_INTERNAL_TOKEN=test-internal-token` e `VERCEL=1` para os testes.
 
 ---
 

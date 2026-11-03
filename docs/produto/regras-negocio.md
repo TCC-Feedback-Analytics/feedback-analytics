@@ -6,7 +6,7 @@
 
 **Como funciona:** todo endpoint em `/protected/*` passa pelo middleware `requireAuth`, que valida a sessão do **Better Auth** a partir do cookie httpOnly, injeta `req.user` e resolve a empresa do usuário em `req.enterpriseId`.
 
-**Regra de isolamento:** o `enterpriseId` resolvido a partir da sessão é usado em todas as queries. Nenhum endpoint retorna dados de outra empresa — o isolamento é garantido na **aplicação**, com filtro explícito por empresa nos repositórios. A **RLS (Row Level Security)** do Postgres continua ligada como defesa em profundidade, mas a conexão do Drizzle usa uma role que a ignora; quem barra o acesso nos caminhos autenticados é o filtro da aplicação (veja [ORM × RLS](../arquitetura/orm-rls-decisao.md)).
+**Regra de isolamento:** o `enterpriseId` resolvido a partir da sessão é usado em todas as queries. Nenhum endpoint retorna dados de outra empresa — o isolamento é garantido na **aplicação**, com filtro explícito por empresa nos repositórios. A **RLS (Row Level Security)** do Postgres está ligada em todas as tabelas, mas a policy deixa o papel do app (`feedback_app`, que só lê e escreve dados) ver todas as linhas; ela barra outros papéis do banco, não uma empresa da outra. Quem separa as empresas nos caminhos autenticados é o filtro da aplicação (veja [ORM × RLS](../arquitetura/orm-rls-decisao.md)).
 
 > ⚠️ **Aviso:** Nunca passe `userId` ou `enterpriseId` como parâmetro de query string ou body em endpoints protegidos. O Gateway extrai o usuário e a empresa da sessão, não do payload da requisição.
 
@@ -23,7 +23,7 @@
 | Cadastro — e-mail já existente | `POST /public/auth/register` | `200 { ok: true, message: 'confirmation_required' }` — segue para a tela de sucesso sem indicar duplicidade. |
 | Recuperação de senha | `POST /public/auth/forgot-password` | `200` com "Se este e-mail estiver cadastrado, você receberá as instruções em breve." — independente de o e-mail existir. |
 
-> **Escopo:** a regra cobre apenas o identificador **e-mail**. As validações de telefone e documento no cadastro permanecem explícitas (`409 phone_taken` / `409 document_taken`) por serem decisões de UX de cadastro fora do escopo desta regra.
+> **Escopo:** a regra cobre apenas o identificador **e-mail**. A validação de telefone no cadastro permanece explícita (`409 phone_taken`) por ser uma decisão de UX de cadastro fora do escopo desta regra. O documento (CPF/CNPJ) não é mais pedido no cadastro, então o antigo `409 document_taken` deixou de existir.
 
 > **Nota (frontend):** `formLogin.tsx` também não diferencia conta não confirmada — exibe a mesma mensagem genérica. Depois de um `401 invalid_credentials`, mostra um aviso neutro ("se você acabou de se cadastrar e não recebeu o e-mail…") com link para `/resend-confirmation`, e o diálogo "Problemas para entrar?" oferece o mesmo caminho; nenhum dos dois revela se a conta existe. O reenvio também está disponível no pós-cadastro (`registerEmailPendingNotice.tsx`) e na página de link expirado (`/auth/link-expired`).
 
@@ -33,7 +33,7 @@
 
 #### Ciclo de Vida da Conta
 
-Todo novo cadastro tem `subscription_status = 'TRIAL'` e `trial_ends_at = NOW() + 4 meses`, inicializados pelo Gateway em `enterpriseOnSignup.ts`, chamado pelo controller de cadastro logo após o Better Auth criar o usuário (substitui o antigo trigger `on_auth_user_created` do Supabase).
+Todo novo cadastro tem `subscription_status = 'TRIAL'` e `trial_ends_at = NOW() + 4 meses`, inicializados pelo Gateway em `enterpriseOnSignup.ts`, chamado pelo controller de cadastro logo após o Better Auth criar o usuário, ou na primeira entrada com o Google (substitui o antigo trigger `on_auth_user_created` do Supabase). Na mesma transação nascem as 3 perguntas padrão do escopo `COMPANY`.
 
 | `subscription_status` | Significado |
 |---|---|
@@ -52,7 +52,7 @@ Se o link estiver expirado ou inválido, o Better Auth redireciona para `/auth/s
 
 #### Constraint de `account_type`
 
-A coluna `account_type` só aceita os valores `'CPF'` ou `'CNPJ'` (constraint `enterprise_account_type_check`). Tentativas de inserir outro valor resultam em erro de violação de constraint no banco.
+A coluna `account_type` aceitava só `'CPF'` ou `'CNPJ'` (constraint `enterprise_account_type_check`). A migration `0009` do gateway removeu essa coluna, a coluna `document` e as duas constraints: o sistema não pede nem guarda mais CPF/CNPJ, porque nada o usava (LGPD, necessidade).
 
 ---
 
@@ -60,16 +60,20 @@ A coluna `account_type` só aceita os valores `'CPF'` ou `'CNPJ'` (constraint `e
 
 O Gateway é responsável por validar, filtrar e agrupar os dados antes de chamar o IA Analyze, e por persistir os resultados retornados. As regras internas do serviço (sentimentos, keywords, normalização) estão na seção [IA Analyze](#ia-analyze) abaixo.
 
+Todo trabalho de IA é **assíncrono**: `POST /ia-analyze/analyze-raw` e `/regenerate-insights` só enfileiram um job e respondem `202`. Um worker processa a fila em passos (um lote por vez) e grava o progresso; a Web acompanha por `GET /ia-analyze/jobs/:id`. Erros de validação e da IA chegam no `errorCode` do job, não como resposta do POST. Os erros tratados como temporários (`failed_remote_ia_analyze_request`, `ia_provider_unavailable`, `ia_provider_rate_limited` e `ia_provider_error`) voltam para a fila com espera; os demais terminam o job como `failed`.
+
 #### Requisitos para Executar
 
 A análise só é executada se a empresa tiver dados de contexto preenchidos em `collecting_data_enterprise`. A função `hasRequiredEnterpriseInfoForAnalysis` valida isso antes de qualquer chamada ao IA Analyze.
 
-**Campos considerados:**
+**Campos exigidos (os três):**
 - `company_objective`
 - `analytics_goal`
 - `business_summary`
 
-**Se não atender:** erro `422 collecting_data_required_for_analysis`.
+**Se não atender:** o job falha com `collecting_data_required_for_analysis` (no diagnóstico do escopo, que valida no POST, a resposta é `422`).
+
+A empresa também precisa da **própria chave de IA** (OpenRouter, em Configuração de IA). Sem ela, o job falha com `ia_config_required`.
 
 > **Nota:** `main_products_or_services` **não** é verificado por essa função. O campo é preenchido separadamente via catálogo e não bloqueia a análise.
 
@@ -77,21 +81,21 @@ A análise só é executada se a empresa tiver dados de contexto preenchidos em 
 
 #### Deduplicação de Feedbacks
 
-Antes de enviar ao IA Analyze, o Gateway busca todos os `feedback_id` já presentes em `feedback_analysis`. Feedbacks já analisados são **removidos do batch** para evitar reprocessamento.
+Só entram na análise os feedbacks **com comentário** (o comentário é opcional) e fora do "Testar o formulário" (canal `TEST`). A busca já pega só os que não têm linha em `feedback_analysis`, do mais antigo para o mais novo, e antes de enviar ao IA Analyze o Gateway confere de novo os `feedback_id` já presentes em `feedback_analysis`. Feedbacks já analisados são **removidos do batch** para evitar reprocessamento.
 
 ---
 
 #### Limite por Execução
 
 ```
-limit = Math.min(options.limit ?? 50, 100)
+limit = options.limit > 0 ? Math.min(options.limit, 100) : sem limite
 ```
 
-- **Padrão:** 50 feedbacks por execução
-- **Máximo:** 100 feedbacks por execução
-- **Mínimo obrigatório:** `MIN_FEEDBACKS_FOR_RELEVANT_ANALYSIS = 10`
+- **Padrão:** sem limite — entram todos os pendentes do escopo. A Web não envia `limit`
+- **Máximo explícito:** 100 feedbacks por execução, quando o `limit` vem no pedido
+- **Mínimo obrigatório:** `MIN_FEEDBACKS_FOR_RELEVANT_ANALYSIS = 10`, contado sobre os feedbacks com comentário do escopo (não só os pendentes)
 
-Se após filtragem o total ficar abaixo de 10: erro `422 insufficient_feedbacks_for_analysis`.
+Se o escopo tiver menos de 10: o job falha com `insufficient_feedbacks_for_analysis`. Sem nenhum pendente, o job conclui com zero, sem chamar a IA.
 
 ---
 
@@ -150,7 +154,7 @@ Isso permite ao frontend detectar o **"falso sucesso"** — quando a chamada ret
 20 ≤ comprimento da pergunta ≤ 150 caracteres
 ```
 
-Perguntas fora desse intervalo são rejeitadas pela action `actionFeedbackSettings`.
+Vale para perguntas e subperguntas. A Web confere antes de enviar, e o Gateway rejeita o que vier fora do intervalo: nas perguntas da empresa, com `400 upsert_failed`; nas de um item do catálogo, com `400 invalid_payload` e o motivo em `reason` (`question_length_invalid` / `subquestion_length_invalid`).
 
 #### Estrutura de Perguntas por Escopo
 
@@ -159,11 +163,13 @@ TOTAL_ITEM_QUESTIONS = 3
 TOTAL_SUBQUESTIONS_PER_QUESTION = 3
 ```
 
-- Cada escopo (COMPANY, PRODUCT, SERVICE, DEPARTMENT) aceita **1 a 3 perguntas efetivas** — não há mais exigência de "exatamente 3 perguntas ativas". Cada slot (`question_order`) é tratado individualmente; o gestor pode configurar 1, 2 ou 3.
+- Não há mais exigência de "exatamente 3 perguntas ativas". Cada slot (`question_order`) é tratado individualmente:
+    - **Empresa (`COMPANY`):** 1 a 3 perguntas, cada uma com texto válido.
+    - **Item do catálogo (PRODUCT, SERVICE, DEPARTMENT):** 0 a 3 — os 3 slots vazios desativam todas as perguntas do item, e o formulário dele fica só com nota e comentário.
 - Cada pergunta aceita no máximo **3 subperguntas**.
 - **Esvaziar um slot** (pergunta sem texto válido) faz **soft-delete**: a linha em `questions_of_feedbacks` é marcada `is_active = false` (e suas subperguntas em `feedback_question_subquestions` também), em vez de ser excluída. A linha e o **histórico de respostas** são preservados — a FK é `ON DELETE CASCADE`, então apagar perderia o histórico.
 - O **editor lê apenas** perguntas/subperguntas com `is_active = true`; por isso um slot desativado volta vazio na interface, mas continua existindo no banco para fins de histórico.
-- O payload de configuração ainda chega com 3 slots ordenados (`question_order`); enviar uma contagem de slots diferente de 3 resulta em `400 INVALID_PAYLOAD` (`ordered_questions_not_3`).
+- No item do catálogo, o payload chega sempre com 3 slots ordenados (`question_order`); um array que não tenha 3 itens resulta em `400 invalid_payload` (`questions_must_have_3_slots`).
 
 #### Itens de Catálogo
 
@@ -197,9 +203,16 @@ O fingerprint de dispositivo é gerado no backend como:
 MD5(userAgent + "|" + clientIP + "|" + dayEpoch)
 ```
 
-Onde `dayEpoch` é o timestamp UNIX do início do dia corrente (`00:00:00`). Isso garante que o bloqueio seja por **dia corrido** (não janela de 24 horas). A tabela `tracked_devices` registra envios por `(device_fingerprint, collection_point_id)`.
+Onde `dayEpoch` é o timestamp UNIX do início do dia corrente (`00:00:00` no horário local do servidor, que em produção é UTC). Isso garante que o bloqueio seja por **dia corrido** (não janela de 24 horas). A tabela `tracked_devices` registra o aparelho por `(enterprise_id, device_fingerprint)`; o limite é conferido na tabela `feedback`, por `tracked_device_id` + `collection_point_id` desde o início do dia.
 
-Um dispositivo que enviou feedback para o mesmo ponto de coleta no mesmo dia recebe **`409 Conflict`**.
+- Um dispositivo que enviou feedback para o mesmo ponto de coleta no mesmo dia recebe **`409 Conflict`** (`DEVICE_ALREADY_SUBMITTED`).
+- Um registro de aparelho com `is_blocked = true` recebe **`403`** (`DEVICE_BLOCKED`), conferido antes do limite diário.
+- Como o dia entra no hash, o mesmo aparelho vira um registro novo a cada dia. O bloqueio e o `feedback_count` valem só para o registro daquele dia (ver [Anti-spam por fingerprint](anti-spam-fingerprint.md)).
+
+#### Canal e Campo de Comentário
+
+- O envio leva o canal da marca `canal` da URL: `QR`, `LINK`, `NFC` ou `TEST` ("Testar o formulário"), gravado em `feedback.channel`. Valor ausente, desconhecido ou o antigo `QRCODE` grava `null`, sem recusar a resposta. Os feedbacks `TEST` ficam fora de todas as métricas, do mínimo de feedbacks e da análise da IA.
+- O campo de comentário segue a configuração do escopo: `DEFAULT` (convite padrão), `CUSTOM` (pergunta própria, de 10 a 150 caracteres, guardada com o comentário em `feedback.comment_prompt`) ou `HIDDEN` (o texto que vier é descartado). O comentário aceita até 5000 caracteres.
 
 #### Contagem Variável de Questões por Escopo
 
@@ -259,13 +272,15 @@ O upsert usa **somente** a chave composta `(enterprise_id, scope_type, catalog_i
 
 | Erro | Regra Violada | Como Resolver |
 |---|---|---|
-| `422 collecting_data_required_for_analysis` | Empresa sem contexto de negócio | Preencha ao menos um dos campos: objetivo, meta analítica ou resumo |
-| `422 insufficient_feedbacks_for_analysis` | Menos de 10 feedbacks após filtragem | Colete mais feedbacks ou remova filtros de escopo/item |
-| `422` no catálogo | Pergunta com texto inválido | Ajuste o texto para entre 20 e 150 caracteres |
+| `collecting_data_required_for_analysis` (no job; `422` no diagnóstico) | Empresa sem contexto de negócio | Preencha os três campos: objetivo, meta analítica e resumo |
+| `insufficient_feedbacks_for_analysis` (no job; `422` no diagnóstico) | Menos de 10 feedbacks com comentário no escopo (no diagnóstico, menos de 10 avaliações no período) | Colete mais feedbacks ou escolha outro escopo/período |
+| `ia_config_required` (no job; `409` no diagnóstico) | Empresa sem chave e modelo de IA | Configure a chave OpenRouter em Configuração de IA |
+| `400 invalid_payload` / `400 upsert_failed` no catálogo ou nas perguntas da empresa | Pergunta com texto inválido | Ajuste o texto para entre 20 e 150 caracteres |
 | `409` na coleta pública | Dispositivo já enviou feedback para este ponto hoje | Aguarde até o próximo dia ou use outro ponto de coleta |
-| `500 missing_ia_analyze_remote_url` | URL do IA Analyze remoto ausente em runtime serverless (modo `remote` ou `VERCEL=1`) | Defina `IA_ANALYZE_REMOTE_URL` (e `IA_ANALYZE_EXECUTION_MODE=remote`). Em serverless não há fallback para `localhost` — `resolvePrimaryBaseUrl` falha alto em vez de mascarar como `502` de conexão recusada |
+| `403` na coleta pública | Registro do aparelho marcado com `is_blocked` | Só se resolve no banco; no dia seguinte o aparelho ganha outro registro |
+| `missing_ia_analyze_remote_url` (no job) | URL do IA Analyze remoto ausente em runtime serverless (modo `remote` ou `VERCEL=1`) | Defina `IA_ANALYZE_REMOTE_URL` (e `IA_ANALYZE_EXECUTION_MODE=remote`). Em serverless não há fallback para `localhost` — `resolvePrimaryBaseUrl` falha alto em vez de mascarar como conexão recusada |
 
-> **Timeout da chamada remota:** `DEFAULT_REMOTE_TIMEOUT_MS` é **280s** (`280_000`), alinhado ao `maxDuration` de 300s do `vercel.json`. Análises de muitos feedbacks são fatiadas por sub-batching (ver [Sub-batching por Tamanho](#sub-batching-por-tamanho)); ainda assim, se o IA Analyze não responder dentro da janela, o `AbortController` cancela o fetch e a chamada falha com `502 failed_remote_ia_analyze_request`.
+> **Timeout da chamada remota:** `DEFAULT_REMOTE_TIMEOUT_MS` é **280s** (`280_000`), alinhado ao `maxDuration` de 300s do `vercel.json`. Análises de muitos feedbacks são fatiadas por sub-batching (ver [Sub-batching por Tamanho](#sub-batching-por-tamanho)) e o worker chama um lote por vez; ainda assim, se o IA Analyze não responder dentro da janela, o `AbortController` cancela o fetch e o lote falha com `failed_remote_ia_analyze_request`, que volta para a fila como erro temporário.
 
 ---
 
@@ -273,11 +288,13 @@ O upsert usa **somente** a chave composta `(enterprise_id, scope_type, catalog_i
 
 ### Autenticação Interna
 
-**O quê:** toda requisição deve incluir `x-ia-analyze-token` com o valor exato de `IA_ANALYZE_INTERNAL_TOKEN`.
+**O quê:** com `IA_ANALYZE_INTERNAL_TOKEN` configurado, toda requisição deve incluir `x-ia-analyze-token` com o valor exato dele.
 
 **Por quê:** o serviço não tem autenticação de usuário. O token garante que apenas o API Gateway — e não agentes externos — pode acionar análises.
 
-**Como é validado:** `utils/isInternalRequestAuthorized.ts` compara o header com a variável de ambiente. Se inválido, retorna `401` imediatamente, antes de qualquer processamento.
+**Como é validado:** `utils/isInternalRequestAuthorized.ts` compara o header com a variável de ambiente. Se inválido, retorna `401 unauthorized_internal_request` imediatamente, antes de qualquer processamento. Sem a variável configurada, `analyze` e `synthesize-insights` aceitam a requisição (uso em desenvolvimento local); `diagnose-scope` e `generate-company-questions` só aceitam fora da Vercel e fora de `NODE_ENV=production` — lá, respondem `503 internal_auth_not_configured`.
+
+**Credencial do LLM:** o Gateway envia o provedor, a chave e o modelo da empresa nos headers internos `x-llm-*`; o serviço não guarda chave de nenhuma empresa.
 
 ---
 
@@ -291,6 +308,10 @@ Se um batch tiver `feedbacks = []` ou `feedbacks` não for um array, ele é **pu
 
 Os resultados são acumulados em um `Map<string, Analysis>`. Se o mesmo `feedback_id` aparecer em dois batches diferentes (situação anômala), apenas a última análise prevalece.
 
+#### Sem Sucesso Parcial
+
+Os lotes rodam com concorrência limitada (`IA_LLM_CONCURRENCY`, padrão 3). Se um lote falhar, o serviço para de agendar os próximos e responde `502` com o código do erro (`incomplete_ai_response` quando outros lotes já tinham concluído) — nunca devolve parte dos resultados.
+
 ---
 
 ### Validação de Sentimentos
@@ -301,12 +322,15 @@ Só três valores são aceitos:
 'positive' | 'neutral' | 'negative'
 ```
 
-Um item analisado pelo LLM é **descartado silenciosamente** se:
-- `feedback_id` não for uma string
-- `sentiment` não estiver nos três valores válidos
-- `feedback_id` não existir no mapa de feedbacks do batch atual
+A resposta de cada lote é validada **inteira** antes do processamento (`validations/iaBatchResponse.validation.ts`). O lote falha com `invalid_ai_response_schema` se algum item:
+- não tiver `feedback_id` em string, de um feedback do lote, sem repetir
+- tiver `sentiment` fora dos três valores válidos
+- não trouxer `categories` e `keywords` como listas de texto
+- tiver `sentiment_score` fora de [-1, 1], `confidence` fora de [0, 1] ou aspecto malformado
 
-> 📝 **Nota:** O descarte é silencioso por design — um sentimento inválido não deve interromper a análise dos demais feedbacks do batch.
+Também falha sem `global_insights` com resumo não vazio e lista de recomendações. Se faltar o resultado de algum feedback enviado, o erro é `incomplete_ai_response`. Resumo e recomendações fora do pt-BR ganham uma única nova tentativa com reforço de idioma; uma segunda resposta inválida falha com `invalid_ai_response_language`.
+
+> 📝 **Nota:** antes, um item com sentimento inválido era descartado em silêncio e o resto do lote seguia. Hoje o lote inteiro é recusado; o filtro por item (`canProcessAnalyzedItem`) continua no processamento como segunda barreira.
 
 ---
 
@@ -317,15 +341,15 @@ Um item analisado pelo LLM é **descartado silenciosamente** se:
 Cada keyword sugerida pelo modelo passa por `sanitizeTermList`:
 
 1. Deve ser uma string não-vazia após trim
-2. Sua forma normalizada deve estar **contida** na mensagem normalizada do feedback
-3. Não pode estar no conjunto de **termos proibidos**
+2. Não pode estar no conjunto de **termos proibidos**
+3. Deve estar **ancorada** na mensagem normalizada do feedback (`isGroundedInMessage`, ver [Normalização de Texto](#normalização-de-texto))
 4. Não pode ser duplicata
 
 **Limite:** máximo de **6 keywords**.
 
 #### Fallback
 
-Se nenhuma keyword passar na sanitização, `tokenizeRelevantWords` extrai palavras diretamente da mensagem (sem stop words, mínimo **4 caracteres**). Retorna até **4 tokens**.
+Se nenhuma keyword passar na sanitização, `tokenizeRelevantWords` extrai palavras diretamente da mensagem (sem stop words e sem os rótulos de `STRUCTURED_ANSWER_LABELS`, mínimo **4 caracteres**). Retorna até **4 tokens**. Esse fallback não aplica os enunciados das perguntas.
 
 ---
 
@@ -341,6 +365,8 @@ Mesmas regras de keywords, com:
 
 Se nenhuma categoria for válida, retorna as **2 primeiras keywords** como fallback.
 
+Depois, as categorias (saneadas ou do fallback) são mapeadas para a **taxonomia fixa do escopo** (`canonicalizeCategories`): o termo que bate com um rótulo canônico ou um sinônimo vira o canônico; o que não bate fica como emergente (ver [Motor de IA](filtro-semantico-ia.md)).
+
 ---
 
 ### Termos Proibidos
@@ -354,6 +380,8 @@ Se nenhuma categoria for válida, retorna as **2 primeiras keywords** como fallb
 - **Enunciados das subperguntas** (`dynamic_subanswers[].subquestion_text_snapshot`)
 
 **Por quê:** evita que as respostas estruturadas do formulário (ex: "boa", "ótima") e os enunciados das próprias perguntas (ex: "Como foi o atendimento?") apareçam como keywords ou categorias — garantindo que o resultado reflita apenas a voz espontânea do cliente na mensagem livre.
+
+> 📝 **Nota:** cada enunciado entra no conjunto **inteiro** (normalizado), e a comparação é por igualdade. Uma palavra solta do enunciado (como "atendimento") não é proibida: ela só passa se estiver ancorada na mensagem do cliente. O prompt também instrui o modelo a não copiar o texto das perguntas nem a pergunta própria do campo de comentário (`message_question`).
 
 ---
 
@@ -388,18 +416,24 @@ Isso garante que termos como "tempo de espera" sejam aceitos mesmo que a mensage
 }
 ```
 
-> 📝 **Nota:** `analyzedCount` reflete o total de feedbacks **enviados** no batch — não o número de análises válidas retornadas. Um feedback com sentimento inválido é contado aqui, mas descartado no `analyses[]`.
+> 📝 **Nota:** `analyzedCount` reflete o total de feedbacks **enviados** no batch. Como a validação exige um resultado válido para cada feedback enviado, esse total coincide com as análises do lote.
 
 ---
 
 ### Tratamento de Erros do Provedor LLM
 
-| Cenário | Tipo de Erro | Código Retornado |
-|---|---|---|
-| Falha HTTP (`IaApiClientError` com código `failed_ia_request`) | `IaAnalyzeServiceError` 502 | `failed_ia_request` |
-| Qualquer outro erro (JSON inválido, timeout, etc.) | `IaAnalyzeServiceError` 502 | `invalid_ai_response` |
+Toda falha sai como `IaAnalyzeServiceError` com status `502` e um código:
 
-O controller captura e retorna o status e código ao API Gateway, que repassa ao frontend.
+| Cenário | Código Retornado |
+|---|---|
+| Falha ao chamar o provedor (rede, timeout, credencial no Gemini), depois de esgotar as tentativas com backoff | `failed_ia_request` |
+| Erro HTTP do provedor (cota, limite de requisições, indisponível) | `ia_provider_*` (ex.: `ia_provider_rate_limited`) |
+| Resposta não parseável como JSON | `invalid_ai_response` |
+| Resposta fora da estrutura esperada | `invalid_ai_response_schema` |
+| Faltou o resultado de algum feedback, ou um lote falhou depois de outros concluírem | `incomplete_ai_response` |
+| Resumo ou recomendações fora do pt-BR depois da nova tentativa | `invalid_ai_response_language` |
+
+O controller captura e retorna o status e o código ao API Gateway, que os grava no `errorCode` do job; a Web lê o job e mostra a mensagem.
 
 ---
 
@@ -407,7 +441,7 @@ O controller captura e retorna o status e código ao API Gateway, que repassa ao
 
 | Sintoma | Regra Violada | Diagnóstico |
 |---|---|---|
-| `analyses` retorna vazio para todos os feedbacks | Todos com sentimento inválido | Verifique se o prompt está retornando `positive`, `neutral` ou `negative` exatamente |
+| `502 invalid_ai_response_schema` ou `incomplete_ai_response` | O modelo devolveu sentimento inválido, ids errados ou faltou feedback | Verifique se o prompt está retornando `positive`, `neutral` ou `negative` exatamente e um item por feedback; troque de modelo se for recorrente |
 | Keywords e categorias sempre vazias | Termos não encontrados na mensagem | Verifique se `message` está sendo enviada corretamente no payload |
-| `globalInsights` é sempre `null` | Provedor LLM não retornou insights | Pode ser batch muito pequeno; experimente com mais feedbacks |
+| `analyses` vazio com `200` | `batches` veio vazio ou só com lotes sem feedbacks | Confira o fatiamento de lotes no Gateway |
 | `502 invalid_ai_response` frequente | Resposta do provedor LLM não parseável | Verifique `extractJsonFromText.ts`; pode ser mudança no formato de saída do modelo |
