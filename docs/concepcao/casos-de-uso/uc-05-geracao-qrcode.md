@@ -1,4 +1,4 @@
-# UC-05: Geração e Compartilhamento de QR Code
+# UC-05: Canais de Coleta (QR Code, link e NFC)
 
 | Campo | Valor |
 |---|---|

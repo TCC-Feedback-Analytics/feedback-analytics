@@ -12,7 +12,7 @@ A infraestrutura do projeto roda integralmente na **Vercel**, sem servidores ded
 
 - **Frontend (web):** arquivos estáticos (HTML, CSS, JS) gerados no build e servidos diretamente pela CDN da Vercel. Em produção, a Web chama `/api/*` no próprio domínio e o `vercel.json` dela repassa ao Gateway, para o cookie de sessão ser do próprio site. O React 19 acompanha os jobs de IA por polling resiliente via `useIaOperation`.
 - **API-Gateway:** ponto central em Node.js/Express. Além de tratar autenticação (Better Auth) e regras de negócio, hospeda o **Worker Assíncrono**, que consome a fila `ia_analysis_job` via `SELECT ... FOR UPDATE SKIP LOCKED`. Fora da Vercel, o worker roda em loop junto com o servidor; na Vercel, ele anda um passo depois de cada pedido (`kickWorker`, com `waitUntil`), no polling de status e pelo cron de reserva `ia-worker.yml` (a cada 5 minutos).
-- **IA-Analyze:** microsserviço isolado de inferência, sem banco. Recebe do Worker, por chamadas HTTP internas protegidas por token, os lotes de feedbacks, a síntese dos insights, o diagnóstico do escopo e a geração das perguntas da empresa, e chama o provedor LLM da empresa (OpenRouter ou Google Gemini) via padrão Strategy.
+- **IA-Analyze:** microsserviço isolado de inferência, sem banco. Recebe do Worker, por chamadas HTTP internas protegidas por token, os lotes de feedbacks, a síntese dos insights, o diagnóstico do escopo e a geração das perguntas da empresa, e chama o OpenRouter com a chave e o modelo da empresa, via padrão Strategy (o adaptador do Gemini fica só como reserva legada).
 
 > **Nota — bundle do Gateway:** antes do deploy, o workflow de deploy do repo `feedback-analytics-api-gateway` roda uma etapa de esbuild que empacota o entrypoint em um `_bundle.cjs`. É esse bundle que o `vercel.json` do Gateway aponta como `src`.
 
@@ -26,7 +26,7 @@ Cada serviço vive em seu **próprio repositório**, com escopo, responsabilidad
 
 | Repositório | Tipo | Descrição |
 |---|---|---|
-| `feedback-analytics-web` | React SPA | Interface do usuário — área pública (QR Code) e painel da empresa |
+| `feedback-analytics-web` | React SPA | Interface do usuário — área pública (formulário por QR Code, link ou NFC) e painel da empresa |
 | `feedback-analytics-api-gateway` | API Gateway / BFF | Hub central — autenticação, regras de negócio, orquestração |
 | `feedback-analytics-contracts` | Pacote compartilhado | `@feedback/lib-shared` — tipos, interfaces e contratos entre serviços |
 | `feedback-analytics-ia-analyze` | Serviço serverless | Processamento de IA com escopo e volume próprios |
@@ -92,7 +92,7 @@ Todo trabalho de IA passa pela fila `ia_analysis_job`, que é ao mesmo tempo a f
    - O Gateway recupera as credenciais da empresa em `enterprise_ia_config` (decifrando a chave via AES-256-GCM) e envia ao `ia-analyze` através de headers internos (`x-llm-provider`, `x-llm-model`, `x-llm-api-key`), junto com o token interno.
 
 4. **Processamento no `ia-analyze` (Multi-Provedor):**
-   - A fábrica `createProvider` instancia o adaptador apropriado (**OpenRouter** ou **Gemini**).
+   - A fábrica `createProvider` instancia o adaptador apropriado (**OpenRouter**; o **Gemini** só como legado).
    - O modelo LLM classifica sentimento, intensidade, aspectos (ABSA), categorias e palavras-chave; palavras-chave, categorias e aspectos são saneados contra o texto original do cliente.
    - A resposta do lote é validada (formato e um resultado por feedback enviado), e o texto exibido ao usuário precisa estar em pt-BR — fora disso, ganha uma única nova tentativa.
 

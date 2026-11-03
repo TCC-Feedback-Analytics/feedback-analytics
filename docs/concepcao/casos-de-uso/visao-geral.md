@@ -23,8 +23,8 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 | [UC-01](uc-01-cadastro-conta.md) | Cadastro de Conta Empresarial | Empresa | Criar conta e ativá-la via e-mail (ou com o Google) |
 | [UC-02](uc-02-login.md) | Login da Empresa | Gestor | Autenticar (e-mail e senha ou Google) e acessar o dashboard |
 | [UC-03](uc-03-recuperacao-senha.md) | Recuperação de Senha | Gestor | Redefinir senha via link no e-mail |
-| [UC-04](uc-04-envio-feedback-qrcode.md) | Envio de Feedback via QR Code | Cliente do estabelecimento | Enviar avaliação pelo QR Code, link ou etiqueta NFC |
-| [UC-05](uc-05-geracao-qrcode.md) | Geração e Compartilhamento de QR Code | Gestor | Controlar a coleta e distribuir os canais (QR Code, link e NFC) |
+| [UC-04](uc-04-envio-feedback-qrcode.md) | Envio de Feedback (QR Code, link ou NFC) | Cliente do estabelecimento | Enviar avaliação pelo QR Code, link ou etiqueta NFC |
+| [UC-05](uc-05-geracao-qrcode.md) | Canais de Coleta (QR Code, link e NFC) | Gestor | Controlar a coleta e distribuir os canais (QR Code, link e NFC) |
 | [UC-06](uc-06-ativacao-tipos-feedback.md) | Ativação de Tipos de Feedback | Gestor | Definir quais categorias a empresa coleta |
 | [UC-07](uc-07-configuracao-catalogo.md) | Configuração do Catálogo | Gestor | Cadastrar itens e configurar perguntas, comentário e canais por item |
 | [UC-08](uc-08-configuracao-coleta-ia.md) | Configuração de Dados de Coleta (IA) | Gestor | Preencher o contexto do negócio e conectar a IA |

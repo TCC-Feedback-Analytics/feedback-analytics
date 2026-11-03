@@ -1,7 +1,7 @@
 # Documentação de Design — Protótipo de Média Fidelidade
 
 !!! note "Material de concepção (jun/2026)"
-    Este documento registra o protótipo feito no Figma na fase de concepção e não foi atualizado com o produto. As telas, os campos e os fluxos descritos aqui não refletem necessariamente a interface atual (por exemplo, o CPF/CNPJ mostrado no Perfil não existe mais no sistema e o comentário do formulário é opcional). O que o sistema faz hoje está em [Requisitos e Funcionalidades](../requisitos-e-funcionalidades.md).
+    Este documento registra o protótipo feito no Figma na fase de concepção e não foi atualizado com o produto. As telas, os campos e os fluxos descritos aqui não refletem necessariamente a interface atual (por exemplo, o CPF/CNPJ mostrado no Perfil não existe mais no sistema e o comentário do formulário é opcional). Nos protótipos a coleta é só por QR Code; hoje o produto também coleta por link e etiqueta NFC, pelo mesmo formulário. O que o sistema faz hoje está em [Requisitos e Funcionalidades](../requisitos-e-funcionalidades.md).
 
 ## Visão Geral
 

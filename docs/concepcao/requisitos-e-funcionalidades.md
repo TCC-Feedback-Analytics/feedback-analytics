@@ -55,8 +55,8 @@
 - **Configuração da IA por empresa:**
   - Chave do OpenRouter da própria empresa, colada ou obtida por "Conectar com OpenRouter", guardada cifrada no banco.
   - Escolha do modelo.
-- **Gerenciamento de QR Code de Coleta:**
-  - Alternar status do QR (Ativo/Inativo) com bloqueio instantâneo.
+- **Gerenciamento dos Canais de Coleta:**
+  - Ligar ou pausar a coleta (Ativo/Inativo) com bloqueio instantâneo, valendo para QR Code, link e NFC de uma vez.
   - Gerar QR code mestre da empresa e específicos (produtos, serviços, departamentos).
   - Configurar perguntas e subperguntas dinâmicas por item.
   - **Canais de coleta:** além do QR Code, o mesmo formulário sai por link e por etiqueta NFC; cada canal leva a sua marca na URL.
@@ -94,15 +94,15 @@
 
 | ID | Descrição | Requisitos Relacionados | Detalhamento |
 |---|---|---|---|
-| **RNE-001** | Isolamento de Dados por Empresa (Multi-tenancy) | RF08, RF09, RNF02 | Uma conta empresarial só pode acessar dados (Feedbacks, Dashboards, QR Codes) atrelados ao seu próprio `enterprise_id`. O gateway tira a empresa da sessão e filtra toda consulta por ela (`src/db/tenantScope.ts`). A RLS está ligada nas 24 tabelas (migration `0013`), mas a policy deixa o papel do app (`feedback_app`) ver todas as linhas: entre empresas, quem barra é a aplicação; a RLS barra os demais papéis do banco. |
-| **RNE-002** | Obrigatoriedade de Validação da Empresa para Coleta | RF06, RNF08 | O formulário público não pode ser renderizado nem aceitar envios se a empresa não existir (`404 enterprise_not_found`) ou se não houver ponto de coleta QR ativo para o escopo (a Web mostra "QR Code indisponível" e o envio responde `404 collection_point_not_found`). Não existe status de empresa desativada: o bloqueio é pelo ponto de coleta. |
+| **RNE-001** | Isolamento de Dados por Empresa (Multi-tenancy) | RF08, RF09, RNF02 | Uma conta empresarial só pode acessar dados (Feedbacks, Dashboards, pontos de coleta) atrelados ao seu próprio `enterprise_id`. O gateway tira a empresa da sessão e filtra toda consulta por ela (`src/db/tenantScope.ts`). A RLS está ligada nas 24 tabelas (migration `0013`), mas a policy deixa o papel do app (`feedback_app`) ver todas as linhas: entre empresas, quem barra é a aplicação; a RLS barra os demais papéis do banco. |
+| **RNE-002** | Obrigatoriedade de Validação da Empresa para Coleta | RF06, RNF08 | O formulário público não pode ser renderizado nem aceitar envios se a empresa não existir (`404 enterprise_not_found`) ou se não houver ponto de coleta ativo para o escopo (no banco, do tipo `QR_CODE`, o mesmo para QR Code, link e NFC; a Web mostra "QR Code indisponível" e o envio responde `404 collection_point_not_found`). Não existe status de empresa desativada: o bloqueio é pelo ponto de coleta. |
 | **RNE-003** | Classificação de Sentimento via IA | RF12, RF13, RNF05, RNF10 | Todo feedback submetido para análise deve obrigatoriamente ser categorizado como 'Positivo', 'Neutro' ou 'Negativo' pelo motor de Inteligência Artificial. Uma resposta da IA com outro valor invalida o lote inteiro (`invalid_ai_response_schema`). |
 | **RNE-004** | Janela de Resfriamento de Submissões (Anti-Spam) | RF07, RNF03 | Um cliente final (mesmo dispositivo/IP) só pode submeter 1 feedback por dia **por ponto de coleta** (`collection_point_id`). Isso previne spam, mas permite que o cliente avalie áreas distintas da empresa (ex: Recepção e Pós-Venda) no mesmo dia. O dia é o do relógio do servidor (UTC em produção). |
 | **RNE-005** | Fallback de Análise (Resiliência Operacional) | RF20, RNF12 | **Mudou.** Se o provedor de IA falhar, a análise falha com um código tipado (ex.: `ia_provider_unavailable`) e não grava resultado parcial; não há extração local no lugar da IA. O fallback que ficou é por feedback: quando nenhuma palavra-chave sugerida pela IA passa na higienização, o `ia-analyze` usa palavras da própria mensagem (sem *stopwords*), e as categorias caem nas duas primeiras palavras-chave. |
 | **RNE-006** | Fidelidade Analítica de Dados | RF08, RNF08 | Os dados consolidados exibidos no Dashboard (Totalizadores, Médias, Distribuição) devem obrigatoriamente espelhar o estado transacional exato do banco de dados relacional no momento da requisição, não sendo permitido o uso de *cache* desatualizado que mascare a realidade operacional. |
 | **RNE-007** | Validação Estrita de Documentos | RF01, RNF01 | **Substituída (migration `0009`).** O CPF/CNPJ deixou de ser pedido e guardado, porque nada no sistema o usava (LGPD, necessidade). Não há mais validação de documento. |
 | **RNE-008** | Validação Geográfica de Telefones | RF02, RNF01 | O sistema só aceita dados de contato estruturados no padrão brasileiro (+55), com DDD de 11 a 99, sem sequência de dígitos repetidos, celular de 9 dígitos começando por 9 e fixo começando por 2 a 5 (`registerSchema` do `@feedback/lib-shared`). |
-| **RNE-009** | Restrição Lógica de Hierarquia do Catálogo | RF05, RF06 | **Em parte.** Ativar o QR Code de um item exige o item `ACTIVE`, e o envio exige o ponto de coleta QR `ACTIVE`. Desativar o item no catálogo, porém, não desativa o QR dele, e o envio público não confere o status do item: um QR que já estava ativo continua aceitando respostas. |
+| **RNE-009** | Restrição Lógica de Hierarquia do Catálogo | RF05, RF06 | **Em parte.** Ativar a coleta de um item exige o item `ACTIVE`, e o envio exige o ponto de coleta `ACTIVE`. Desativar o item no catálogo, porém, não pausa a coleta dele, e o envio público não confere o status do item: uma coleta que já estava ativa continua aceitando respostas, por QR Code, link ou NFC. |
 | **RNE-010** | Preenchimento Automático do Catálogo (Onboarding) | RF04, RF25, RNF06 | Logo após o cadastro (com senha ou na primeira entrada com o Google), o gateway cria a empresa e 3 perguntas institucionais base (Atendimento, Qualidade e Custo-Benefício) numa transação (`src/auth/enterpriseOnSignup.ts`), no lugar do antigo *trigger* do banco, para evitar que o cliente fique diante de um formulário vazio. Com o contexto da empresa e a IA configurados, a IA troca essas perguntas padrão por 3 perguntas feitas para o negócio. |
 | **RNE-011** | Higienização de Metadados de Autenticação | RF01, RNF01, RNF02 | **Substituída.** Com o Better Auth, não há payload de metadados do Supabase Auth nem JWT: a sessão é um cookie httpOnly com um token guardado na tabela `session`. O telefone fica em `user.phone`, o aceite dos termos na `enterprise`, e o CPF/CNPJ não é mais pedido. |
 | **RNE-012** | Proteção contra Mutação Destrutiva (Storage) | RNF08, RNF09 | **Substituída.** O sistema não usa o Storage do Supabase (o Supabase só hospeda o Postgres) e não guarda logotipo nem mídia; o gatilho `protect_delete` não existe nas migrations atuais. |
@@ -120,7 +120,7 @@
 | **RF03** | Gestão de Empresa | O sistema deve permitir visualizar e atualizar os dados cadastrais da empresa. |
 | **RF04** | Coleta de Dados de Contexto | Consultar, atualizar (PATCH) e inserir (PUT) dados de contexto utilizados pela IA. |
 | **RF05** | Gestão de QR Codes | Gerar códigos para empresa, produtos/serviços e customizar perguntas dinâmicas por item, além de habilitar/desabilitar pontos de coleta. |
-| **RF06** | Submissão de Feedback | Formulário público acessível via QR Code (nota + mensagem) com validação prévia de existência da empresa. |
+| **RF06** | Submissão de Feedback | Formulário público acessível por QR Code, link ou etiqueta NFC (nota + mensagem) com validação prévia de existência da empresa. |
 | **RF07** | Proteção Anti-Spam | Impedir mais de 1 envio por dispositivo, ponto de coleta e dia (*fingerprint*), retornando HTTP 409 em duplicidade. |
 | **RF08** | Dashboard | Apresentar estatísticas gerais e a listagem dos últimos feedbacks para a empresa logada. |
 | **RF09** | Filtros e Listagem | Listar feedbacks com paginação, filtros por nota, busca textual e visualização detalhada. |
@@ -204,10 +204,10 @@
 - **Acesso:** Rotas administrativas (Dashboard, Perfil) redirecionam automaticamente para login caso a sessão seja inexistente ou inválida (RF15).
 - **Autenticação:** E-mail de confirmação ou recuperação de senha deve ser enviado pelo provedor em até 30 segundos (RF01, RF16, RF17).
 - **Gestão do QR Code e Compartilhamento:**
-  - Desabilitar o QR Code corporativo deve tornar o formulário inacessível imediatamente, exibindo mensagem (RF05).
+  - Pausar a coleta da empresa deve tornar o formulário inacessível imediatamente, em todos os canais (QR Code, link e NFC), exibindo mensagem (RF05).
   - O sistema deve gerar um Blob de imagem (`.png`) baixável com o nome da empresa e invocar a `Share API` do sistema operacional quando disponível (RF19).
 - **Integridade da Coleta:**
-  - Caso o usuário tente acessar um formulário alterando o ID do QR Code para uma empresa inexistente, exibir tela de erro fatal, impedindo acesso (RF06).
+  - Caso o usuário tente acessar um formulário alterando o ID da empresa na URL do formulário para uma empresa inexistente, exibir tela de erro fatal, impedindo acesso (RF06).
   - O feedback preenchido e válido deve persistir no banco e gerar resposta HTTP 200 (`{ "ok": true }`) em menos de 5 segundos (RF06, RNF04).
 - **Segurança (Spam):** Ao enviar o 2º feedback pelo mesmo navegador/dispositivo, para o mesmo ponto de coleta e no mesmo dia, a API Gateway deve abortar com HTTP 409 Conflict (RF07).
 - **Inteligência Artificial de Alta Precisão:**

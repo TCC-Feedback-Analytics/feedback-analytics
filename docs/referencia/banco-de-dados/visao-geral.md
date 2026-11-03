@@ -191,7 +191,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 
 ### `public.catalog_items`
 
-> Catálogo de itens da empresa (produtos, serviços, departamentos) — base para segmentação de QR Codes e feedback.
+> Catálogo de itens da empresa (produtos, serviços, departamentos) — base para segmentar os pontos de coleta e os feedbacks.
 
 | Coluna | Tipo | Obrigatório | Descrição | Impacto no Projeto |
 |---|---|---|---|---|
@@ -216,7 +216,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `id` | uuid PK | Sim | — | **Crítico** — compõe a URL do formulário público e é gravado em `feedback.collection_point_id` |
 | `enterprise_id` | uuid FK | Sim | → `enterprise.id` ON DELETE CASCADE | **Crítico** — multi-tenant |
 | `catalog_item_id` | uuid FK | Não | → `catalog_items.id` ON DELETE SET NULL — `null` = ponto corporativo | **Alto** — determina o escopo do formulário e quais perguntas dinâmicas são exibidas |
-| `name` | text | Sim | Nome do ponto de coleta | **Médio** — exibido na tela de gerenciamento de QR Codes do dashboard |
+| `name` | text | Sim | Nome do ponto de coleta | **Médio** — exibido nas telas de configuração da coleta do painel |
 | `type` | text | Sim | `QR_CODE` (único tipo gravado; sem CHECK no banco) | **Crítico** — o Gateway só aceita envio por ponto `QR_CODE` |
 | `identifier` | text | Não | Identificador opcional | **Baixo** — lido na listagem de feedbacks e no contexto enviado à IA |
 | `status` | text | Sim | `ACTIVE` (default) \| `INACTIVE` (sem CHECK no banco) | **Crítico** — sem ponto `ACTIVE` para o escopo, o envio responde `collection_point_not_found` |
@@ -305,7 +305,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `device_fingerprint` | text | Não | Hash MD5 diário `(user_agent \| ip \| dia)`, calculado no Gateway | **Crítico** — chave de busca do dispositivo no envio; sem ele não há controle de spam |
 | `user_agent` | text | Não | User-Agent do navegador | **Médio** — um dos três componentes do fingerprint; armazenado para auditoria e identificação do dispositivo |
 | `ip_address` | inet | Não | IP do cliente | **Médio** — um dos três componentes do fingerprint; armazenado para auditoria |
-| `is_blocked` | boolean | Não | Bloqueio manual pelo gestor (default `false`) | **Crítico** — conferido pelo Gateway no envio; `true` recusa o feedback com `DEVICE_BLOCKED` |
+| `is_blocked` | boolean | Não | Bloqueio manual (default `false`); sem tela nem rota, só direto no banco | **Crítico** — conferido pelo Gateway no envio; `true` recusa o feedback com `DEVICE_BLOCKED` |
 | `blocked_reason` | text | Não | Motivo do bloqueio | **Baixo** — informativo para o gestor; sem impacto funcional |
 | `blocked_at` | timestamptz | Não | Data do bloqueio | **Baixo** — auditoria do bloqueio |
 | `blocked_by` | uuid | Não | ID do gestor que bloqueou (sem FK) | **Baixo** — rastreabilidade de quem aplicou o bloqueio |
@@ -326,7 +326,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `tracked_device_id` | uuid | Não | Dispositivo emissor (**sem FK** nas migrations) | **Alto** — vincula o feedback ao dispositivo; usado no limite diário e no bloqueio |
 | `message` | text | Sim | Texto livre do cliente (texto vazio quando não há comentário) | **Crítico** — principal entrada do motor de IA; sem comentário, o feedback não vai para a IA nem conta como "aguardando análise" |
 | `comment_prompt` | text | Não | Pergunta própria que o cliente viu no campo de comentário (nulo = convite padrão) | **Alto** — vai à IA junto com o comentário, que é lido como resposta a ela |
-| `channel` | text | Não | `QR` \| `LINK` \| `NFC` \| `TEST` (CHECK); nulo = sem a marca de canal | **Alto** — métricas por canal; `TEST` ("Testar o formulário") fica fora das métricas |
+| `channel` | text | Não | `QR` \| `LINK` \| `NFC` \| `TEST` (CHECK); nulo = sem a marca de canal | **Alto** — métricas por canal; `TEST` ("Testar o formulário") fica fora das métricas e da IA |
 | `rating` | integer | Não | Nota global da experiência (1–5) | **Crítico** — exibido nos cards de métricas do dashboard (média, positivos, críticos) e na listagem de feedbacks |
 
 **Índice:** `idx_feedback_enterprise_created_at` `(enterprise_id, created_at DESC)` — toda leitura de métricas filtra por empresa e recorta por período.

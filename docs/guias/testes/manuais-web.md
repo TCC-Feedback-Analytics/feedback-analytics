@@ -129,13 +129,13 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
 
 ---
 
-## UC-04 — Envio de feedback via QR Code
+## UC-04 — Envio de feedback (QR Code, link ou NFC)
 
 Área pública de coleta · Executar **deslogado**. Rota: `/feedback/qrcode?enterprise=<ID>&collection_point=<CP_ID>&item=<ITEM_ID>&canal=<qr|link|nfc>`. O mesmo endereço serve a todos os canais; o parâmetro `canal` diz por onde o cliente chegou (os endereços prontos estão em **Canais de coleta**, CT-UC05-04). O submit envia `POST /api/public/qrcode/feedback`, com o canal junto.
 
 ### CT-UC04-01 — Envio válido exibe confirmação de feedback recebido
 
-- **Objetivo:** enviar um feedback completo via QR e ver a confirmação.
+- **Objetivo:** enviar um feedback completo pelo formulário público e ver a confirmação.
 - **Pré-condições:**
   - `enterprise_id` da conta de teste disponível (ID de empresa válido).
   - A empresa precisa ter um **ponto de coleta QR ativo** (`type=QR_CODE`, `status=ACTIVE`), ou seja, a coleta ativada em **Canais de coleta**. Prefira o ponto de escopo empresa (sem item de catálogo). Sem um ponto ativo, a página nem mostra o formulário: aparece "QR Code indisponível: não há ponto de coleta ativo para este código. Verifique o QR Code ou contate a empresa."
@@ -168,7 +168,7 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
 
 ---
 
-## UC-05 — Geração de QR Code da empresa
+## UC-05 — Canais de coleta da empresa (QR Code, link e NFC)
 
 Rota: `/user/edit/feedback-general` (menu **Configuração da coleta › Avaliação da empresa**) · **Autenticado**. A tela tem, nesta ordem, as **Perguntas**, o **Campo de comentário** e os **Canais de coleta**.
 
@@ -308,7 +308,7 @@ Rota: `/user/profile` · **Autenticado**. O contexto da empresa para a IA fica n
 
 Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe o **escopo** (empresa ou um item) e o **período**; todas as seções seguem essa escolha.
 
-> **Conta sem nenhum feedback:** no lugar das seções de métricas, o Dashboard mostra os **"Primeiros passos"** (ativar o QR Code e, se quiser, testar o formulário) e a prévia "Aguardando os primeiros feedbacks". Os CT-UC09-02 a 04, 09 e 10 pedem uma conta com feedbacks.
+> **Conta sem nenhum feedback:** no lugar das seções de métricas, o Dashboard mostra as boas-vindas e a prévia "Aguardando os primeiros feedbacks". Os **"Primeiros passos"** (ativar o QR Code e, se quiser, testar o formulário) aparecem no topo quando a coleta da empresa está pausada ao abrir o Dashboard, como na conta nova (CT-UC09-13). Os CT-UC09-02 a 04, 09 e 10 pedem uma conta com feedbacks.
 
 ### CT-UC09-01 — Dashboard carrega e exibe saudação personalizada
 
@@ -376,6 +376,17 @@ Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe
   1. Abra o menu **"Comparar itens"** (`/user/compare`).
   2. Com dois ou mais itens do mesmo tipo, escolha o tipo, os dois itens e o período.
 - **Resultado esperado:** sem dois itens do mesmo tipo, a página mostra o passo a passo para chegar lá ("Cadastre os itens no Catálogo", "Ative o QR Code de cada item", "Volte aqui e escolha os dois"). Com eles, aparece **"Leitura lado a lado"**, uma tabela com **Nº de avaliações**, **Média**, **Positivas (4–5★)**, **Críticas (1–2★)**, **Tom dos comentários**, **Escreveram comentário** e **Precisão da média**, e a coluna **"Quem está melhor"** (com "Diferença incerta" quando as margens se sobrepõem).
+
+### CT-UC09-13 — Primeiros passos e "Testar o formulário"
+
+- **Objetivo:** confirmar que o gestor ativa a coleta e testa o formulário sem sair do Dashboard, e que o teste fica fora das métricas.
+- **Pré-condições:** logado; a coleta da empresa pausada (conta nova, ou **"Pausar coleta"** no CT-UC05-02). O aparelho não pode ter respondido ao formulário geral da empresa no mesmo dia (o CT-UC04-01 no mesmo navegador conta).
+- **Passos:**
+  1. Navegue para `/user/dashboard`.
+  2. No cartão **"Primeiros passos"**, clique em **"Ativar QR Code"**.
+  3. Clique em **"Testar o formulário"**, responda na janela e clique em **Enviar Feedback**.
+  4. Abra `/user/feedbacks/all`.
+- **Resultado esperado:** passo 1 → o cartão mostra **"Ativar o QR Code da empresa"** e **"Testar o formulário (opcional)"**, este desabilitado com "Ative o QR Code para poder testar."; passo 2 → o primeiro passo vira **"QR Code ativado"** ("Os clientes já conseguem responder pelo QR Code, pelo link e pela etiqueta NFC."); passo 3 → a janela "Testar o formulário" abre o mesmo formulário do cliente e, depois do envio, mostra **"Pronto! Seu teste chegou."**, fecha sozinha e o cartão passa a **"Tudo pronto ✓"**; passo 4 → o feedback aparece com a marca **"Teste"** e o canal "Teste do formulário", e não entra em "Por onde chegaram" (CT-UC09-09) nem nas métricas. Se o aparelho já respondeu no dia, a janela mostra "Você já respondeu por este aparelho.". **"Pular"** conclui o passo sem testar.
 
 ---
 
@@ -521,7 +532,7 @@ Rotas: `/user/profile`, `/user/qrcode/enterprise`, `/user/edit/types-feedback`, 
 
 - **Sessão:** faça login uma vez (ver "Como fazer login") antes de executar as UCs 05–12; reutilize a mesma aba/sessão. Para UC-01, UC-02, UC-04 e CT-UC12-07, use uma janela **anônima/deslogada**.
 - **Latência:** telas com carregamento assíncrono podem levar até ~15s; aguarde o estado final antes de concluir que houve falha.
-- **UC-04 é a mais sensível a dados:** exige empresa válida, ponto de coleta QR ativo e dispositivo sem envio prévio no mesmo ponto e no mesmo dia — prepare esses dados antes de testar.
+- **UC-04 é a mais sensível a dados:** exige empresa válida, coleta ativa (ponto de coleta ativo, o mesmo para QR Code, link e NFC) e dispositivo sem envio prévio no mesmo ponto e no mesmo dia — prepare esses dados antes de testar.
 - **Casos com IA** (CT-UC08-07, CT-UC09-10, CT-UC11-05) consomem a cota da chave OpenRouter da empresa. **Casos destrutivos** (CT-UC12-15) só em conta descartável.
 - **Ordem que evita retrabalho:** CT-UC05-02 (ativar a coleta) antes de UC-04 e CT-UC05-08; UC-04 antes de CT-UC09-09; CT-UC12-09 por último na sessão logada, porque deixa a tela em branco até recarregar.
 - **IDs dos casos:** seguem os documentos de cada caso de uso (`concepcao/casos-de-uso/uc-xx-*.md`). Os casos que entraram depois da suíte Playwright usam o ID do cenário correspondente nesses documentos (ex.: CT-UC04-02, CT-UC12-09) ou um número novo no fim da lista (ex.: CT-UC01-08, CT-UC09-09).

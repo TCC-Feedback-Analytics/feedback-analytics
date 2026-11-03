@@ -1,12 +1,14 @@
-# Coleta via QR Code de Baixo Atrito
+# Coleta de Baixo Atrito: QR Code, Link e NFC
 
 ## O Que É
 
-É o mecanismo central de entrada de dados do sistema. O cliente escaneia um QR Code físico com a câmera do celular e cai diretamente no formulário de feedback — sem criar conta, sem instalar nenhum app, sem digitar nenhuma URL.
+É o mecanismo central de entrada de dados do sistema. O cliente chega ao formulário público de feedback por um dos três **canais de coleta** — sem criar conta, sem instalar nenhum app, sem digitar nenhuma URL:
 
-Um scan. Uma avaliação. Pronto.
+- **QR Code:** o cliente aponta a câmera do celular para o código impresso;
+- **Link:** a empresa envia o endereço por mensagem, e-mail ou redes sociais;
+- **Etiqueta NFC:** o cliente encosta o celular na etiqueta e o formulário abre.
 
-O mesmo formulário também abre por mais dois **canais de coleta**: um **link** (para enviar por mensagem, e-mail ou redes) e uma **etiqueta NFC** (o cliente encosta o celular e o formulário abre). Os três levam às mesmas perguntas e às mesmas métricas do escopo.
+Um scan, um clique ou um toque. Uma avaliação. Pronto. Os três levam às mesmas perguntas e às mesmas métricas do escopo.
 
 ---
 
@@ -16,7 +18,7 @@ A maior inimiga da coleta de feedback é a **fricção**. Toda etapa extra que o
 
 Formulários em papel são lentos e difíceis de agregar. Apps exigem instalação. Links digitados geram erros de digitação. E-mails ficam para "responder depois" (e nunca são respondidos).
 
-O QR Code resolve tudo isso: está no balcão, na embalagem, no cardápio, na nota fiscal. O cliente já tem a câmera na mão, o que reduz bastante as barreiras de acesso.
+Os canais de coleta resolvem isso: o QR Code e a etiqueta NFC ficam no balcão, na embalagem, no cardápio ou na nota fiscal, e o link chega pela conversa que o cliente já tem com a empresa. O celular já está na mão, o que reduz bastante as barreiras de acesso.
 
 > **Sem coleta, não há dado. Sem dado, não há análise. Sem análise, o produto não existe.**
 > Esta é a funcionalidade que alimenta todo o resto do sistema.
@@ -35,7 +37,7 @@ Frontend chama o API Gateway (GET /api/public/enterprise/:id)
         ↓
 API confirma que a empresa existe e resolve o ponto de coleta ATIVO do escopo
         ↓
-Sem ponto de coleta ativo → tela de erro ("QR Code indisponível")
+Sem ponto de coleta ativo → tela de erro (coleta desativada)
         ↓
 Formulário é exibido com as perguntas do escopo e o campo de comentário dele
         ↓
@@ -52,18 +54,24 @@ Feedback persistido no banco → tela de confirmação exibida
 
 ## Canais de Coleta
 
-Cada escopo (a avaliação da empresa ou um item do catálogo) tem a seção **Canais de coleta** na configuração, com um card por canal:
+Cada escopo (a avaliação da empresa, em `/user/qrcode/enterprise`, ou um item do catálogo) tem a seção **Canais de coleta** na configuração. No topo fica o interruptor **Coleta de respostas**, que liga ou pausa a coleta do escopo; abaixo, um card por canal:
 
 | Canal | Como o gestor usa | Marca na URL |
 |---|---|---|
 | **QR Code** | Baixa a imagem em `.png` e imprime | `canal=qr` |
 | **Link** | Copia ou compartilha (pelo compartilhamento do celular, quando existe) | `canal=link` |
-| **Etiqueta NFC** | Grava o endereço numa etiqueta: direto pelo navegador no Chrome do Android (Web NFC) ou, no iPhone, por um app gravador de NFC | `canal=nfc` |
+| **Etiqueta NFC** | Grava o endereço numa etiqueta (recomendada: NTAG215): com um toque pelo Chrome do Android (Web NFC) ou, fora dele, copiando o endereço e gravando por um app como o NFC Tools | `canal=nfc` |
 
-- Os três apontam para o **mesmo ponto de coleta** do escopo: a marca só diz por onde o cliente chegou. Ela é gravada em `feedback.channel` (`QR`, `LINK` ou `NFC`), e o Dashboard mostra quantas avaliações chegaram por canal ("Por onde chegaram").
+- Os três apontam para o **mesmo ponto de coleta** do escopo: a marca só diz por onde o cliente chegou. Ela é gravada em `feedback.channel` (`QR`, `LINK` ou `NFC`).
 - Marca ausente, desconhecida ou o antigo valor `QRCODE` grava `null` (sem canal), sem recusar a resposta.
 - **Testar o formulário:** o painel abre o formulário com `canal=teste`. Esses feedbacks ficam marcados como `TEST` e aparecem na lista de Feedbacks recebidos com a marca "Teste", mas ficam **fora** de todas as métricas, do mínimo de feedbacks e da análise da IA.
 - Com a coleta do escopo pausada, nenhum canal recebe respostas.
+
+### Por onde chegaram
+
+- O Dashboard tem a seção **"Por onde chegaram"**: quantas avaliações vieram de cada canal e a média das estrelas de cada um. As avaliações sem marca de canal (de antes dela) ficam à parte.
+- A lista de Feedbacks recebidos mostra o canal de cada feedback.
+- O diagnóstico do escopo feito pela IA também recebe os números por canal.
 
 ---
 
@@ -96,7 +104,7 @@ Sem comentário, o feedback não vai para a IA nem conta como "aguardando análi
 ## Detalhes Técnicos
 
 - O endereço do formulário leva `enterprise`, e opcionalmente `collection_point` e `item`, mais a marca `canal`. Na etiqueta NFC o `item` fica de fora, para o endereço caber na memória da etiqueta
-- Antes de exibir o formulário, o backend confirma que a empresa existe (view `enterprise_public`) e resolve o ponto de coleta do tipo QR Code com status `ACTIVE`. Sem ele, o formulário não é exibido — o cliente vê uma tela de erro explicativa
+- Antes de exibir o formulário, o backend confirma que a empresa existe (view `enterprise_public`) e resolve o ponto de coleta do tipo `QR_CODE` (o nome técnico vale para os três canais) com status `ACTIVE`. Sem ele, o formulário não é exibido — o cliente vê uma tela de erro explicativa
 - O envio também exige o ponto de coleta ativo (senão `404 collection_point_not_found`) e respostas que batam exatamente com as perguntas ativas do escopo (senão `400 invalid_payload`)
 - A submissão **não requer autenticação** — é uma rota pública com proteção via fingerprint (1 envio por aparelho, por ponto de coleta, por dia)
 - O comentário aceita até 5000 caracteres. Dos dados opcionais de quem respondeu, só nome, e-mail e gênero são gravados (no cadastro do cliente, deduplicado por e-mail na empresa)
@@ -106,6 +114,6 @@ Sem comentário, o feedback não vai para a IA nem conta como "aguardando análi
 
 ## Referência Técnica
 
-- [QR Codes por Escopo → qrcode-escopo-dinamico.md](./qrcode-escopo-dinamico.md)
+- [Pontos de Coleta por Escopo → qrcode-escopo-dinamico.md](./qrcode-escopo-dinamico.md)
 - [Anti-Spam por Fingerprint → anti-spam-fingerprint.md](./anti-spam-fingerprint.md)
 - [Endpoints Públicos](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md)

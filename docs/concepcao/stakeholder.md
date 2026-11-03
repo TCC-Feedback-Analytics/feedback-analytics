@@ -30,7 +30,7 @@ Este documento mapeia quem são os stakeholders do Feedback Analytics, o que cad
 - **Principal Interesse / Objetivo:** Transformar a "voz do cliente" em um ativo estratégico. Querem entender rapidamente o que seus clientes pensam por escopo (produto, serviço, departamento), identificar problemas, descobrir oportunidades e aumentar satisfação e fidelização — sem precisar de uma equipe de dados.
 - **Impacto no Projeto:**
   - O requisito de **isolamento de dados (multi-tenancy)** é a principal demanda deste stakeholder: cada empresa só pode ver seus próprios dados.
-  - A necessidade de **granularidade por escopo** (QR Code por produto/serviço/departamento) é o principal diferencial competitivo do produto.
+  - A necessidade de **granularidade por escopo** (coleta por produto/serviço/departamento, com QR Code, link e NFC próprios) é o principal diferencial competitivo do produto.
   - A **clareza do dashboard** é crítica: o gestor não é analista de dados — os insights precisam chegar prontos.
   - A jornada de **onboarding e ativação** determina se a empresa chegará ao final do trial com valor percebido suficiente para converter em pagante.
 
@@ -57,7 +57,7 @@ Este documento mapeia quem são os stakeholders do Feedback Analytics, o que cad
 - **Impacto no Projeto:**
   - A arquitetura **Serverless multi-repo** (`web`, `api-gateway`, `ia-analyze`) foi adotada para garantir autonomia entre serviços, deploys independentes e clareza de responsabilidades.
   - A documentação técnica (`/docs`) existe para reduzir o tempo de onboarding e evitar que o conhecimento fique concentrado em uma pessoa.
-  - A **cobertura de testes** (unitários, integração, E2E) protege o time de regressões ao evoluir funcionalidades críticas.
+  - A **cobertura de testes** (unitários e de integração; os E2E com Playwright saíram em ago/2026 e viraram roteiro manual) protege o time de regressões ao evoluir funcionalidades críticas.
   - O padrão de **variáveis de ambiente por domínio** e a separação de serviços reduzem o risco de mudanças em um serviço quebrarem outro.
 
 ---
@@ -69,7 +69,7 @@ Este documento mapeia quem são os stakeholders do Feedback Analytics, o que cad
 - **Impacto no Projeto:**
   - O modelo de **trial de 4 meses com plano único** (sem feature flags por tier) simplifica o produto e direciona o esforço de desenvolvimento para o valor central, não para gestão de planos.
   - A decisão de focar em **PMEs** sem equipe técnica define o nível de complexidade aceitável na UX — simples acima de completo.
-  - Os **diferenciais competitivos** (QR Code por escopo + painel de insights com IA) são as partes do sistema que nunca podem degradar — toda decisão de arquitetura existe, em alguma medida, para protegê-los.
+  - Os **diferenciais competitivos** (coleta por escopo + painel de insights com IA) são as partes do sistema que nunca podem degradar — toda decisão de arquitetura existe, em alguma medida, para protegê-los.
 
 ---
 

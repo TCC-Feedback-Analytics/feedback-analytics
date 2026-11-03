@@ -138,7 +138,7 @@ Contador durável do limite de reenvio do e-mail de confirmação, compartilhado
 ### 2. Catálogo e Pontos de Coleta
 
 #### `catalog_items`
-Produtos, serviços ou departamentos que a empresa quer avaliar individualmente. Cada item pode ter seu próprio QR Code, perguntas, campo de comentário, relatório de insights e diagnóstico.
+Produtos, serviços ou departamentos que a empresa quer avaliar individualmente. Cada item pode ter seu próprio ponto de coleta (QR Code, link e NFC), perguntas, campo de comentário, relatório de insights e diagnóstico.
 
 | Campo | Tipo | Descrição |
 |---|---|---|
@@ -262,7 +262,7 @@ Registro central da avaliação enviada pelo cliente. Agrega todos os dados de u
 | `tracked_device_id` | uuid | Dispositivo emissor (opcional; sem FK nas migrations) |
 | `message` | text | Comentário livre do cliente (texto vazio quando ele só deu as notas ou o campo está oculto) |
 | `comment_prompt` | text | A pergunta própria que o cliente viu no campo de comentário (nulo = convite padrão) |
-| `channel` | text | Canal de coleta: `QR`, `LINK`, `NFC` ou `TEST` (o "Testar o formulário", fora das métricas); nulo = sem a marca de canal |
+| `channel` | text | Canal de coleta: `QR`, `LINK`, `NFC` ou `TEST` (o "Testar o formulário", fora das métricas e da IA); nulo = sem a marca de canal |
 | `rating` | int | Nota geral (1–5 estrelas) |
 
 ---

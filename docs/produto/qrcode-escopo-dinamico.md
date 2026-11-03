@@ -1,16 +1,16 @@
-# QR Codes por Escopo com Perguntas Dinâmicas
+# Pontos de Coleta por Escopo com Perguntas Dinâmicas
 
 ## O Que É
 
-Cada empresa não tem apenas um QR Code — ela tem **um ponto de coleta por escopo**. A avaliação geral da empresa e cada produto, serviço ou departamento do catálogo têm o seu, com suas próprias perguntas e seus próprios canais (QR Code, link e etiqueta NFC).
+Cada empresa não tem apenas um formulário — ela tem **um ponto de coleta por escopo**. A avaliação geral da empresa e cada produto, serviço ou departamento do catálogo têm o seu, com suas próprias perguntas e seus próprios canais (QR Code, link e etiqueta NFC).
 
-O cliente que escaneia o QR do "Hambúrguer Artesanal" responde perguntas específicas sobre aquele item. Quem escaneia o QR do "Pós-Venda" responde perguntas sobre aquela experiência. Contextos diferentes, perguntas diferentes, análises diferentes.
+O cliente que escaneia o QR Code (ou abre o link, ou encosta na etiqueta NFC) do "Hambúrguer Artesanal" responde perguntas específicas sobre aquele item. Quem chega pelo canal do "Pós-Venda" responde perguntas sobre aquela experiência. Contextos diferentes, perguntas diferentes, análises diferentes.
 
 ---
 
 ## Por Que Existe
 
-Um único QR Code para a empresa inteira diz que "os clientes estão insatisfeitos". Mas **não diz onde**.
+Um único formulário para a empresa inteira diz que "os clientes estão insatisfeitos". Mas **não diz onde**.
 
 Sem escopo, é impossível saber se o problema está no produto, no atendimento ou na entrega. O gestor termina com uma nota média que não orienta nenhuma decisão.
 
@@ -34,7 +34,7 @@ O item ganha QR Code, link e etiqueta NFC próprios, todos para o mesmo ponto de
         ↓
 Se não houver perguntas no item, o formulário exibe só nota + comentário (sem fallback para outro escopo)
         ↓
-Cliente escaneia → formulário carrega com as perguntas daquele escopo
+Cliente chega por um dos canais → formulário carrega com as perguntas daquele escopo
         ↓
 Feedback é armazenado vinculado ao item específico
         ↓
@@ -82,7 +82,7 @@ O sistema usa uma **contagem variável de 0 a 3 perguntas ativas** por ponto de 
 ## Detalhes Técnicos
 
 - A ativação de escopos (Produtos, Serviços, Departamentos) é feita via flags no banco: `uses_company_products`, `uses_company_services`, `uses_company_departments`
-- O formulário só abre e só aceita envio com o ponto de coleta do tipo QR Code em `ACTIVE`. Ativar a coleta de um item exige o item do catálogo ativo (RNE-009)
+- O formulário só abre e só aceita envio com o ponto de coleta do tipo `QR_CODE` (o mesmo para os três canais) em `ACTIVE`. Ativar a coleta de um item exige o item do catálogo ativo (RNE-009)
 - O ponto de coleta do item é criado (ou reativado) quando o gestor ativa a coleta, e desativado quando ele a pausa. Itens que saem do catálogo viram `INACTIVE`, sem ser excluídos
 - O sistema aceita uma contagem variável de 0 a 3 perguntas por ponto de coleta; sem fallback — as respostas precisam bater exatamente com as perguntas ativas do escopo (ou nenhuma)
 - Esvaziar uma pergunta faz soft-delete (`is_active = false`): ela some do formulário, mas o histórico de respostas fica
@@ -93,6 +93,6 @@ O sistema usa uma **contagem variável de 0 a 3 perguntas ativas** por ponto de 
 ## Referência Técnica
 
 - [Onboarding do Catálogo → onboarding-catalogo.md](./onboarding-catalogo.md)
-- [Coleta via QR Code → coleta-qrcode.md](./coleta-qrcode.md)
+- [Coleta: QR Code, link e NFC → coleta-qrcode.md](./coleta-qrcode.md)
 - [Análise dos comentários por escopo → painel-insights-ia.md](./painel-insights-ia.md)
 - [Endpoints de QR Code](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/endpoints.md)
