@@ -14,12 +14,12 @@
 - **Perfil:** Ana Rocha, 38 anos.
 - **Cargo:** Gerente de uma Rede de Cafeterias (3 unidades).
 - **Bio:** Ana é multitarefa e vive sob pressão. Ela gerencia equipes, estoques e a qualidade do serviço. Ela se sente ansiosa porque sabe que os clientes reclamam nas redes sociais, mas ela não tem tempo de ler comentário por comentário. Ela depende de planilhas manuais e relatórios de vendas que não dizem *por que* as vendas caíram.
-- **Comportamento Digital:** Usa WhatsApp Business para comunicar com a equipe, planilhas Google e Instagram para monitorar menções. Não é tech-savvy mas aprende rápido por necessidade. Acessa principalmente pelo celular durante o dia e pelo computador no fim do expediente.
+- **Comportamento Digital:** Usa WhatsApp Business para comunicar com a equipe, planilhas Google e as redes sociais para monitorar menções. Não é tech-savvy mas aprende rápido por necessidade. Acessa principalmente pelo celular durante o dia e pelo computador no fim do expediente.
 - **Objetivos:**
     - Ter visibilidade sobre a experiência do cliente em todas as unidades sem depender de relatos filtrados pela equipe.
     - Transformar reclamações em ações corretivas antes que virem crises.
 - **Necessidades Principais:**
-    - Centralizar feedbacks dispersos (Google, Instagram, iFood) em um único lugar.
+    - Centralizar feedbacks dispersos em várias plataformas (redes sociais, sites de avaliação, mensagens) em um único lugar.
     - Agilidade para identificar problemas (ex: café frio ou atendimento lento) em minutos, não em semanas.
     - Relatórios simples e visuais para apresentar nas reuniões semanais.
 - **Frustrações:**
@@ -40,14 +40,14 @@
 - **Perfil:** Lucas Silva, 25 anos.
 - **Cargo:** Analista de Sistemas e frequentador assíduo da cafeteria.
 - **Bio:** Lucas valoriza a qualidade e gosta de frequentar lugares agradáveis. Ele é detalhista e percebe a limpeza, a música e o sabor do produto. Ele está quase sempre com pressa e resolve tudo pelo celular. Ele gostaria de elogiar quando o serviço é bom e alertar sobre problemas, mas acha o processo atual burocrático.
-- **Comportamento Digital:** Nativo digital, mobile-first. Usa apps de avaliação (iFood, Google Maps) com naturalidade e tem tolerância zero a atrito. Não cria contas em serviços que usará apenas uma vez.
+- **Comportamento Digital:** Nativo digital, mobile-first. Usa apps e sites de avaliação com naturalidade e tem tolerância zero a atrito. Não cria contas em serviços que usará apenas uma vez.
 - **Objetivos:**
     - Dar sua opinião de forma rápida e honesta quando a experiência merece — para o bem ou para o mal.
     - Sentir que seu feedback chega diretamente a quem pode mudar algo, sem passar por filtros públicos.
 - **Necessidades Principais:**
-    - Um método de feedback de baixo atrito: escanear o QR Code e responder em menos de 1 minuto.
+    - Um método de feedback de baixo atrito: abrir o formulário (pelo QR Code, por um link ou encostando o celular numa etiqueta NFC) e responder em menos de 1 minuto.
     - Possibilidade de responder sem se identificar: ele quer ser sincero sem precisar fornecer dados pessoais ou criar contas.
-    - Um canal direto: ele prefere falar com a empresa do que reclamar publicamente no Instagram deles.
+    - Um canal direto: ele prefere falar com a empresa do que reclamar publicamente nas redes sociais dela.
 - **Frustrações:**
     - Formulários longos, com muitas perguntas obrigatórias ou que pedem login.
     - Ter que procurar o perfil da empresa nas redes sociais para fazer uma reclamação ou elogio no momento em que o fato acontece.
@@ -94,5 +94,5 @@
 | **Relação com o produto** | Usuária diária do dashboard | Usuário esporádico do formulário público | Usuário periódico do relatório IA |
 | **Principal entrega de valor** | Identificação rápida de problemas operacionais | Feedback sem identificação obrigatória e de baixo atrito | Insights consolidados para decisão estratégica |
 | **Maior medo** | Perder um problema que virou crise | Ter sua opinião rastreada | Expandir ou investir na direção errada |
-| **Feature crítica** | Dashboard, cards de métricas, listagem de feedbacks | Formulário público, QR Code, coleta sem identificação obrigatória | Relatório IA, `scope_type`, recomendações |
+| **Feature crítica** | Dashboard, cards de métricas, listagem de feedbacks | Formulário público, canais de coleta (QR Code, link e NFC), coleta sem identificação obrigatória | Relatório IA, `scope_type`, recomendações |
 | **Nível de maturidade digital** | Intermediário | Avançado | Básico / Intermediário |

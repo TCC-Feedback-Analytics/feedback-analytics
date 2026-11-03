@@ -25,7 +25,7 @@ O **app web não mudou o jeito de chamar auth**: ele já chamava os endpoints do
 
 - **O banco é o mesmo Postgres** do Supabase, acessado direto por connection string (`DATABASE_URL`, pooler) com **Drizzle ORM**.
 - O **isolamento por empresa (tenant)** é feito na aplicação (filtro explícito por `enterprise_id`). O app entra com o papel `feedback_app`, que a policy da RLS deixa ver todas as linhas; a RLS fica ligada para barrar os outros papéis. Ver [ORM × RLS: nossa decisão](../orm-rls-decisao.md).
-- O fluxo público anônimo (QR Code) também passa pelo Gateway e pelo Drizzle, com o mesmo filtro por empresa.
+- O fluxo público anônimo (formulário por QR Code, link ou NFC) também passa pelo Gateway e pelo Drizzle, com o mesmo filtro por empresa.
 
 ## Variáveis de ambiente (api-gateway)
 

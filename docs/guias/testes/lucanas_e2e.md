@@ -3,7 +3,7 @@
 !!! warning "Situação em 03/11/2026: a suíte descrita aqui não existe mais"
     A pasta `e2e/` e o Playwright saíram do `feedback-analytics-web` em 08/08/2026; os arquivos `*.spec.ts` citados abaixo não estão mais no repositório (por isso aparecem sem link). Use esta página só como checklist de cenários difíceis para a execução manual. Os cenários de cada caso de uso não foram reconferidos contra a aplicação atual: confirme no [runbook da Web](./manuais-web.md) e no próprio caso de uso antes de executar.
 
-Este documento mapeia os conflitos, divergências e lacunas entre a documentação de **Casos de Uso (`docs/casos-de-uso/`)** e a antiga implementação dos testes E2E com o **Playwright (`feedback-analytics-web/e2e/`)** — hoje executados **manualmente**.
+Este documento mapeia os conflitos, divergências e lacunas entre a documentação de **Casos de Uso (`docs/concepcao/casos-de-uso/`)** e a antiga implementação dos testes E2E com o **Playwright (`feedback-analytics-web/e2e/`)** — hoje executados **manualmente**.
 
 O objetivo deste relatório é servir de guia para correções de regras de negócio e expansão da cobertura de testes.
 
@@ -21,8 +21,8 @@ Estes cenários eram desativados nos testes E2E do Playwright (`test.skip(true, 
 | Identificador | Descrição do Caso de Uso | Arquivo de Teste E2E | Motivo do Skip |
 | :--- | :--- | :--- | :--- |
 | **[CT-UC01-01]** | Confirmação de e-mail ao criar conta | `uc-01-cadastro-conta.spec.ts` | Exige acessar uma caixa de e-mails real para clicar no link de validação. |
-| **[CT-UC02-04]** | Login com conta criada mas pendente de confirmação | `uc-02-login.spec.ts` | Requer manter uma conta no banco de dados fixamente com e-mail não verificado. |
-| **[CT-UC11-05]** | Executar nova análise chamando a API de IA | `uc-11-insights-ia.spec.ts` | A requisição HTTP real para a API do Gemini foi interceptada e mockada para **não consumir créditos financeiros** da conta do projeto. |
+| **[UC-02, exceção "Conta não ativada"]** | Login com conta criada mas pendente de confirmação | `uc-02-login.spec.ts` | Requer manter uma conta no banco de dados fixamente com e-mail não verificado. |
+| **[CT-UC11-05]** | Executar nova análise chamando a API de IA | `uc-11-insights-ia.spec.ts` | A requisição HTTP real para a API do Gemini (o provedor da época; hoje cada empresa usa a própria chave OpenRouter) foi interceptada e mockada para **não consumir créditos financeiros** da conta do projeto. |
 
 ---
 
@@ -32,16 +32,16 @@ Estes cenários envolvem integrações com recursos físicos do sistema operacio
 
 | Identificador | Descrição do Caso de Uso | Arquivo de Teste E2E | Limitação do Navegador / Playwright |
 | :--- | :--- | :--- | :--- |
-| **[CT-UC04-02]** | Bloqueio de múltiplos feedbacks do mesmo dispositivo no dia | `uc-04-envio-feedback-qrcode.spec.ts` | A validação utiliza fingerprinting persistido. No Playwright, cada teste executa em um *browser context* limpo (sem cookies ou localStorage herdados), permitindo submissões consecutivas sem simular o bloqueio diário. |
-| **[CT-UC05-02]** | Download do arquivo `.png` com o nome da empresa | `uc-05-geracao-qrcode.spec.ts` *(não implementado)* | Testar o download físico de uma imagem gerada via canvas e validar sua integridade estrutural (e nome do arquivo) é complexo no ambiente headless. |
-| **[CT-UC05-04]** | Acionamento da API nativa de compartilhamento (`navigator.share`) | `uc-05-geracao-qrcode.spec.ts` *(não implementado)* | A Web Share API necessita de suporte e permissão nativa do sistema operacional (SO) e geralmente falha ou não tem efeito em navegadores de teste. |
-| **[CT-UC12-03]** | Envio de código de verificação por SMS para telefone | `uc-12-gestao-perfil.spec.ts` *(não implementado)* | Exige a simulação física de recebimento de SMS e extração do código numérico de 6 dígitos. |
+| **[CT-UC04-02]** | Bloqueio de múltiplos feedbacks do mesmo dispositivo, no mesmo ponto de coleta, no dia | `uc-04-envio-feedback-qrcode.spec.ts` | A validação utiliza fingerprinting persistido. No Playwright, cada teste executa em um *browser context* limpo (sem cookies ou localStorage herdados), permitindo submissões consecutivas sem simular o bloqueio diário. Hoje o fingerprint é calculado no servidor (MD5 de navegador, IP e dia): uma janela anônima no mesmo navegador e na mesma rede **não** escapa da deduplicação. |
+| **[CT-UC05-03]** | Download do arquivo `.png` com o nome da empresa | `uc-05-geracao-qrcode.spec.ts` *(não implementado)* | Testar o download físico de uma imagem gerada via canvas e validar sua integridade estrutural (e nome do arquivo) é complexo no ambiente headless. |
+| **[CT-UC05-05]** | Acionamento da API nativa de compartilhamento (`navigator.share`) | `uc-05-geracao-qrcode.spec.ts` *(não implementado)* | A Web Share API necessita de suporte e permissão nativa do sistema operacional (SO) e geralmente falha ou não tem efeito em navegadores de teste. |
+| **[CT-UC12-10]** | Envio de código de verificação por SMS para telefone | `uc-12-gestao-perfil.spec.ts` *(não implementado)* | Exige a simulação física de recebimento de SMS e extração do código numérico de 6 dígitos. Hoje não há provedor de SMS: o número é gravado já no "Enviar SMS" e o código não é conferido. |
 
 ---
 
 ## 3. ❌ Cenários Não Cobertos nos Testes E2E (Não Atende)
 
-Esta seção documenta a lista de cenários documentados na pasta `docs/casos-de-uso/` que **não possuem testes equivalentes** implementados nos specs do Playwright, agrupados por use case.
+Esta seção documenta a lista de cenários documentados na pasta `docs/concepcao/casos-de-uso/` que **não possuem testes equivalentes** implementados nos specs do Playwright, agrupados por use case.
 
 ### [UC-01: Cadastro de Conta](../../concepcao/casos-de-uso/uc-01-cadastro-conta.md)
 *   **Cadastro com telefone fora do padrão brasileiro:** Não há validação automatizada de regex de telefone incorreto impedindo o envio do formulário.
@@ -56,14 +56,15 @@ Esta seção documenta a lista de cenários documentados na pasta `docs/casos-de
 *   **Acesso via link expirado:** Não existe teste para a exibição da tela de erro ao tentar redefinir senha com token expirado.
 *   **Comparação de senhas divergentes:** Falta testar o bloqueio visual do formulário de redefinição se a confirmação de senha não bater com a nova senha digitada.
 
-### [UC-04: Envio de Feedback via QR Code](../../concepcao/casos-de-uso/uc-04-envio-feedback-qrcode.md)
-*   **Exceção de QR Code inativo:** Se a empresa ou o ponto de coleta estiver desabilitado, o acesso ao link público deve ser bloqueado na tela de carregamento.
+### [UC-04: Envio de Feedback (QR Code, link ou NFC)](../../concepcao/casos-de-uso/uc-04-envio-feedback-qrcode.md)
+*   **Exceção de coleta pausada:** Se a coleta da empresa ou do item estiver pausada, o formulário público não deve abrir, venha o cliente pelo QR Code, pelo link ou pela etiqueta NFC.
 *   **Validação de subperguntas obrigatórias:** Se o gestor configurou subperguntas obrigatórias, o formulário público não deve permitir o envio até que todas sejam respondidas.
-*   **Validação de comentário obrigatório:** Testar se o sistema impede o envio caso o campo de texto livre esteja totalmente em branco.
+*   **Comentário opcional:** O comentário deixou de ser obrigatório. Testar que o envio sem comentário é aceito e que, com o campo oculto no escopo, o formulário não pede comentário.
 *   **Falha de rede/servidor:** Testar a exibição de aviso inline amigável caso ocorra erro 500 no envio final.
 
-### [UC-05: Geração e Compartilhamento de QR Code](../../concepcao/casos-de-uso/uc-05-geracao-qrcode.md)
+### [UC-05: Canais de coleta (QR Code, link e NFC)](../../concepcao/casos-de-uso/uc-05-geracao-qrcode.md)
 *   **Fallback do compartilhamento:** Testar se o link é copiado para a área de transferência quando o navegador não suporta `navigator.share` nativamente.
+*   **Gravação da etiqueta NFC:** O "Gravar etiqueta" só aparece no Chrome do Android (Web NFC) e precisa de uma etiqueta física; no computador, dá para conferir só o "Copiar endereço da etiqueta".
 
 ### [UC-06: Ativação de Tipos de Feedback](../../concepcao/casos-de-uso/uc-06-ativacao-tipos-feedback.md)
 *   **Comportamento pré-salvamento:** O sistema deve alertar visualmente (badge em âmbar) que as alterações só serão aplicadas após o clique em "Salvar", mantendo o catálogo bloqueado até a confirmação.
@@ -71,11 +72,11 @@ Esta seção documenta a lista de cenários documentados na pasta `docs/casos-de
 
 ### [UC-07: Configuração do Catálogo](../../concepcao/casos-de-uso/uc-07-configuracao-catalogo.md)
 *   **Gerenciamento de perguntas dinâmicas por item:** Não existem testes para cadastrar, editar ou desativar perguntas específicas ligadas a um item de catálogo (ex.: perguntas exclusivas para um produto específico).
-*   **Habilitar/Desabilitar QR Code por item:** Falta testar se o toggle individual de QR Code de produto/serviço gera sucesso visual e altera o comportamento na ponta.
+*   **Ativar/pausar a coleta por item:** Falta testar se o interruptor de coleta do produto/serviço, em **Canais de coleta**, gera sucesso visual e altera o comportamento na ponta (QR Code, link e NFC do item).
 *   **Exceções de tamanho de caracteres:** Validar o limite de 20 a 150 caracteres para perguntas e subperguntas.
 
 ### [UC-08: Configuração de Coleta (Contexto IA)](../../concepcao/casos-de-uso/uc-08-configuracao-coleta-ia.md)
-*   **Permissão de campos vazios:** O caso de uso especifica que salvar os campos em branco é permitido (a IA usará contexto padrão). Os testes atuais não cobrem o salvamento de formulário vazio.
+*   **Campos vazios:** Hoje a janela do contexto não deixa salvar com algum dos três campos em branco ("Complete os campos obrigatórios"), e o CT-UC08-03 ficou obsoleto na interface. O gateway ainda aceita os campos nulos no `PATCH /collecting_data`, o que só dá para conferir pela API.
 *   **Divergência de arquivo:** O teste `[CT-UC08-03]` insere perguntas dinâmicas gerais da empresa, o que pertence funcionalmente ao escopo da tela de perfil (`UC-12`) e não de contexto de IA (`UC-08`).
 
 ### [UC-09: Visualização do Dashboard](../../concepcao/casos-de-uso/uc-09-dashboard.md)

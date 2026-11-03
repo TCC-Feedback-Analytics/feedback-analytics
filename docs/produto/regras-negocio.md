@@ -193,7 +193,7 @@ Exceção: desativar `uses_company_products` (`false`) **zera automaticamente** 
 
 ---
 
-### Coleta via QR Code
+### Coleta pelo Formulário Público (QR Code, Link e NFC)
 
 #### Fingerprint Anti-Spam
 

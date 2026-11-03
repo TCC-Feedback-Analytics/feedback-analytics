@@ -15,7 +15,7 @@ A voz dos seus clientes ajudando a decidir — com apoio de IA. Colete por QR Co
 
 </div>
 
-O **Feedback Analytics** transforma a opinião dos seus clientes em decisões estratégicas — de forma automatizada e sem exigir equipe de dados. Muitas empresas, especialmente as de pequeno e médio porte, não têm um canal estruturado para ouvir o cliente: os feedbacks ficam espalhados entre Google, Instagram e iFood, e o gestor acaba decidindo por intuição, não por evidência. Nós resolvemos isso reunindo coleta, análise e decisão em um único fluxo: o cliente avalia pelo QR Code, por um link ou por uma etiqueta NFC, uma inteligência artificial lê os comentários e o gestor recebe um painel com métricas e recomendações prontas. Você deixa de adivinhar o que está dando errado e ganha mais clareza sobre onde agir.
+O **Feedback Analytics** transforma a opinião dos seus clientes em decisões estratégicas — de forma automatizada e sem exigir equipe de dados. Muitas empresas, especialmente as de pequeno e médio porte, não têm um canal estruturado para ouvir o cliente: os feedbacks ficam espalhados entre várias plataformas (redes sociais, sites de avaliação, mensagens), e o gestor acaba decidindo por intuição, não por evidência. Nós resolvemos isso reunindo coleta, análise e decisão em um único fluxo: o cliente avalia pelo QR Code, por um link ou por uma etiqueta NFC, uma inteligência artificial lê os comentários e o gestor recebe um painel com métricas e recomendações prontas. Você deixa de adivinhar o que está dando errado e ganha mais clareza sobre onde agir.
 
 ## Como funciona
 
@@ -51,7 +51,7 @@ A plataforma é **serverless** (Vercel Functions + CDN) e distribuída em **repo
 
 - **feedback-analytics-web** — frontend React: formulário público de coleta e dashboard protegido da empresa.
 - **feedback-analytics-api-gateway** — API REST e ponto único de entrada: centraliza a autenticação (Better Auth, com sessão em cookie httpOnly), as regras de negócio, as métricas e o acesso ao banco (Drizzle), e põe todo trabalho de IA numa fila processada em segundo plano.
-- **feedback-analytics-ia-analyze** — serviço isolado de IA, sem banco: chama o LLM da empresa (OpenRouter) para analisar comentários, diagnosticar o escopo e sugerir perguntas; só o Gateway o acessa.
+- **feedback-analytics-ia-analyze** — serviço isolado de IA, sem banco: chama o LLM da empresa (OpenRouter) para analisar comentários, diagnosticar o escopo e gerar as perguntas do formulário; só o Gateway o acessa.
 - **feedback-analytics-contracts** — pacote `@feedback/lib-shared` com os tipos e contratos compartilhados entre os serviços.
 
 [Ver como os serviços se conectam → Arquitetura](arquitetura/visao-geral.md)
@@ -84,11 +84,11 @@ A plataforma é **serverless** (Vercel Functions + CDN) e distribuída em **repo
 
     [:octicons-arrow-right-24: Ver a análise](produto/painel-insights-ia.md)
 
-- :material-qrcode-scan: __Coleta via QR Code__
+- :material-qrcode-scan: __Coleta por QR Code, link e NFC__
 
     ---
 
-    O canal de coleta de baixo atrito que alimenta todo o sistema.
+    Os canais de coleta de baixo atrito que alimentam todo o sistema.
 
     [:octicons-arrow-right-24: Como funciona](produto/coleta-qrcode.md)
 

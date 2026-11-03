@@ -74,7 +74,7 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 
 ---
 
-## Coleta de Feedbacks via QR Code
+## Coleta de Feedbacks (QR Code, link e NFC)
 
 ### Um dispositivo envia no máximo um feedback por ponto de coleta por dia
 
@@ -82,7 +82,7 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 
 **Por quê:** feedbacks duplicados do mesmo dispositivo distorcem as análises. Uma empresa não deve tomar decisões baseadas em respostas repetidas da mesma pessoa no mesmo dia. O bloqueio é por dia corrido (meia-noite a meia-noite), não por janela de 24 horas — quem enviou às 23h de hoje pode enviar novamente às 0h de amanhã.
 
-**Hoje:** a meia-noite é a do relógio do servidor, que em produção roda em UTC. No horário de Brasília, o dia vira às 21h.
+**Hoje:** a meia-noite é a do relógio do servidor, que em produção roda em UTC. No horário de Brasília, o dia vira às 21h. O limite é do ponto de coleta, não do canal: quem respondeu pelo QR Code não envia de novo no mesmo dia pelo link ou pela etiqueta NFC do mesmo escopo.
 
 ---
 

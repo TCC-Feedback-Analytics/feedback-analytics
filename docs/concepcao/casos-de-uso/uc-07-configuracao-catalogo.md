@@ -54,7 +54,7 @@ A tela dedicada do item espelha a Avaliação da empresa e tem **quatro blocos i
 | Erro ao salvar as perguntas de um item | Exibe o toast "Não foi possível salvar" — outros itens não são afetados |
 | Erro ao salvar o campo de comentário | Exibe o toast "Não deu para salvar" |
 | Erro ao ativar ou pausar a coleta de um item | Exibe o toast "Erro na operação" — o estado não é alterado |
-| Gestor remove um item da lista | O item não é apagado do banco: fica inativo e some da lista, preservando o histórico. A coleta do item **não** é pausada por isso: o gateway não confere o status do item, e o formulário daquele QR continua aceitando respostas enquanto o ponto de coleta estiver ativo. Para parar a coleta, pause-a na tela do item antes de removê-lo |
+| Gestor remove um item da lista | O item não é apagado do banco: fica inativo e some da lista, preservando o histórico. A coleta do item **não** é pausada por isso: o gateway não confere o status do item, e o formulário daquele item continua aceitando respostas (pelo QR Code, pelo link ou pela etiqueta NFC) enquanto o ponto de coleta estiver ativo. Para parar a coleta, pause-a na tela do item antes de removê-lo |
 | Gestor pausa a coleta de um item | O formulário público daquele item mostra a tela de erro "QR Code indisponível" e bloqueia novos envios (UC-04) |
 
 ---

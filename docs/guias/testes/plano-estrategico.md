@@ -53,13 +53,13 @@ Se uma regra mudar no UC (ex: mínimo de feedbacks para análise mudar de 10 par
 
 #### 1.1. Introdução
 
-O feedback-analytics é um SaaS destinado a negócios — pessoa física (CPF) ou jurídica (CNPJ) — que precisam coletar e interpretar avaliações de clientes de forma estruturada. O sistema resolve dois problemas centrais: **como coletar feedback com granularidade** (por empresa, produto, serviço ou departamento via QR Code físico) e **como transformar esse volume em decisões** sem que o gestor precise ler cada avaliação individualmente (via análise de IA).
+O feedback-analytics é um SaaS destinado a negócios — de profissionais autônomos a pequenas e médias empresas — que precisam coletar e interpretar avaliações de clientes de forma estruturada. O sistema resolve dois problemas centrais: **como coletar feedback com granularidade** (por empresa, produto, serviço ou departamento, pelo mesmo formulário aberto por QR Code, link compartilhado ou etiqueta NFC) e **como transformar esse volume em decisões** sem que o gestor precise ler cada avaliação individualmente (via análise de IA).
 
 A plataforma possui três atores distintos:
 
 - **Empresa** (novo cliente) — realiza o cadastro e ativa a conta.
-- **Gestor** — configura a coleta, distribui os QR Codes e analisa os resultados no dashboard.
-- **Cliente do estabelecimento** — escaneia o QR Code e submete a avaliação pelo formulário público.
+- **Gestor** — configura a coleta, distribui os canais (QR Code, link e etiqueta NFC) e analisa os resultados no dashboard.
+- **Cliente do estabelecimento** — escaneia o QR Code, abre o link ou encosta o celular na etiqueta NFC e submete a avaliação pelo formulário público.
 
 Stack técnica: React 19 SPA com React Router v7, API Gateway Node.js (Express, com autenticação Better Auth e acesso ao Postgres via Drizzle; o Postgres de produção é hospedado no Supabase) e Serviço Serverless de IA em Node.js, que chama o LLM configurado por cada empresa (OpenRouter).
 
@@ -69,17 +69,17 @@ Stack técnica: React 19 SPA com React Router v7, API Gateway Node.js (Express, 
 
 - Fluxo de cadastro, ativação de conta e autenticação (UC-01, UC-02, UC-03)
 - Configuração da coleta: tipos de feedback, catálogo de itens, perguntas dinâmicas e contexto de IA (UC-06, UC-07, UC-08)
-- Envio de feedback via QR Code — formulário público acessado pelo cliente (UC-04)
-- Controle e distribuição de QR Code (ativar/desativar, download, copiar link, compartilhar) (UC-05)
-- Dashboard com métricas, gráficos e últimos feedbacks (UC-09)
+- Envio de feedback pelo formulário público, aberto por QR Code, link ou etiqueta NFC (UC-04)
+- Canais de coleta: ativar/pausar a coleta, baixar o QR Code, copiar e compartilhar o link, gravar a etiqueta NFC e testar o formulário (UC-05)
+- Dashboard com métricas, canais de chegada, gráficos e diagnóstico do escopo pela IA (UC-09)
 - Listagem de feedbacks com filtros combinados e modal de detalhes (UC-10)
-- Disparo de análise de IA e visualização de relatório, análise emocional e estatísticas (UC-11)
-- Gestão de perfil: nome, e-mail, telefone e perguntas dinâmicas da empresa (UC-12)
-- Mecanismo anti-spam por fingerprint de dispositivo (bloqueio de envios duplicados no mesmo dia)
+- Disparo da análise dos comentários com IA e visualização do tom, dos assuntos e do resumo com recomendações (UC-11)
+- Gestão de perfil: nome, e-mail, telefone, contexto e LLM da empresa e exclusão da conta (UC-12)
+- Mecanismo anti-spam por fingerprint de dispositivo (bloqueio de envios duplicados no mesmo ponto de coleta e no mesmo dia)
 
 **FORA DO ESCOPO:**
 
-- Testes de carga e estresse (múltiplos envios de QR Code simultâneos em pico)
+- Testes de carga e estresse (muitos envios simultâneos do formulário público em pico)
 - Testes de acessibilidade visual detalhados (WCAG)
 - Testes end-to-end do fluxo de e-mail (confirmação de conta, link de reset) — requerem acesso a caixa de e-mail real em tempo de execução
 - Testes de integração direta com provedores externos de IA (OpenRouter, Gemini) — nos testes automatizados as chamadas ao LLM são mockadas
@@ -118,7 +118,7 @@ Stack técnica: React 19 SPA com React Router v7, API Gateway Node.js (Express, 
 | Testes de unidade e componentes | Vitest + @vitest/coverage-v8 | Em uso |
 | Execução E2E de interface | Manual pela UI (runbook [Web](./manuais-web.md)) | Em uso — automação Playwright removida |
 | Mock de API em testes de integração | MSW (Mock Service Worker) | A implementar |
-| Gerenciamento de casos de teste | Casos de Uso em `docs/casos-de-uso/` | Em uso |
+| Gerenciamento de casos de teste | Casos de Uso em `docs/concepcao/casos-de-uso/` | Em uso |
 
 **Ambiente de Teste:**
 
@@ -126,7 +126,7 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 
 - Uma empresa de teste criada, conta ativada e com gestor autenticado.
 - Tipos de feedback ativados (Produtos, Serviços e Departamentos).
-- Catálogo com ao menos 1 item ativo por tipo, com QR Code ativo.
+- Coleta da empresa ativa e catálogo com ao menos 1 item ativo por tipo, com a coleta do item ativa.
 - Contexto de IA preenchido (os 3 campos obrigatórios: objetivo, objetivo analítico, resumo).
 - Mínimo de 10 feedbacks coletados para viabilizar os testes de insights.
 
@@ -153,7 +153,7 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 
 | Risco | Probabilidade | Impacto | Ação de Mitigação |
 |---|---|---|---|
-| **Anti-spam bloqueando testes E2E** — o fingerprint do dispositivo de teste é reconhecido após o primeiro envio do dia, impedindo novos envios no mesmo ciclo de testes | Alta | Alto | Gerar um fingerprint UUID aleatório por execução de teste, ou executar scripts de limpeza da tabela de dispositivos no banco do ambiente de teste antes de cada rodada |
+| **Anti-spam bloqueando testes E2E** — o fingerprint do dispositivo de teste é reconhecido após o primeiro envio do dia, impedindo novos envios ao mesmo ponto de coleta no mesmo ciclo de testes | Alta | Alto | O fingerprint é calculado no servidor (MD5 de navegador, IP e dia), então não dá para trocá-lo pelo cliente: use outro navegador, outra rede ou outro ponto de coleta, ou limpe a tabela `tracked_devices` no banco do ambiente de teste antes de cada rodada (no local, `npm run db:reset`) |
 | **Fluxo de e-mail inacessível em automação** — confirmação de conta e reset de senha exigem acesso à caixa de e-mail em tempo real, inviável em pipelines automatizados | Média | Alto | No ambiente local, o Mailpit do docker-compose do API Gateway captura os e-mails (UI em `http://localhost:8025`) e permite clicar no link; em produção, testar as telas de sucesso/erro do fluxo sem clicar no link real |
 | **Instabilidade do provedor de IA externo** — indisponibilidade bloqueia completamente os testes de UC-11 | Baixa | Alto | Criar mocks das respostas de IA para testes unitários e de integração; pular o cenário de UC-11 na execução manual quando o provedor estiver indisponível |
 | **Estado sujo entre execuções de teste** — empresa de teste acumula catálogos, tipos e feedbacks de execuções anteriores, causando resultados inconsistentes | Alta | Médio | No ambiente local, rodar `npm run db:reset` no API Gateway antes de cada rodada: recria o banco com o seed determinístico e o usuário de teste. O script só roda contra banco local; em produção a limpeza continua manual |
@@ -216,28 +216,28 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 
 ### Grupo 2: Coleta de Feedback
 
-#### [UC-04] Envio de Feedback via QR Code → [uc-04-envio-feedback-qrcode.md](../../concepcao/casos-de-uso/uc-04-envio-feedback-qrcode.md)
+#### [UC-04] Envio de Feedback (QR Code, link ou NFC) → [uc-04-envio-feedback-qrcode.md](../../concepcao/casos-de-uso/uc-04-envio-feedback-qrcode.md)
 
 | ID | Título | Pré-condições | Passos de Execução | Dados de Teste | Resultado Esperado |
 |---|---|---|---|---|---|
-| `CT-UC04-01`<br>✅ *Coberto E2E (skip condicional)* | Caminho feliz | Empresa ativa; QR Code ativo; perguntas dinâmicas configuradas; dispositivo sem envio anterior no dia | 1. Acessar URL do formulário com identifier válido. 2. Selecionar nota Likert (Ótima). 3. Preencher comentário. 4. Responder todas as perguntas dinâmicas. 5. Clicar em "Enviar". | identifier: `empresa-teste`; comentário: "Ótimo atendimento". Requer `E2E_TEST_ENTERPRISE_ID` | Tela de agradecimento exibida; feedback registrado no banco. *Contém `test.skip(!TEST_ENTERPRISE_ID, ...)` — pulado quando a variável não está configurada.* |
-| `CT-UC04-02`<br>📝 *Planejado / não implementado* | Dispositivo duplicado (Exceção) | Dispositivo já enviou feedback para o mesmo ponto de coleta hoje | 1. Acessar URL do formulário. 2. Preencher e submeter o formulário normalmente. | Mesmo fingerprint do envio anterior | Sistema aceita o envio mas exibe tela de "feedback já registrado hoje". *Sem teste E2E com este ID no spec.* |
+| `CT-UC04-01`<br>✅ *Coberto E2E (skip condicional)* | Caminho feliz | Empresa ativa; coleta ativa; perguntas dinâmicas configuradas; dispositivo sem envio anterior no dia | 1. Acessar URL do formulário com identifier válido. 2. Selecionar nota Likert (Ótima). 3. Preencher comentário. 4. Responder todas as perguntas dinâmicas. 5. Clicar em "Enviar". | identifier: `empresa-teste`; comentário: "Ótimo atendimento". Requer `E2E_TEST_ENTERPRISE_ID` | Tela de agradecimento exibida; feedback registrado no banco. *Contém `test.skip(!TEST_ENTERPRISE_ID, ...)` — pulado quando a variável não está configurada.* |
+| `CT-UC04-02`<br>📝 *Planejado / não implementado* | Dispositivo duplicado (Exceção) | Dispositivo já enviou feedback para o mesmo ponto de coleta hoje | 1. Acessar URL do formulário. 2. Preencher e submeter o formulário normalmente. | Mesmo fingerprint do envio anterior | O envio é recusado (HTTP 409) e o formulário mostra a tela "Obrigado por participar", avisando que o dispositivo já respondeu hoje. *Sem teste E2E com este ID no spec.* |
 | `CT-UC04-03`<br>✅ *Coberto E2E* | Empresa inválida (Exceção) | Nenhuma empresa com o identifier informado | 1. Acessar URL com `enterprise_id` inexistente. | identifier: `empresa-inexistente-xyz` | Tela de "empresa não encontrada" / erro exibida; formulário não renderizado |
-| `CT-UC04-04`<br>🔵 *Unidade já atende* | Nota não selecionada (Exceção) | Empresa e QR Code ativos | 1. Acessar URL válida. 2. Preencher comentário. 3. Responder perguntas. 4. Clicar "Enviar" sem selecionar nota. | Sem nota selecionada | Envio bloqueado; mensagem "Por favor, selecione uma avaliação" exibida |
-| `CT-UC04-05`<br>🔵 *Unidade já atende* | Comentário vazio (Exceção) | Empresa e QR Code ativos | 1. Acessar URL válida. 2. Selecionar nota. 3. Responder perguntas. 4. Clicar "Enviar" sem preencher comentário. | Comentário: `""` | Envio bloqueado; mensagem "Por favor, escreva seu feedback" exibida |
-| `CT-UC04-06`<br>🔵 *Unidade já atende* | Perguntas não respondidas (Exceção) | Empresa com perguntas dinâmicas; QR Code ativo | 1. Acessar URL válida. 2. Selecionar nota. 3. Preencher comentário. 4. Deixar ao menos uma pergunta sem resposta. 5. Clicar "Enviar". | 1 pergunta sem resposta | Envio bloqueado; mensagem solicitando que todas as perguntas sejam respondidas |
+| `CT-UC04-04`<br>🔵 *Unidade já atende* | Nota não selecionada (Exceção) | Empresa com a coleta ativa | 1. Acessar URL válida. 2. Preencher comentário. 3. Responder perguntas. 4. Clicar "Enviar" sem selecionar nota. | Sem nota selecionada | Envio bloqueado; mensagem "Por favor, selecione uma avaliação" exibida |
+| `CT-UC04-05`<br>🔵 *Unidade já atende* | Comentário vazio | Empresa com a coleta ativa | 1. Acessar URL válida. 2. Selecionar nota. 3. Responder perguntas. 4. Clicar "Enviar" sem preencher comentário. | Comentário: `""` | Envio **aceito**: o comentário é opcional desde a configuração do campo de comentário por escopo |
+| `CT-UC04-06`<br>🔵 *Unidade já atende* | Perguntas não respondidas (Exceção) | Empresa com perguntas dinâmicas; coleta ativa | 1. Acessar URL válida. 2. Selecionar nota. 3. Preencher comentário. 4. Deixar ao menos uma pergunta sem resposta. 5. Clicar "Enviar". | 1 pergunta sem resposta | Envio bloqueado; mensagem solicitando que todas as perguntas sejam respondidas |
 
-#### [UC-05] Geração e Compartilhamento de QR Code → [uc-05-geracao-qrcode.md](../../concepcao/casos-de-uso/uc-05-geracao-qrcode.md)
+#### [UC-05] Canais de coleta (QR Code, link e NFC) → [uc-05-geracao-qrcode.md](../../concepcao/casos-de-uso/uc-05-geracao-qrcode.md)
 
 | ID | Título | Pré-condições | Passos de Execução | Dados de Teste | Resultado Esperado |
 |---|---|---|---|---|---|
-| `CT-UC05-01`<br>✅ *Coberto E2E (smoke)* | Carregamento da página | Gestor autenticado | 1. Acessar `/user/qrcode/enterprise`. 2. Verificar que a página carrega com os dados da empresa, exibindo o QR Code (canvas/img/svg) ou o botão de ativar/desativar. | — | Página carrega e exibe o QR Code ou o botão de controle. *Smoke — **não** exercita o clique de ativar/desativar.* |
-| `CT-UC05-02`<br>📝 *Planejado / não implementado* | Ativar/desativar (Caminho Feliz) | Gestor autenticado; página de QR Code carregada | 1. Clicar no botão de controle do QR Code. | — | Toast de confirmação exibido; estado visual atualizado imediatamente |
-| `CT-UC05-03`<br>🚫 *Não é possível testar com Playwright* | Download (Caminho Feliz) | Gestor autenticado | 1. Clicar em "Download" na página de QR Code. | — | Download de arquivo `.png` disparado com o nome da empresa no título |
-| `CT-UC05-04`<br>📝 *Planejado / não implementado* | Copiar link (Caminho Feliz) | Gestor autenticado | 1. Clicar em "Copiar link". | — | URL copiada para a área de transferência; indicador visual de cópia por 2 segundos |
+| `CT-UC05-01`<br>✅ *Coberto E2E (smoke)* | Carregamento da página | Gestor autenticado | 1. Acessar `/user/edit/feedback-general` (o antigo `/user/qrcode/enterprise` redireciona para lá). 2. Verificar que a seção **Canais de coleta** carrega, exibindo o QR Code ou o botão de ativar a coleta. | — | Página carrega e exibe o QR Code ou o botão de controle. *Smoke — **não** exercita o clique de ativar/pausar.* |
+| `CT-UC05-02`<br>📝 *Planejado / não implementado* | Ativar/pausar a coleta (Caminho Feliz) | Gestor autenticado; seção Canais de coleta carregada | 1. Clicar em "Ativar coleta" ou "Pausar coleta". | — | Toast de confirmação exibido; estado visual atualizado imediatamente; o interruptor vale para os três canais |
+| `CT-UC05-03`<br>🚫 *Não é possível testar com Playwright* | Download (Caminho Feliz) | Gestor autenticado | 1. Clicar em "Baixar QR Code" no cartão QR Code. | — | Download de arquivo `.png` disparado com o nome da empresa no título |
+| `CT-UC05-04`<br>📝 *Planejado / não implementado* | Copiar link (Caminho Feliz) | Gestor autenticado | 1. Clicar em "Copiar link" no cartão Link. | — | URL copiada para a área de transferência, com `canal=link`; indicador visual de cópia por 2 segundos |
 | `CT-UC05-05`<br>🚫 *Não é possível testar com Playwright* | Compartilhar (Caminho Feliz) | Ambiente com `navigator.share` disponível | 1. Clicar em "Compartilhar". | — | API nativa de compartilhamento invocada com título, descrição e link corretos |
 | `CT-UC05-06`<br>📝 *Planejado / não implementado* | Share API indisponível (Exceção) | Ambiente sem `navigator.share` | 1. Clicar em "Compartilhar". | — | Link copiado automaticamente para a área de transferência (sem mensagem de erro) |
-| `CT-UC05-07`<br>📝 *Planejado / não implementado* | QR desativado — formulário bloqueado (Exceção) | QR Code da empresa no estado inativo | 1. Acessar o link do formulário público da empresa com QR Code desativado. | identifier: `empresa-teste` (QR inativo) | Tela de erro fatal no formulário público; envio bloqueado |
+| `CT-UC05-07`<br>📝 *Planejado / não implementado* | Coleta pausada — formulário bloqueado (Exceção) | Coleta da empresa pausada | 1. Acessar o formulário público da empresa (pelo QR Code, pelo link ou pela etiqueta NFC) com a coleta pausada. | identifier: `empresa-teste` (coleta pausada) | Tela de erro fatal no formulário público; envio bloqueado |
 
 ---
 
@@ -259,22 +259,22 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 |---|---|---|---|---|---|
 | `CT-UC07-01`<br>✅ *Coberto E2E (smoke)* | Carregamento da página | Gestor autenticado | 1. Acessar `/user/edit/feedback-products`. 2. Verificar que a página carrega — exibindo o conteúdo principal ou a mensagem de tipo não ativado. | — | Página carrega corretamente. *Smoke — **não** cobre adicionar/editar item nem salvar perguntas.* |
 | `CT-UC07-02`<br>📝 *Planejado / não implementado* | Adicionar item (Caminho Feliz) | Gestor autenticado; tipo "Produtos" ativo | 1. Acessar catálogo de produtos. 2. Preencher nome do novo produto. 3. Clicar "Salvar". | nome: `Produto Teste A` | Toast de sucesso; item aparece na lista com status ativo |
-| `CT-UC07-03`<br>📝 *Planejado / não implementado* | Editar item (Caminho Feliz) | Item existente no catálogo | 1. Acessar catálogo. 2. Editar nome de um item existente. 3. Clicar "Salvar". | nome editado: `Produto Atualizado` | Toast de sucesso; nome atualizado na lista |
-| `CT-UC07-04`<br>📝 *Planejado / não implementado* | Salvar perguntas (Caminho Feliz) | Item existente no catálogo | 1. Expandir card do item. 2. Configurar pergunta dinâmica válida (20–150 chars). 3. Clicar "Salvar perguntas". | texto: `Como você avaliaria a qualidade?` (31 chars) | Toast de sucesso para aquele item; pergunta salva |
-| `CT-UC07-05`<br>📝 *Planejado / não implementado* | Toggle QR Code por item (Caminho Feliz) | Item existente no catálogo | 1. Expandir card do item. 2. Clicar no toggle de QR Code do item. | — | Toast de sucesso; estado do toggle atualizado sem necessidade de salvar o catálogo |
-| `CT-UC07-06`<br>🔵 *Unidade já atende* | Pergunta inválida — curta (Exceção) | Item existente no catálogo | 1. Expandir card do item. 2. Inserir pergunta com menos de 20 caracteres. 3. Clicar "Salvar perguntas". | texto: `Curta` (5 chars) | Envio bloqueado; campo destacado com erro de comprimento mínimo |
-| `CT-UC07-07`<br>🔵 *Unidade já atende* | Pergunta inválida — longa (Exceção) | Item existente no catálogo | 1. Expandir card do item. 2. Inserir pergunta com mais de 150 caracteres. 3. Clicar "Salvar perguntas". | texto: 151 caracteres | Envio bloqueado; campo destacado com erro de comprimento máximo |
-| `CT-UC07-08`<br>❌ *Cenário não coberto* | Item inativo — formulário bloqueado (Exceção) | Item existente no catálogo | 1. Desativar um item (status inativo). 2. Acessar a URL do formulário público daquele item. | — | Tela de erro fatal no formulário público; envio bloqueado |
-| `CT-UC07-09`<br>❌ *Cenário não coberto* | QR Code de item desativado (Exceção) | Item ativo com toggle de QR Code inativo | 1. Desativar o toggle de QR Code de um item. 2. Acessar a URL do formulário público daquele item. | — | Tela de erro no formulário público; envio bloqueado |
+| `CT-UC07-03`<br>📝 *Planejado / não implementado* | Editar item (Caminho Feliz) | Item existente no catálogo | 1. Acessar catálogo e clicar em "Configurar" num item. 2. Editar o nome em "Dados do item". 3. Clicar "Salvar dados do item". | nome editado: `Produto Atualizado` | Toast de sucesso; nome atualizado na lista |
+| `CT-UC07-04`<br>📝 *Planejado / não implementado* | Salvar perguntas (Caminho Feliz) | Item existente no catálogo | 1. Abrir a tela do item ("Configurar"). 2. Em "Configurar perguntas", escrever pergunta dinâmica válida (20–150 chars). 3. Clicar "Salvar perguntas". | texto: `Como você avaliaria a qualidade?` (31 chars) | Toast de sucesso para aquele item; pergunta salva |
+| `CT-UC07-05`<br>📝 *Planejado / não implementado* | Coleta por item (Caminho Feliz) | Item existente no catálogo | 1. Abrir a tela do item ("Configurar"). 2. Em "Canais de coleta", ativar ou pausar a coleta do item. | — | Toast de sucesso; estado atualizado sem necessidade de salvar os outros blocos; vale para o QR Code, o link e a etiqueta NFC do item |
+| `CT-UC07-06`<br>🔵 *Unidade já atende* | Pergunta inválida — curta (Exceção) | Item existente no catálogo | 1. Abrir a tela do item. 2. Inserir pergunta com menos de 20 caracteres. 3. Clicar "Salvar perguntas". | texto: `Curta` (5 chars) | Envio bloqueado; campo destacado com erro de comprimento mínimo |
+| `CT-UC07-07`<br>🔵 *Unidade já atende* | Pergunta inválida — longa (Exceção) | Item existente no catálogo | 1. Abrir a tela do item. 2. Inserir pergunta com mais de 150 caracteres. 3. Clicar "Salvar perguntas". | texto: 151 caracteres | Envio bloqueado; campo destacado com erro de comprimento máximo |
+| `CT-UC07-08`<br>❌ *Cenário não coberto* | Item removido (Exceção) | Item com a coleta ativa | 1. Remover o item da lista do catálogo. 2. Acessar a URL do formulário público daquele item. | — | Hoje o formulário **continua** abrindo e aceitando respostas (ver a exceção "Gestor remove um item da lista" no UC-07) |
+| `CT-UC07-09`<br>❌ *Cenário não coberto* | Coleta do item pausada (Exceção) | Item ativo com a coleta pausada | 1. Pausar a coleta do item em "Canais de coleta". 2. Acessar a URL do formulário público daquele item. | — | Tela de erro no formulário público; envio bloqueado |
 
 #### [UC-08] Configuração de Dados de Coleta (Contexto IA) → [uc-08-configuracao-coleta-ia.md](../../concepcao/casos-de-uso/uc-08-configuracao-coleta-ia.md)
 
 | ID | Título | Pré-condições | Passos de Execução | Dados de Teste | Resultado Esperado |
 |---|---|---|---|---|---|
 | `CT-UC08-01`<br>✅ *Coberto E2E (smoke)* | Carregamento da página | Gestor autenticado | 1. Acessar a tela de configuração de coleta. 2. Verificar que o formulário está visível. | — | Página carrega com o formulário de contexto visível. *Smoke — não salva dados.* |
-| `CT-UC08-02`<br>✅ *Coberto E2E (skip condicional)* | Salvar objetivo (Caminho Feliz) | Gestor autenticado; campo de objetivo visível | 1. Acessar tela de dados de coleta. 2. Preencher o objetivo da empresa. 3. Clicar "Salvar Alterações". | objetivo: `Aumentar retenção` | Toast de sucesso; objetivo persistido. *Contém `test.skip()` quando o campo de objetivo não está visível.* |
-| `CT-UC08-03`<br>🔵 *Unidade já atende* | Campos em branco (Caminho Feliz) | Gestor autenticado | 1. Acessar tela de dados de coleta. 2. Limpar todos os campos. 3. Clicar "Salvar Alterações". | Todos os campos: `""` | Toast de sucesso — campos em branco são permitidos |
-| `CT-UC08-04`<br>✅ *Coberto E2E (skip condicional)* | Salvar resumo do negócio (Caminho Feliz) | Gestor autenticado; campo de resumo visível | 1. Acessar tela de dados de coleta. 2. Preencher o resumo do negócio. 3. Clicar "Salvar Alterações". | resumo: `Restaurante de culinária japonesa` | Toast de sucesso; resumo persistido. *Contém `test.skip()` quando o campo de resumo não está visível.* |
+| `CT-UC08-02`<br>✅ *Coberto E2E (skip condicional)* | Salvar objetivo (Caminho Feliz) | Gestor autenticado; campo de objetivo visível | 1. Em `/user/profile`, clicar "Editar contexto e LLM". 2. No passo "Sua meta", preencher o objetivo da empresa. 3. Avançar até "Modelo LLM" e salvar. | objetivo: `Aumentar retenção` | Toast de sucesso; objetivo persistido. *Contém `test.skip()` quando o campo de objetivo não está visível.* |
+| `CT-UC08-03`<br>⛔ *Obsoleto na interface* (a janela não deixa salvar com campo vazio) | Campos em branco (Exceção) | Gestor autenticado | 1. Em `/user/profile`, clicar "Editar contexto e LLM". 2. Limpar algum dos três campos do contexto. 3. Tentar salvar. | Um dos campos: `""` | Salvamento barrado com "Complete os campos obrigatórios". O gateway ainda aceita os campos nulos no `PATCH /collecting_data` |
+| `CT-UC08-04`<br>✅ *Coberto E2E (skip condicional)* | Salvar resumo do negócio (Caminho Feliz) | Gestor autenticado; campo de resumo visível | 1. Em `/user/profile`, clicar "Editar contexto e LLM". 2. No passo "Seu negócio", preencher o resumo do negócio. 3. Avançar até "Modelo LLM" e salvar. | resumo: `Restaurante de culinária japonesa` | Toast de sucesso; resumo persistido. *Contém `test.skip()` quando o campo de resumo não está visível.* |
 | `CT-UC08-05`<br>🟠 *Integração já atende* | Atualização parcial (Caminho Feliz) | Gestor com dados já preenchidos | 1. Acessar tela. 2. Editar apenas o campo "Resumo do Negócio". 3. Clicar "Salvar Alterações". | Resumo atualizado; demais campos mantidos | Toast de sucesso; apenas o resumo alterado — os demais campos permanecem inalterados |
 | `CT-UC08-06`<br>❌ *Cenário não coberto* | Erro ao salvar (Exceção) | Gestor autenticado; rede instável | 1. Preencher os campos. 2. Clicar "Salvar Alterações" com falha de rede simulada. | — | Toast de erro; dados do formulário permanecem para nova tentativa |
 
@@ -284,17 +284,17 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 |---|---|---|---|---|---|
 | `CT-UC12-01`<br>✅ *Coberto E2E* | Carregamento do perfil | Gestor autenticado | 1. Acessar a tela de perfil. 2. Verificar que os dados da empresa (perfil/empresa/nome/e-mail) são exibidos. | — | Página de perfil carrega com os dados da empresa |
 | `CT-UC12-02`<br>✅ *Coberto E2E* | E-mail exibido | Gestor autenticado | 1. Acessar a tela de perfil. 2. Localizar o e-mail do usuário autenticado. | e-mail da sessão | E-mail do usuário autenticado exibido no perfil |
-| `CT-UC12-03`<br>✅ *Coberto E2E (skip condicional)* | Link para QR Code | Gestor autenticado | 1. Acessar perfil. 2. Verificar o link de QR Code da empresa e que ele navega para `/user/qrcode/enterprise`. | — | Link presente e navega para a página de QR Code. *Contém `test.skip()` quando o link não está visível.* |
-| `CT-UC12-04`<br>✅ *Coberto E2E (skip condicional)* | Link para catálogo | Gestor autenticado | 1. Acessar perfil. 2. Verificar o link de configuração do catálogo e que ele navega para a rota de edição. | — | Link presente e navega para a configuração do catálogo. *Contém `test.skip()` quando o link não está visível.* |
-| `CT-UC12-06`<br>✅ *Coberto E2E* | Logout | Gestor autenticado | 1. Acessar perfil. 2. Clicar em "Sair". | — | Logout redireciona para a página de login |
+| `CT-UC12-03`<br>✅ *Coberto E2E (skip condicional)* | Endereço antigo do QR Code | Gestor autenticado | 1. Acessar diretamente `/user/qrcode/enterprise` (o perfil não tem mais link de QR Code). | — | Redireciona para `/user/edit/feedback-general`, com a seção Canais de coleta. *A antiga suíte caía em `test.skip()` porque o link saiu do perfil.* |
+| `CT-UC12-04`<br>✅ *Coberto E2E (skip condicional)* | Catálogo acessível | Gestor autenticado | 1. Acessar diretamente `/user/edit/types-feedback` (o catálogo fica no menu Configuração da coleta, não no perfil). | — | A tela responde na rota com o conteúdo principal visível |
+| `CT-UC12-06`<br>✅ *Coberto E2E* | Logout | Gestor autenticado | 1. Abrir o menu de conta (nome da empresa no cabeçalho). 2. Clicar em "Sair". | — | Logout redireciona para a página de login |
 | `CT-UC12-07`<br>✅ *Coberto E2E* | Rota protegida | Usuário não autenticado | 1. Acessar uma rota protegida sem sessão. | — | Redirecionamento automático para o login |
 | `CT-UC12-08`<br>📝 *Planejado / não implementado* | Atualizar nome (Caminho Feliz) | Gestor autenticado | 1. Acessar tela de perfil. 2. Editar o campo de nome. 3. Salvar. | nome: `Gestor Atualizado` | Novo nome aparece no perfil após salvar |
-| `CT-UC12-09`<br>📝 *Planejado / não implementado* | Atualizar e-mail (Caminho Feliz) | Gestor autenticado | 1. Acessar tela de perfil. 2. Informar novo e-mail válido. 3. Confirmar. | e-mail: `novo@email.com` | Mensagem de sucesso informando que confirmação foi enviada para os dois endereços (confirmação feita fora do app) |
-| `CT-UC12-10`<br>📝 *Planejado / não implementado* | Atualizar telefone (Caminho Feliz) | Gestor autenticado | 1. Acessar tela de perfil. 2. Clicar no campo de telefone (modo edição). 3. Informar novo número e clicar "Enviar SMS". 4. Inserir código de 6 dígitos recebido. 5. Clicar "Confirmar". | número: `+55 11 99999-0001`; código: válido | Telefone atualizado na conta; tela retorna ao modo de visualização |
+| `CT-UC12-09`<br>📝 *Planejado / não implementado* | Atualizar e-mail (Caminho Feliz) | Gestor autenticado | 1. Acessar tela de perfil. 2. Informar novo e-mail válido. 3. Confirmar. | e-mail: `novo@email.com` | Mensagem de sucesso informando que confirmação foi enviada para os dois endereços (confirmação feita fora do app). **Hoje falha:** o gateway responde `400 update_failed` e a área logada fica em branco (ver o CT-UC12-09 do [runbook da Web](./manuais-web.md)) |
+| `CT-UC12-10`<br>📝 *Planejado / não implementado* | Atualizar telefone (Caminho Feliz) | Gestor autenticado | 1. Acessar tela de perfil. 2. Clicar no campo de telefone (modo edição). 3. Informar novo número e clicar "Enviar SMS". 4. Inserir código de 6 dígitos recebido. 5. Clicar "Confirmar". | número: `+55 11 99999-0001`; código: válido | Telefone atualizado na conta; tela retorna ao modo de visualização. **Hoje** não há provedor de SMS: o número é gravado já no "Enviar SMS" e o código não é conferido |
 | `CT-UC12-11`<br>📝 *Planejado / não implementado* | Cancelar atualização de telefone (Caminho Alternativo) | Gestor no modo de edição ou verificação de telefone | 1. Clicar em "Cancelar" durante qualquer etapa da atualização de telefone. | — | Tela retorna ao modo de visualização sem alterar o número atual |
 | `CT-UC12-12`<br>🔵 *Unidade já atende* | Nome vazio (Exceção) | Gestor autenticado | 1. Acessar tela de perfil. 2. Apagar o conteúdo do campo de nome. 3. Tentar salvar. | nome: `""` | Envio bloqueado; campo de nome destacado como obrigatório |
 | `CT-UC12-13`<br>🔵 *Unidade já atende* | Telefone inválido (Exceção) | Gestor no modo edição de telefone | 1. Informar número fora do padrão `+55 DDD NÚMERO`. 2. Clicar "Enviar SMS". | número: `12345` | Formulário bloqueado antes de chamar a API; mensagem de formato inválido |
-| `CT-UC12-14`<br>📝 *Planejado / não implementado* | Código de verificação inválido (Exceção) | Gestor no modo verificação de telefone | 1. Inserir código incorreto. 2. Clicar "Confirmar". | código: `000000` (errado) | Toast de erro "Código inválido"; permanece no modo de verificação |
+| `CT-UC12-14`<br>⛔ *Obsoleto* (sem provedor de SMS, o código não é conferido) | Código de verificação inválido (Exceção) | Gestor no modo verificação de telefone | 1. Inserir código incorreto. 2. Clicar "Confirmar". | código: `000000` (errado) | Não se aplica hoje: o gateway não confere o código (`/phone/verify` não faz nada). O esperado, com SMS, seria o toast de erro "Código inválido" |
 
 ---
 
@@ -307,7 +307,7 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 | `CT-UC09-01`<br>✅ *Coberto E2E* | Saudação personalizada (Caminho Feliz) | Gestor autenticado | 1. Acessar o dashboard. 2. Verificar a saudação personalizada ("Olá, ..."). | — | Dashboard carrega exibindo a saudação personalizada |
 | `CT-UC09-02`<br>✅ *Coberto E2E* | Avaliação por estrelas | Gestor autenticado; empresa com feedbacks | 1. Acessar o dashboard. 2. Localizar a seção "Avaliação por estrelas". | — | Card "Média" com nota /5, rótulo e número de avaliações (o card de total saiu em 16/10/2026) |
 | `CT-UC09-03`<br>✅ *Coberto E2E* | Positivas e críticas | Gestor autenticado | 1. Acessar o dashboard. 2. Localizar os cards de positivas e críticas. | — | Cards "Positivas (4–5★)" e "Críticas (1–2★)" com contagem e % |
-| `CT-UC09-04`<br>✅ *Coberto E2E* | Análise dos comentários | Gestor autenticado | 1. Acessar o dashboard. 2. Localizar a seção "Análise dos comentários ✨ IA". | — | Tom dos comentários e "Resumo e recomendações da IA" exibidos (ou os estados vazios) |
+| `CT-UC09-04`<br>✅ *Coberto E2E* | Análise dos comentários | Gestor autenticado | 1. Acessar o dashboard. 2. Localizar a seção "Análise dos comentários ✨ IA". | — | Tom dos comentários e "Resumo dos comentários e recomendações" exibidos (ou os estados vazios) |
 | `CT-UC09-05`<br>✅ *Coberto E2E* | Navegação para listagem | Gestor autenticado | 1. Acessar o dashboard. 2. Clicar em "Ver feedbacks". | — | Navega para a listagem completa (`/user/feedbacks/all`) |
 | `CT-UC09-06`<br>📝 *Planejado / não implementado* | Toast de login (Caminho Alternativo) | Gestor que acabou de fazer login | 1. Acessar o dashboard com `?login=success` na URL. | URL: `?login=success` | Toast de boas-vindas exibido; parâmetro `?login=success` removido da URL |
 | `CT-UC09-07`<br>❌ *Cenário não coberto* | Erro de carregamento (Exceção) | API de estatísticas indisponível | 1. Acessar o dashboard com API de estatísticas simulando falha. | — | Mensagem de erro inline no topo; página permanece acessível sem redirecionamento |
@@ -335,7 +335,7 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 | `CT-UC11-02`<br>✅ *Coberto E2E (smoke)* | Tom e assuntos | Gestor autenticado | 1. Acessar a Visão geral. 2. Verificar o tom dos comentários e os assuntos que mais impactam (ou o estado vazio). | — | Visão geral exibe o tom e os assuntos (ou estado vazio); palavras-chave não aparecem mais. *Smoke.* |
 | `CT-UC11-05`<br>✅ *Coberto E2E (skip condicional)* | Gerar o resumo de novo (Caminho Feliz) | Botão "Apenas gerar o resumo" habilitado | 1. Acessar a Visão geral. 2. Clicar em "Analisar comentários com IA" e em "Apenas gerar o resumo" (chamada de IA mockada). | — | Nova análise solicitada; feedback de processamento exibido. *Contém `test.skip()` quando o botão não está visível; API de IA mockada para não consumir créditos.* |
 | `CT-UC11-03`<br>📝 *Planejado / não implementado* | Analisar feedbacks (Caminho Feliz) | Contexto de IA preenchido (os 3 campos); mínimo de 10 feedbacks | 1. Acessar a Visão geral. 2. Clicar em "Analisar comentários com IA" e em "Apenas Analisar". | — | Processamento concluído; tom dos comentários atualizado na tela |
-| `CT-UC11-04`<br>📝 *Planejado / não implementado* | Gerar o resumo (Caminho Feliz) | Feedbacks já analisados; contexto preenchido | 1. Clicar em "Analisar comentários com IA" e em "Apenas gerar o resumo". | — | "Resumo e recomendações da IA" atualizado |
+| `CT-UC11-04`<br>📝 *Planejado / não implementado* | Gerar o resumo (Caminho Feliz) | Feedbacks já analisados; contexto preenchido | 1. Clicar em "Analisar comentários com IA" e em "Apenas gerar o resumo". | — | "Resumo dos comentários e recomendações" atualizado |
 | `CT-UC11-06`<br>📝 *Planejado / não implementado* | Escopo por produto (Caminho Feliz) | Catálogo com item de produto ativo; contexto preenchido; feedbacks suficientes | 1. Selecionar escopo "Produto". 2. Escolher item de catálogo. 3. Clicar em "Processar e analisar comentários com IA". | escopo: PRODUCT; item: `Produto A` | Tom, assuntos e resumo refletem apenas aquele item; a etiqueta de escopo mostra "Produto · Produto A" |
 | `CT-UC11-07`<br>🔵 *Unidade já atende* | Lista e filtros de comentários (Caminho Feliz) | Comentários já analisados | 1. Acessar a aba "Comentários". 2. Escolher o filtro "Nota e texto não combinam". 3. Abrir `/user/feedbacks/analytics/negative`. | — | A lista mostra só os comentários do filtro e guarda `?filtro=` no endereço; o endereço antigo cai na lista filtrada por negativos |
 | `CT-UC11-08`<br>📝 *Planejado / não implementado* | Contexto incompleto (Exceção) | Algum dos 3 campos de contexto em branco | 1. Acessar a Análise dos comentários sem contexto completo. | Um ou mais campos de UC-08 em branco | Botões de análise desabilitados; mensagem com link para tela de configuração |

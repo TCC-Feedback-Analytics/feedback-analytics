@@ -1,6 +1,6 @@
 # Testes — IA Analyze (`feedback-analytics-ia-analyze`)
 
-Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço Serverless **IA Analyze**. O serviço recebe pedidos do API Gateway, chama o LLM da empresa (provedor, chave e modelo chegam nos headers `x-llm-*`; o Gateway configura o **OpenRouter**, e há também um adaptador **Gemini**) e devolve sentimentos estruturados, palavras-chave, aspectos, a síntese dos insights, o diagnóstico do escopo e sugestões de perguntas.
+Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço Serverless **IA Analyze**. O serviço recebe pedidos do API Gateway, chama o LLM da empresa (provedor, chave e modelo chegam nos headers `x-llm-*`; o Gateway configura o **OpenRouter**, e há também um adaptador **Gemini**) e devolve sentimentos estruturados, palavras-chave, aspectos, a síntese dos insights, o diagnóstico do escopo e as perguntas geradas para o formulário da empresa.
 
 !!! info "Conferido em 03/11/2026"
     Inventário refeito contra o repositório: **13 arquivos** de teste. A versão anterior listava 6 arquivos e 46 testes e tratava o Gemini como único provedor. O número de testes muda a cada PR; o total atual sai no fim do `npm test`.

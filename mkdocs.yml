@@ -87,8 +87,8 @@ markdown_extensions:
 nav:
   - Início: index.md
   - Produto:
-      - Coleta por QR Code: produto/coleta-qrcode.md
-      - QR Code por escopo: produto/qrcode-escopo-dinamico.md
+      - Coleta por QR Code, link e NFC: produto/coleta-qrcode.md
+      - Coleta por escopo: produto/qrcode-escopo-dinamico.md
       - Onboarding do catálogo: produto/onboarding-catalogo.md
       - Anti-spam por fingerprint: produto/anti-spam-fingerprint.md
       - Bloqueio de dispositivo: produto/bloqueio-dispositivo.md
@@ -108,8 +108,8 @@ nav:
           - UC-01 — Cadastro de conta: concepcao/casos-de-uso/uc-01-cadastro-conta.md
           - UC-02 — Login: concepcao/casos-de-uso/uc-02-login.md
           - UC-03 — Recuperação de senha: concepcao/casos-de-uso/uc-03-recuperacao-senha.md
-          - UC-04 — Envio de feedback (QR Code): concepcao/casos-de-uso/uc-04-envio-feedback-qrcode.md
-          - UC-05 — Geração de QR Code: concepcao/casos-de-uso/uc-05-geracao-qrcode.md
+          - UC-04 — Envio de feedback (QR Code, link ou NFC): concepcao/casos-de-uso/uc-04-envio-feedback-qrcode.md
+          - UC-05 — Canais de coleta (QR Code, link e NFC): concepcao/casos-de-uso/uc-05-geracao-qrcode.md
           - UC-06 — Ativação de tipos de feedback: concepcao/casos-de-uso/uc-06-ativacao-tipos-feedback.md
           - UC-07 — Configuração do catálogo: concepcao/casos-de-uso/uc-07-configuracao-catalogo.md
           - UC-08 — Configuração de coleta (contexto IA): concepcao/casos-de-uso/uc-08-configuracao-coleta-ia.md

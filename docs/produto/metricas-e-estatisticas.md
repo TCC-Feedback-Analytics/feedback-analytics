@@ -8,18 +8,18 @@ Toda métrica do Feedback Analytics nasce de três fontes de dados coletadas no 
 
 ## Escopos
 
-Todas as métricas das telas seguem o escopo escolhido no cabeçalho. O escopo decide **quais pontos de coleta (QR Codes)** entram na conta (`resolveScopeCollectionPointIds`, em `feedback-analytics-api-gateway/src/repositories/scope.repository.ts`):
+Todas as métricas das telas seguem o escopo escolhido no cabeçalho. O escopo decide **quais pontos de coleta** entram na conta (cada ponto junta o QR Code, o link e a etiqueta NFC do escopo) (`resolveScopeCollectionPointIds`, em `feedback-analytics-api-gateway/src/repositories/scope.repository.ts`):
 
 | Escolha no cabeçalho | O que entra na conta | Exemplo |
 |---|---|---|
-| **Geral** (`COMPANY`) | Só os feedbacks do **QR Code geral da empresa**. Produtos, serviços e departamentos **ficam de fora**. | Um cliente que avaliou o "Produto A" pelo QR do produto **não** aparece em "Geral". |
+| **Geral** (`COMPANY`) | Só os feedbacks da **avaliação geral da empresa**, venham de qualquer canal. Produtos, serviços e departamentos **ficam de fora**. | Um cliente que avaliou o "Produto A" pelo QR Code ou pelo link do produto **não** aparece em "Geral". |
 | **Produto / Serviço / Departamento**, sem item escolhido | A soma de **todos os itens daquele tipo**. | "Produto" sem item = todos os produtos juntos. |
 | **Produto / Serviço / Departamento**, com item escolhido | Só os feedbacks daquele item. | "Produto A". |
 | *(sem escopo)* | Todos os feedbacks da empresa. **Não existe na tela**: só acontece se a API for chamada sem `scope_type`. | — |
 
 Consequências que importam para a leitura:
 
-- **"Geral" ≠ empresa inteira.** O nome sugere o total, mas é só o canal geral da empresa. Hoje não há na interface uma visão do total da empresa.
+- **"Geral" ≠ empresa inteira.** O nome sugere o total, mas é só a avaliação geral da empresa. Hoje não há na interface uma visão do total da empresa.
 - **Antes da reorganização, nenhuma métrica dizia na tela de qual escopo estava falando**: o escopo só aparecia no seletor do cabeçalho. Resolvido pela etiqueta de escopo (abaixo).
 - O rótulo "Total acumulado no workspace", no card de feedbacks recebidos do Dashboard, era impreciso (o número é do escopo selecionado). O card saiu na reorganização.
 - **Feedbacks de teste ficam de fora.** Os enviados pelo "Testar o formulário" (canal `TEST`) não entram em nenhuma métrica, nem no mínimo de feedbacks e na análise da IA. Só a lista de Feedbacks recebidos os mostra, com a marca "Teste" (`notTestFeedback`, em `src/db/tenantScope.ts` do gateway).
@@ -194,7 +194,7 @@ A configuração separa três coisas que o nome "Feedback geral" misturava (e qu
 
 - A aba "Feedback geral" passou a se chamar **"Avaliação da empresa"**. O endereço continua `/user/edit/feedback-general`. No celular, o atalho se chama "Avaliação".
 - A página do item do Catálogo segue o mesmo desenho: dados do item, **Perguntas** e **Canais de coleta**.
-- Cada escopo também configura o **campo de comentário**: o convite padrão, uma pergunta própria ou oculto (ver [Coleta via QR Code](coleta-qrcode.md)).
+- Cada escopo também configura o **campo de comentário**: o convite padrão, uma pergunta própria ou oculto (ver [Coleta: QR Code, link e NFC](coleta-qrcode.md)).
 - Todas as respostas de um escopo entram nas mesmas métricas, seja qual for o canal. O canal não vira um escopo novo nem filtro: desde a etapa 06, o Dashboard mostra **"Por onde chegaram"** (ver **Canais e comentários**, abaixo).
 
 ### Período e comparação (etapa 02, 17/10/2026)

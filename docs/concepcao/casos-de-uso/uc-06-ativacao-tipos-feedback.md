@@ -27,7 +27,7 @@
 |---|---|
 | Gestor ativa um interruptor mas não salva | O interruptor muda visualmente, mas o tipo não está ativo — o selo "Ativo" e o link de catálogo não aparecem até o salvamento |
 | Erro ao salvar as configurações | Exibe o toast "Erro ao salvar" — o estado salvo não é alterado |
-| Gestor desativa um tipo que já tem itens de catálogo cadastrados | Desativar não apaga os itens do banco, mas o gateway marca **todos os itens do tipo como inativos**: eles somem da lista do catálogo e dos seletores de escopo. Reativar o tipo depois **não** traz esses itens de volta. Desativar Produtos também limpa o campo `main_products_or_services` do contexto da IA. O QR Code de cada item não é pausado por isso (ver UC-07) |
+| Gestor desativa um tipo que já tem itens de catálogo cadastrados | Desativar não apaga os itens do banco, mas o gateway marca **todos os itens do tipo como inativos**: eles somem da lista do catálogo e dos seletores de escopo. Reativar o tipo depois **não** traz esses itens de volta. Desativar Produtos também limpa o campo `main_products_or_services` do contexto da IA. A coleta de cada item (QR Code, link e NFC) não é pausada por isso (ver UC-07) |
 
 ---
 

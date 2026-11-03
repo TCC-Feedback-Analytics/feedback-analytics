@@ -31,7 +31,7 @@ Consequência prática: num incidente com feedbacks, **avisamos o negócio**, e 
 |---|---|---|---|---|
 | **Supabase** | Hospeda o PostgreSQL | Todos os dados do banco | Fora do Brasil (região do projeto a confirmar no painel) | Acordo de tratamento de dados (DPA) aceito; plano de backup |
 | **Vercel** | Hospeda a Web, o gateway e o `ia-analyze` | Todas as requisições, com IP e navegador nos registros de acesso | Fora do Brasil | DPA aceito; por quanto tempo guarda os registros |
-| **OpenRouter** e o **provedor do modelo** escolhido pelo negócio | Roda a análise dos comentários e o diagnóstico | Comentários, notas, respostas, pergunta própria, nomes dos itens e contexto do negócio. Nunca nome, e-mail, gênero ou IP do cliente | Fora do Brasil | Política de retenção do OpenRouter e do provedor escolhido. A chamada usa a **chave do próprio negócio**, então o negócio também tem um contrato direto com o OpenRouter |
+| **OpenRouter** e o **provedor do modelo** escolhido pelo negócio | Roda a análise dos comentários, o diagnóstico e a geração das perguntas | Comentários, notas, respostas, pergunta própria, nomes dos itens e contexto do negócio. Nunca nome, e-mail, gênero ou IP do cliente | Fora do Brasil | Política de retenção do OpenRouter e do provedor escolhido. A chamada usa a **chave do próprio negócio**, então o negócio também tem um contrato direto com o OpenRouter |
 | **Brevo** | Envia os e-mails da conta | E-mail do gestor e os links de confirmação e de nova senha | Fora do Brasil (União Europeia) | DPA aceito |
 | **Google** | Login com Google | O pedido de login; devolve nome, e-mail e foto do perfil | Fora do Brasil | Configuração do OAuth publicada |
 

@@ -306,7 +306,7 @@ SELECT status FROM public.catalog_items WHERE name = 'P2'; -- INACTIVE
 
 ## Pontos de coleta QR (`collectionPointsQr.itest`)
 
-Cobre o QR "geral" (COMPANY) e o QR por item de catálogo: ativar/reusar/desativar/reativar (sempre o **mesmo** ponto), o upsert transacional de perguntas do item e o isolamento por tenant. Autenticado como gestor.
+Cobre o QR "geral" (COMPANY) e o QR por item de catálogo: ativar/reusar/desativar/reativar (sempre o **mesmo** ponto), o upsert transacional de perguntas do item e o isolamento por tenant. Autenticado como gestor. O nome "QR" ficou nas rotas e no tipo `QR_CODE`, mas o ponto é o mesmo para os três canais: QR Code, link e etiqueta NFC.
 
 ### QR geral (COMPANY): criar, reusar, desativar, reativar
 
@@ -412,7 +412,7 @@ Cobre `fetchActiveQuestionsForScope`, exposto no campo `questions` do endpoint p
 
 ---
 
-## Envio de feedback via QR (`qrFeedback.itest`)
+## Envio de feedback pelo formulário público (`qrFeedback.itest`)
 
 Endpoint **público**: `POST $BASE/public/qrcode/feedback`. Escrita atômica (dispositivo + feedback + respostas), deduplicação diária, isolamento e anti-adulteração. O corpo exige `enterprise_id`, `rating` e `answers` (que devem **casar exatamente** com as perguntas ativas do escopo) e aceita, opcionalmente, `channel`, `message` (comentário, até 5000 caracteres), `subanswers`, `collection_point_id`/`catalog_item_id` e dados do cliente.
 
@@ -787,5 +787,5 @@ Endpoints protegidos sob `$BASE/protected/user/ia-config` e `$BASE/protected/use
 
 - Os arquivos originais (`src/tests/integration/*.itest.ts`, `globalSetup.ts`, `src/tests/e2e/authCutover.e2e.ts`) chamavam **funções de repositório** e a **camada HTTP** diretamente. Este runbook mapeia cada asserção para o endpoint real do API Gateway que exercita o mesmo repositório (rotas em `src/routes/**`), sem inventar rotas. As seções de troca de e-mail, guia do sistema, Google, exclusão de conta, canal, campo de comentário, diagnóstico, perguntas automáticas e configuração de IA não vieram dos testes antigos: cobrem rotas que entraram depois. A referência completa de cada rota é o `docs/endpoints.md` do repositório `feedback-analytics-api-gateway`.
 - Onde o teste verifica um invariante puramente de banco (soft-delete `INACTIVE`, isolamento de `tracked_devices`/`customer`, contexto de IA), incluí uma verificação opcional por SQL **somente leitura** — nunca execute `INSERT/UPDATE/DELETE` fora do fluxo da aplicação.
-- Para números determinísticos, rode `npm run db:reset` antes de cada seção que conta feedbacks/análises; os cenários de escrita (feedback via QR, collecting_data, QR, campo de comentário, exclusão de conta) alteram o estado.
+- Para números determinísticos, rode `npm run db:reset` antes de cada seção que conta feedbacks/análises; os cenários de escrita (envio de feedback, collecting_data, pontos de coleta, campo de comentário, exclusão de conta) alteram o estado.
 - Nunca versione a chave OpenRouter, o cookie de sessão nem os valores reais do `.env` usados nestes passos.

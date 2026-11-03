@@ -19,7 +19,7 @@ O produto resolve isso em três etapas:
 
 | Etapa | O que acontece |
 |---|---|
-| **1. Colete** | A empresa gera QR Codes exclusivos por produto, serviço ou departamento. O cliente escaneia, avalia e vai embora — sem criar conta. |
+| **1. Colete** | A empresa ativa a coleta por produto, serviço ou departamento, com QR Code, link ou etiqueta NFC exclusivos de cada um. O cliente abre o formulário, avalia e vai embora — sem criar conta. |
 | **2. Analise** | Um pipeline de IA interpreta cada feedback automaticamente: classifica sentimento, extrai temas e palavras-chave. |
 | **3. Decida** | O dashboard apresenta um painel de insights por escopo, com recomendações prontas. O gestor para de decidir por intuição e começa a decidir por evidência. |
 
@@ -64,7 +64,7 @@ Esse período existe por uma razão estratégica: feedback analytics é um produ
 | Item | Detalhe |
 |---|---|
 | **Preço** | ~R$ 80,00 / mês |
-| **O que inclui** | Canal QR Code com todos os tipos de feedback: Empresa (Geral), Produtos, Serviços e Departamentos |
+| **O que inclui** | Canais de coleta (QR Code, link e NFC) com todos os tipos de feedback: Empresa (Geral), Produtos, Serviços e Departamentos |
 | **Restrição** | Nenhuma além do plano — acesso completo ao produto |
 
 **Por que isso importa para o projeto:** No começo para mostrar o valor do produto um único plano simplifica o produto e a experiência. Não há lógica de feature flag ou bloqueio por tier para manter no código. Todo usuário autenticado tem acesso a tudo — o esforço de desenvolvimento vai para o produto em si, não para gerenciar limites de plano.
@@ -79,7 +79,7 @@ Existem dois diferenciais que fazem o cliente dizer **"é esse que eu preciso"**
 
 ### "Eu sei exatamente onde está o problema"
 
-A maioria das ferramentas de feedback entrega um formulário genérico para a empresa inteira. O Feedback Analytics gera um **QR Code independente por produto, serviço ou departamento**.
+A maioria das ferramentas de feedback entrega um formulário genérico para a empresa inteira. O Feedback Analytics gera uma **coleta independente por produto, serviço ou departamento**, com QR Code, link e etiqueta NFC próprios.
 
 O que muda na prática: um gestor de restaurante para de saber que "os clientes estão insatisfeitos" e começa a saber que "o atendimento tem nota 2.6 enquanto a cozinha tem 4.2". Ele sabe onde agir — e age. Essa granularidade é o principal argumento de venda do produto.
 
@@ -93,7 +93,7 @@ O que muda na prática: o gestor abre o painel de insights e já tem a decisão 
 
 ---
 
-**Por que isso importa para o projeto:** esses dois diferenciais são as partes do sistema que nunca podem degradar. Se o QR Code por escopo parar de funcionar ou o painel de insights ficar vazio, o produto perde os dois únicos argumentos que fazem o cliente escolher ele.
+**Por que isso importa para o projeto:** esses dois diferenciais são as partes do sistema que nunca podem degradar. Se a coleta por escopo parar de funcionar ou o painel de insights ficar vazio, o produto perde os dois únicos argumentos que fazem o cliente escolher ele.
 
 ---
 
@@ -101,11 +101,13 @@ O que muda na prática: o gestor abre o painel de insights e já tem a decisão 
 
 > Como os clientes chegam até o produto?
 
-### Product-Led Growth via QR Code
+### Product-Led Growth pelo formulário de coleta
 
-O próprio produto é o principal canal de aquisição. Quando um cliente final escaneia o QR Code de uma empresa e preenche o formulário, ele está vendo o produto em funcionamento. Uma simples atribuição no rodapé do formulário ("Powered by Feedback Analytics") transforma cada ponto de coleta em uma vitrine.
+O próprio produto é o principal canal de aquisição. Quando um cliente final abre o formulário de uma empresa (pelo QR Code, pelo link ou pela etiqueta NFC) e o preenche, ele está vendo o produto em funcionamento. Uma simples atribuição no rodapé do formulário ("Powered by Feedback Analytics") transforma cada ponto de coleta em uma vitrine.
 
-**Por que é poderoso:** não tem custo por impressão e escala com o crescimento de cada cliente. Quanto mais QR Codes uma empresa distribui, mais pessoas descobrem o produto.
+**Hoje:** o formulário ainda não mostra essa atribuição no rodapé.
+
+**Por que é poderoso:** não tem custo por impressão e escala com o crescimento de cada cliente. Quanto mais QR Codes, links e etiquetas uma empresa distribui, mais pessoas descobrem o produto.
 
 ### Conteúdo + SEO
 
@@ -175,9 +177,9 @@ Métricas são o GPS do produto. Sem elas, as decisões de onde investir tempo e
 
 ### Taxa de Ativação
 
-**O que é:** percentual de empresas que configuraram pelo menos um QR Code após o cadastro.
+**O que é:** percentual de empresas que ativaram a coleta (por QR Code, link ou NFC) pelo menos uma vez após o cadastro.
 
-**Por que importa:** uma empresa que cadastrou mas nunca gerou um QR Code nunca vai ver valor no produto — e certamente não vai converter ao final do trial. Ativação baixa é um sinal de problema de onboarding, não de produto.
+**Por que importa:** uma empresa que cadastrou mas nunca ativou a coleta nunca vai ver valor no produto — e certamente não vai converter ao final do trial. Ativação baixa é um sinal de problema de onboarding, não de produto.
 
 ---
 
@@ -193,7 +195,7 @@ Métricas são o GPS do produto. Sem elas, as decisões de onde investir tempo e
 
 ```
 CLIENTE DESCOBRE          →   Trial 4 meses    →   Converte (R$80/mês)
-(PLG, SEO, LinkedIn)           (ativa QR Code,        (renova enquanto
+(PLG, SEO, LinkedIn)           (ativa a coleta,       (renova enquanto
                                 coleta feedbacks,       vê valor nos insights)
                                 vê insights)
         ↑                                                      ↓

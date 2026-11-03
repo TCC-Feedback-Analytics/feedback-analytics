@@ -59,4 +59,4 @@ O **Playwright** era utilizado para realizar testes **End-to-End (E2E)** no fron
 | Testar funções puras, cálculos de IA, validações de schemas (Zod). | **Vitest** | `npm run test` |
 | Testar se um componente React renderiza corretamente isolado na tela. | **Vitest** | `npm run test` |
 | Testar se as rotas da API Express respondem com os status HTTP corretos. | **Vitest** | `npm run test` |
-| Testar o fluxo completo de cadastro, login ou geração de QR Codes no navegador. | **Manual** (runbook) | Seguir [Testes manuais — Web](./manuais-web.md) |
+| Testar o fluxo completo de cadastro, login, canais de coleta ou envio de feedback no navegador. | **Manual** (runbook) | Seguir [Testes manuais — Web](./manuais-web.md) |
