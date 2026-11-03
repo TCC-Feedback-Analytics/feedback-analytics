@@ -1,5 +1,8 @@
 # Documentação de Design — Protótipo de Baixa Fidelidade
 
+!!! note "Material de concepção (jun/2026)"
+    Este documento registra o protótipo feito no Figma na fase de concepção e não foi atualizado com o produto. As telas, as rotas e os campos descritos aqui não refletem necessariamente a interface atual (por exemplo, o CPF/CNPJ mostrado no Perfil não existe mais no sistema). O que o sistema faz hoje está em [Requisitos e Funcionalidades](../requisitos-e-funcionalidades.md).
+
 ## Visão Geral
 
 Este documento descreve o protótipo de baixa fidelidade do **Feedback Analytics**, focando na arquitetura de informação. Ele cobre as telas do sistema, fluxos de navegação básicos e os componentes estruturais esperados em cada interface para guiar a implementação front-end inicial.

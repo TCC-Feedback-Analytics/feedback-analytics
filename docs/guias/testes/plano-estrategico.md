@@ -5,6 +5,8 @@
 
     Este plano continua válido: a **Fase 1** (estratégia/riscos) é permanente e a **Fase 2** (CTs com passos e dados) virou o **roteiro da execução manual**. Onde o texto abaixo cita "Playwright", "homologação" ou "automação no CI", entenda como a execução **manual** descrita nos runbooks. No CI seguem apenas **unidade + integração mockada** (Vitest) e o **smoke de migrations** do API Gateway (`schema-migrations.yml`).
 
+    Em 03/11/2026, a stack, os riscos e a massa de dados foram revistos contra o código (Better Auth no lugar do Supabase Auth, Mailpit e `npm run db:reset` no ambiente local). Os status de cobertura dos CTs da Fase 2 continuam os da antiga suíte e não foram reconferidos.
+
 ## Para que serve este documento?
 ### Está tabela serve para mostrar do por que o plano de teste estratégico é útil e como ele trabalha com os casos de uso.
 Os casos de uso e o plano estratégico dividem responsabilidades sem repetir conteúdo, cada um tem um papel único.
@@ -31,7 +33,7 @@ Se uma regra mudar no UC (ex: mínimo de feedbacks para análise mudar de 10 par
 | **O que o sistema deve fazer** | ✅ Fluxo principal + exceções | — | — |
 | **Cenários a testar (linguagem natural)** | ✅ Seção "Base para Teste E2E" | — | ✅ Formaliza com CT-IDs |
 | **Passos de execução passo a passo** | ✗ | — | ✅ "1. Acesse URL. 2. Preencha X..." |
-| **Dados de teste concretos** | ✗ | — | ✅ CPF, identificadores, notas específicas |
+| **Dados de teste concretos** | ✗ | — | ✅ E-mails, identificadores, notas específicas |
 | **Pré-condições por caso** | Parcial | — | ✅ Por CT ("dispositivo sem envio anterior") |
 | **Por que esses fluxos são prioritários** | ✗ | ✅ Mapa de criticidade e bloqueadores entre UCs | — |
 | **Riscos documentados** | ✗ | ✅ Anti-spam, e-mail inacessível em CI, estado sujo | — |
@@ -59,7 +61,7 @@ A plataforma possui três atores distintos:
 - **Gestor** — configura a coleta, distribui os QR Codes e analisa os resultados no dashboard.
 - **Cliente do estabelecimento** — escaneia o QR Code e submete a avaliação pelo formulário público.
 
-Stack técnica: React 19 SPA com React Router v7, Supabase (autenticação + banco de dados), API Gateway Node.js e Serviço Serverless de IA em Node.js.
+Stack técnica: React 19 SPA com React Router v7, API Gateway Node.js (Express, com autenticação Better Auth e acesso ao Postgres via Drizzle; o Postgres de produção é hospedado no Supabase) e Serviço Serverless de IA em Node.js, que chama o LLM configurado por cada empresa (OpenRouter).
 
 #### 1.2. Escopo do Teste
 
@@ -80,7 +82,7 @@ Stack técnica: React 19 SPA com React Router v7, Supabase (autenticação + ban
 - Testes de carga e estresse (múltiplos envios de QR Code simultâneos em pico)
 - Testes de acessibilidade visual detalhados (WCAG)
 - Testes end-to-end do fluxo de e-mail (confirmação de conta, link de reset) — requerem acesso a caixa de e-mail real em tempo de execução
-- Testes de integração direta com provedores externos de IA (OpenAI/Anthropic)
+- Testes de integração direta com provedores externos de IA (OpenRouter, Gemini) — nos testes automatizados as chamadas ao LLM são mockadas
 - Testes de gateway de pagamento
 
 ---
@@ -89,9 +91,9 @@ Stack técnica: React 19 SPA com React Router v7, Supabase (autenticação + ban
 
 #### 2.1. Níveis de Teste
 
-- **Teste de Unidade:** Foco nas funções puras de validação (CPF/CNPJ, telefone, comprimento de perguntas 20–150 chars), funções de transformação (formatação de data, truncamento de texto, geração de fingerprint) e lógica das route actions (parsing de FormData, retorno de erros). Responsável: Desenvolvedores. Ferramenta: **Vitest** (já em uso no projeto).
+- **Teste de Unidade:** Foco nas funções puras de validação (força da senha, telefone, comprimento de perguntas 20–150 chars), funções de transformação (formatação de data, truncamento de texto, geração de fingerprint) e lógica das route actions (parsing de FormData, retorno de erros). Responsável: Desenvolvedores. Ferramenta: **Vitest** (já em uso no projeto).
 
-- **Teste de Integração:** Verificação de que as camadas loader → service → API Gateway retornam dados com o contrato esperado; que as actions processam FormData e acionam os serviços corretos; e que o fluxo de autenticação Supabase + cookie funciona de ponta a ponta. Responsável: Engenharia/QA.
+- **Teste de Integração:** Verificação de que as camadas loader → service → API Gateway retornam dados com o contrato esperado; que as actions processam FormData e acionam os serviços corretos; e que o fluxo de autenticação Better Auth + cookie httpOnly funciona de ponta a ponta. Responsável: Engenharia/QA.
 
 - **Teste de Sistema (E2E):** Navegação pelos casos de uso documentados, simulando o comportamento real dos três atores. A cobertura E2E abrange 11 dos 12 UCs (UC-01, UC-02, UC-04 a UC-12) — o UC-03 (recuperação de senha) fica **fora do roteiro E2E** por depender de e-mail real e do rate limit de e-mail do provedor de autenticação, ficando coberto por testes de unidade/integração e validação manual. Responsável: QA. Execução: **manual**, seguindo o runbook [Testes manuais — Web](./manuais-web.md) (a antiga automação Playwright foi removida).
 
@@ -152,9 +154,9 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 | Risco | Probabilidade | Impacto | Ação de Mitigação |
 |---|---|---|---|
 | **Anti-spam bloqueando testes E2E** — o fingerprint do dispositivo de teste é reconhecido após o primeiro envio do dia, impedindo novos envios no mesmo ciclo de testes | Alta | Alto | Gerar um fingerprint UUID aleatório por execução de teste, ou executar scripts de limpeza da tabela de dispositivos no banco do ambiente de teste antes de cada rodada |
-| **Fluxo de e-mail inacessível em automação** — confirmação de conta e reset de senha exigem acesso à caixa de e-mail em tempo real, inviável em pipelines automatizados | Média | Alto | Usar Mailpit/Mailtrap ou serviço equivalente no ambiente de teste; testar as telas de sucesso/erro do fluxo sem clicar no link real |
+| **Fluxo de e-mail inacessível em automação** — confirmação de conta e reset de senha exigem acesso à caixa de e-mail em tempo real, inviável em pipelines automatizados | Média | Alto | No ambiente local, o Mailpit do docker-compose do API Gateway captura os e-mails (UI em `http://localhost:8025`) e permite clicar no link; em produção, testar as telas de sucesso/erro do fluxo sem clicar no link real |
 | **Instabilidade do provedor de IA externo** — indisponibilidade bloqueia completamente os testes de UC-11 | Baixa | Alto | Criar mocks das respostas de IA para testes unitários e de integração; pular o cenário de UC-11 na execução manual quando o provedor estiver indisponível |
-| **Estado sujo entre execuções de teste** — empresa de teste acumula catálogos, tipos e feedbacks de execuções anteriores, causando resultados inconsistentes | Alta | Médio | Implementar scripts de setup/teardown que restauram o estado inicial da empresa de teste antes de cada rodada manual de E2E |
+| **Estado sujo entre execuções de teste** — empresa de teste acumula catálogos, tipos e feedbacks de execuções anteriores, causando resultados inconsistentes | Alta | Médio | No ambiente local, rodar `npm run db:reset` no API Gateway antes de cada rodada: recria o banco com o seed determinístico e o usuário de teste. O script só roda contra banco local; em produção a limpeza continua manual |
 
 ---
 
@@ -184,10 +186,10 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 
 | ID | Título | Pré-condições | Passos de Execução | Dados de Teste | Resultado Esperado |
 |---|---|---|---|---|---|
-| `CT-UC01-01`<br>📝 *Planejado / não implementado* | Caminho feliz | E-mail ainda não cadastrado | 1. Acessar tela de cadastro. 2. Preencher nome, e-mail, senha, CPF válido, telefone BR, aceitar termos. 3. Clicar "Criar conta". | e-mail: `novo@teste.com`; CPF: `529.982.247-25` | Tela de sucesso com orientação para confirmar o e-mail. *Sem teste E2E no spec — depende de recebimento de e-mail real.* |
+| `CT-UC01-01`<br>📝 *Planejado / não implementado* | Caminho feliz | E-mail ainda não cadastrado | 1. Acessar tela de cadastro. 2. Preencher nome, e-mail, senha forte, telefone BR, aceitar termos. 3. Clicar "Criar Conta". | e-mail: `novo@teste.com` | Tela de sucesso com orientação para confirmar o e-mail. *Sem teste E2E no spec — depende de recebimento de e-mail real.* |
 | `CT-UC01-02`<br>✅ *Coberto E2E* | E-mail duplicado — prevenção de enumeração (Exceção) | E-mail já cadastrado | 1. Acessar tela de cadastro. 2. Preencher com e-mail já existente e dados válidos. 3. Clicar "Criar conta". | e-mail: `gestor@empresateste.com` (já existente) | **Segue para a tela de sucesso** normalmente — sem revelar que o e-mail já existe |
-| `CT-UC01-03`<br>✅ *Coberto E2E* | Documento já cadastrado (Exceção) | CPF/CNPJ já existente na base | 1. Acessar tela de cadastro. 2. Preencher com um documento já existente e demais dados válidos. 3. Clicar "Criar conta". | CPF: documento já cadastrado na base | Envio bloqueado; mensagem de erro de documento duplicado exibida |
-| `CT-UC01-04`<br>🔵 *Unidade já atende* | Documento inválido (Exceção) | Nenhuma | 1. Acessar tela de cadastro. 2. Preencher todos os campos com CPF inválido. 3. Clicar "Criar conta". | CPF: `111.111.111-11` (não passa na validação matemática) | Envio bloqueado; mensagem indicando que o documento é inválido |
+| `CT-UC01-03`<br>⛔ *Obsoleto* (o cadastro não pede mais CPF/CNPJ) | Documento já cadastrado (Exceção) | CPF/CNPJ já existente na base | 1. Acessar tela de cadastro. 2. Preencher com um documento já existente e demais dados válidos. 3. Clicar "Criar conta". | CPF: documento já cadastrado na base | Envio bloqueado; mensagem de erro de documento duplicado exibida |
+| `CT-UC01-04`<br>⛔ *Obsoleto* (o cadastro não pede mais CPF/CNPJ) | Documento inválido (Exceção) | Nenhuma | 1. Acessar tela de cadastro. 2. Preencher todos os campos com CPF inválido. 3. Clicar "Criar conta". | CPF: `111.111.111-11` (não passa na validação matemática) | Envio bloqueado; mensagem indicando que o documento é inválido |
 | `CT-UC01-05`<br>🔵 *Unidade já atende* | Telefone inválido (Exceção) | Nenhuma | 1. Acessar tela de cadastro. 2. Preencher telefone fora do padrão BR. 3. Clicar "Criar conta". | Telefone: `12345` | Envio bloqueado; campo destacado com mensagem de formato inválido |
 | `CT-UC01-06`<br>🔵 *Unidade já atende* | Termos não aceitos (Exceção) | Nenhuma | 1. Acessar tela de cadastro. 2. Preencher todos os campos válidos sem marcar os termos. 3. Clicar "Criar conta". | Checkbox de termos: desmarcado | Envio bloqueado; formulário não submetido |
 | `CT-UC01-07`<br>❌ *Cenário não coberto* | Reenvio de e-mail (Exceção) | Conta criada, e-mail não confirmado | 1. Na tela de sucesso ou login, solicitar reenvio do e-mail de confirmação. | — | Confirmação de envio exibida; nenhum erro |
@@ -346,9 +348,9 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 
 **Massa de Dados:**
 
-- A empresa de teste deve ser criada manualmente no ambiente de teste (produção ou local) antes da primeira execução, com conta ativa, gestor autenticado e todos os tipos de feedback ativados.
-- O fingerprint de dispositivo deve ser resetado (via script de limpeza no banco) antes de cada execução dos testes de UC-04 para evitar bloqueio por anti-spam.
-- Os feedbacks necessários para UC-11 (mínimo 10) devem ser inseridos diretamente no banco do ambiente de teste caso o volume ainda não tenha sido atingido via envio manual.
+- A empresa de teste deve ser criada manualmente em produção antes da primeira execução, com conta ativa, gestor autenticado e todos os tipos de feedback ativados. No ambiente local, o `npm run db:reset` do API Gateway já entrega duas empresas semeadas e o usuário de teste (`E2E_TEST_EMAIL`/`E2E_TEST_PASSWORD`) vinculado a uma delas — ver o [Guia de Instalação](../guia-instalacao.md).
+- O fingerprint de dispositivo deve ser resetado (via script de limpeza no banco; no local, o próprio `npm run db:reset`) antes de cada execução dos testes de UC-04 para evitar bloqueio por anti-spam.
+- Os feedbacks necessários para UC-11 (mínimo 10) devem ser inseridos diretamente no banco do ambiente de teste caso o volume ainda não tenha sido atingido via envio manual. No local, o `node scripts/seed-raw-feedbacks.mjs --apply` do API Gateway insere um lote sintético de 100 feedbacks na empresa A do seed.
 - Para os testes de UC-07 e UC-08, ao menos um item de catálogo deve estar cadastrado e ativo no ambiente de teste.
 
 **Critérios de Sucesso:**

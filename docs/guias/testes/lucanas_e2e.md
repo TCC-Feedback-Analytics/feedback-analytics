@@ -1,5 +1,8 @@
 # Lacunas dos Testes E2E (Playwright)
 
+!!! warning "Situação em 03/11/2026: a suíte descrita aqui não existe mais"
+    A pasta `e2e/` e o Playwright saíram do `feedback-analytics-web` em 08/08/2026; os arquivos `*.spec.ts` citados abaixo não estão mais no repositório (por isso aparecem sem link). Use esta página só como checklist de cenários difíceis para a execução manual. Os cenários de cada caso de uso não foram reconferidos contra a aplicação atual: confirme no [runbook da Web](./manuais-web.md) e no próprio caso de uso antes de executar.
+
 Este documento mapeia os conflitos, divergências e lacunas entre a documentação de **Casos de Uso (`docs/casos-de-uso/`)** e a antiga implementação dos testes E2E com o **Playwright (`feedback-analytics-web/e2e/`)** — hoje executados **manualmente**.
 
 O objetivo deste relatório é servir de guia para correções de regras de negócio e expansão da cobertura de testes.
@@ -17,9 +20,9 @@ Estes cenários eram desativados nos testes E2E do Playwright (`test.skip(true, 
 
 | Identificador | Descrição do Caso de Uso | Arquivo de Teste E2E | Motivo do Skip |
 | :--- | :--- | :--- | :--- |
-| **[CT-UC01-01]** | Confirmação de e-mail ao criar conta | [uc-01-cadastro-conta.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-01-cadastro-conta.spec.ts) | Exige acessar uma caixa de e-mails real para clicar no link de validação. |
-| **[CT-UC02-04]** | Login com conta criada mas pendente de confirmação | [uc-02-login.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-02-login.spec.ts) | Requer manter uma conta no banco de dados fixamente com e-mail não verificado. |
-| **[CT-UC11-05]** | Executar nova análise chamando a API de IA | [uc-11-insights-ia.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-11-insights-ia.spec.ts) | A requisição HTTP real para a API do Gemini foi interceptada e mockada para **não consumir créditos financeiros** da conta do projeto. |
+| **[CT-UC01-01]** | Confirmação de e-mail ao criar conta | `uc-01-cadastro-conta.spec.ts` | Exige acessar uma caixa de e-mails real para clicar no link de validação. |
+| **[CT-UC02-04]** | Login com conta criada mas pendente de confirmação | `uc-02-login.spec.ts` | Requer manter uma conta no banco de dados fixamente com e-mail não verificado. |
+| **[CT-UC11-05]** | Executar nova análise chamando a API de IA | `uc-11-insights-ia.spec.ts` | A requisição HTTP real para a API do Gemini foi interceptada e mockada para **não consumir créditos financeiros** da conta do projeto. |
 
 ---
 
@@ -29,10 +32,10 @@ Estes cenários envolvem integrações com recursos físicos do sistema operacio
 
 | Identificador | Descrição do Caso de Uso | Arquivo de Teste E2E | Limitação do Navegador / Playwright |
 | :--- | :--- | :--- | :--- |
-| **[CT-UC04-02]** | Bloqueio de múltiplos feedbacks do mesmo dispositivo no dia | [uc-04-envio-feedback-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-04-envio-feedback-qrcode.spec.ts) | A validação utiliza fingerprinting persistido. No Playwright, cada teste executa em um *browser context* limpo (sem cookies ou localStorage herdados), permitindo submissões consecutivas sem simular o bloqueio diário. |
-| **[CT-UC05-02]** | Download do arquivo `.png` com o nome da empresa | [uc-05-geracao-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-05-geracao-qrcode.spec.ts) *(não implementado)* | Testar o download físico de uma imagem gerada via canvas e validar sua integridade estrutural (e nome do arquivo) é complexo no ambiente headless. |
-| **[CT-UC05-04]** | Acionamento da API nativa de compartilhamento (`navigator.share`) | [uc-05-geracao-qrcode.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-05-geracao-qrcode.spec.ts) *(não implementado)* | A Web Share API necessita de suporte e permissão nativa do sistema operacional (SO) e geralmente falha ou não tem efeito em navegadores de teste. |
-| **[CT-UC12-03]** | Envio de código de verificação por SMS para telefone | [uc-12-gestao-perfil.spec.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/e2e/uc-12-gestao-perfil.spec.ts) *(não implementado)* | Exige a simulação física de recebimento de SMS e extração do código numérico de 6 dígitos. |
+| **[CT-UC04-02]** | Bloqueio de múltiplos feedbacks do mesmo dispositivo no dia | `uc-04-envio-feedback-qrcode.spec.ts` | A validação utiliza fingerprinting persistido. No Playwright, cada teste executa em um *browser context* limpo (sem cookies ou localStorage herdados), permitindo submissões consecutivas sem simular o bloqueio diário. |
+| **[CT-UC05-02]** | Download do arquivo `.png` com o nome da empresa | `uc-05-geracao-qrcode.spec.ts` *(não implementado)* | Testar o download físico de uma imagem gerada via canvas e validar sua integridade estrutural (e nome do arquivo) é complexo no ambiente headless. |
+| **[CT-UC05-04]** | Acionamento da API nativa de compartilhamento (`navigator.share`) | `uc-05-geracao-qrcode.spec.ts` *(não implementado)* | A Web Share API necessita de suporte e permissão nativa do sistema operacional (SO) e geralmente falha ou não tem efeito em navegadores de teste. |
+| **[CT-UC12-03]** | Envio de código de verificação por SMS para telefone | `uc-12-gestao-perfil.spec.ts` *(não implementado)* | Exige a simulação física de recebimento de SMS e extração do código numérico de 6 dígitos. |
 
 ---
 
@@ -49,7 +52,7 @@ Esta seção documenta a lista de cenários documentados na pasta `docs/casos-de
 *   **Mensagens de erro para campos em branco:** O formulário de login deve validar os campos obrigatórios inline no cliente sem fazer a requisição.
 
 ### [UC-03: Recuperação de Senha](../../concepcao/casos-de-uso/uc-03-recuperacao-senha.md)
-*   **Sem cobertura E2E:** O UC-03 não possui spec do Playwright (não há `uc-03-recuperacao-senha.spec.ts`). Os fluxos de envio de link de recuperação e de toast de sucesso (CT-UC03-01/02) dependem de caixa de e-mail real e de rate-limit do Supabase Auth, portanto não foram implementados como E2E.
+*   **Sem cobertura E2E:** O UC-03 não possui spec do Playwright (não há `uc-03-recuperacao-senha.spec.ts`). Os fluxos de envio de link de recuperação e de toast de sucesso (CT-UC03-01/02) dependiam de caixa de e-mail real e do rate limit do Supabase Auth (o provedor de auth da época; hoje é o Better Auth, e no ambiente local os e-mails caem no Mailpit), portanto não foram implementados como E2E.
 *   **Acesso via link expirado:** Não existe teste para a exibição da tela de erro ao tentar redefinir senha com token expirado.
 *   **Comparação de senhas divergentes:** Falta testar o bloqueio visual do formulário de redefinição se a confirmação de senha não bater com a nova senha digitada.
 

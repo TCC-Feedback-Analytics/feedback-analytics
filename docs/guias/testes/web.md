@@ -1,6 +1,9 @@
 # Testes — Frontend (`feedback-analytics-web`)
 
-Este documento detalha a arquitetura, estrutura e especificação dos testes na aplicação Web (Frontend). Nele, você encontrará a distribuição exata dos testes separados por sua granularidade: **Unidade**, **Integração** (ambos automatizados no CI via Vitest) e **Fim a Fim (E2E)** — esta última **não é mais automatizada**: a suíte Playwright foi removida e virou o runbook manual [Testes manuais — Web](./manuais-web.md).
+Este documento detalha a arquitetura, estrutura e especificação dos testes na aplicação Web (Frontend). Nele, você encontrará a distribuição dos testes separados por sua granularidade: **Unidade**, **Integração** (ambos automatizados no CI via Vitest) e **Fim a Fim (E2E)** — esta última **não é mais automatizada**: a suíte Playwright foi removida em 08/08/2026 e virou o runbook manual [Testes manuais — Web](./manuais-web.md).
+
+!!! info "Conferido em 03/11/2026"
+    Inventário refeito contra o repositório: **112 arquivos** de teste (`*.test.ts`/`*.test.tsx`). A versão anterior listava 23 arquivos, vários deles já removidos (como os de formatação de CPF/CNPJ, que saíram com o documento da empresa). Em vez da lista arquivo por arquivo, que envelhece a cada PR, as tabelas abaixo agrupam os testes por pasta. O número de testes sai no fim do `npm run test -- run`.
 
 ---
 
@@ -15,27 +18,34 @@ Usamos a geração automática de cobertura para **evitar desinformação**. O c
 
 ### Como executar a cobertura
 
-Para rodar a suíte completa de testes unitários/integração com relatório de cobertura:
+Para rodar a suíte completa de testes unitários/integração com relatório de cobertura, no repositório `feedback-analytics-web`:
 
 ```bash
-cd feedback-analytics-web
-powershell -ExecutionPolicy Bypass -Command "npm run test:coverage"
+npm run test:coverage
 ```
 
-O relatório é gerado em dois formatos principais:
+A cobertura mede `src/lib/utils`, `src/routes`, `pages` e `layouts` (sem os próprios testes) e sai em dois formatos:
+
 1. **Terminal** — Tabela imediata com percentuais e linhas não cobertas.
-2. **HTML** — Relatório interativo detalhado gerado em [index.html](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/coverage/index.html).
+2. **HTML** — Relatório interativo em `coverage/index.html`, gerado na máquina de quem rodou (a pasta `coverage/` fica fora do git).
+
+Para rodar os testes sem cobertura, use `npm run test -- run` (execução única, como no CI); o `npm test` sozinho fica em modo watch.
 
 ---
 
 ## Setup Global (`tests/setup.ts`)
 
-O arquivo [setup.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/tests/setup.ts) é executado antes de cada arquivo de testes do Vitest para emular o ambiente de navegador (*jsdom*):
+O arquivo [setup.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/tests/setup.ts) é executado antes de cada arquivo de testes do Vitest (ambiente *jsdom*, configurado no bloco `test` do `vite.config.ts`):
 
 | Mock / Setup | Por quê |
 |---|---|
-| `useRouteLoaderData` | O *jsdom* não possui contexto do React Router; este mock evita quebras de hooks de dados em páginas protegidas. |
+| `@testing-library/jest-dom` | Matchers de DOM (`toBeInTheDocument` etc.). |
+| `URLSearchParams` e `AbortController` do Node | O `Request` que o React Router cria nas submissions vem do Node e rejeita instâncias do jsdom, que são de outro *realm*. |
+| `react-router-dom` (só `useRouteLoaderData`) | O *jsdom* não possui contexto do React Router; o mock global evita quebras de hooks de dados. Arquivos que usam `MemoryRouter`, `Link` ou outro export voltam ao módulo real no próprio teste. |
 | `window.matchMedia` | A API de media queries não é nativa do *jsdom*; esse mock impede erros na renderização de componentes responsivos. |
+| `localStorage` em memória | Estado isolado e previsível entre os testes. |
+
+Os padrões de mock por página estão no [`pages/tests/README.md`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/README.md) do repositório.
 
 ---
 
@@ -47,56 +57,48 @@ O que define se um teste é classificado como **Unidade** ou **Integração** é
 * **Integração:** Valida contratos entre diferentes peças ou módulos reais. O fluxo de dados transita de forma real entre múltiplos módulos (ex: da *Action* do React Router que processa dados estruturados até as validações internas, mockando apenas a comunicação HTTP com a API externa).
 * **E2E (End-to-End):** O fluxo roda a aplicação inteira integrada (Frontend, API-Gateway, IA-Analyze e banco de dados real), simulando a interação visual de um usuário real em um browser. Esta camada **não é mais automatizada** — é executada **manualmente** pelo runbook [Testes manuais — Web](./manuais-web.md).
 
+Os blocos `describe` usam o prefixo `[Unidade]` ou `[Integração]`, mas nem todos seguem; a tabela abaixo classifica pela pasta.
+
 ---
 
 ## 1. Testes de Unidade (`Unit Tests`)
 
-> **Total: 110 testes em 19 arquivos**
+> **Total: 107 arquivos**
 >
-> Validam funções de utilidade pura, parsers, validadores locais e componentes de página e layout isolados (com seus componentes filhos mockados).
+> Validam funções de utilidade pura, parsers, validadores locais, hooks, services e componentes de página e layout isolados (com seus componentes filhos e dados mockados).
 
-| Arquivo de Teste | Propósito do Arquivo | Qtd. Testes |
-| :--- | :--- | :---: |
-| [userLayout.test.tsx](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/layouts/tests/userLayout.test.tsx) | Valida a renderização e interatividade estrutural do layout base do gestor (`UserLayout`), incluindo menus de navegação lateral (Sidebar), recolhimento/colapso do menu, links, cabeçalhos contextuais e os skeletons de carregamento por rota (com `SectionTabs` e `InsightsActionBar` mockados; removidas as rotas de skeleton `/user/qrcode/{products,services,departments}`). | **16** |
-| [truncateText.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/truncateText.test.ts) | Garante o truncamento correto de strings longas, adicionando reticências (`...`) baseadas no limite de caracteres especificado, cobrindo cenários com valores nulos ou curtos. | **11** |
-| [formtPhone.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/formtPhone.test.ts) | Valida a formatação estática de números de telefone comerciais no padrão brasileiro (`(DD) XXXXX-XXXX` ou `(DD) XXXX-XXXX`) para exibição visual estática. | **10** |
-| [publicQrFeedbackValidation.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/publicQrFeedbackValidation.test.ts) | Testa as validações de payload no lado do cliente antes do envio do formulário de feedback do QR Code (ausência de dados essenciais, notas zeradas, etc.). | **10** |
-| [register.test.tsx](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/register.test.tsx) | Valida a renderização e o comportamento isolado da página de criação de conta (Registro do Gestor), incluindo campos de entrada de dados, regras de botões e links. | **8** |
-| [login.test.tsx](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/login.test.tsx) | Valida o comportamento e a estrutura da página de login do gestor, garantindo a exibição de títulos, links de termos de uso e a renderização do formulário. | **7** |
-| [profile.test.tsx](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/profile.test.tsx) | Testa a renderização da página de gerenciamento de dados do perfil do gestor, validando a integridade dos inputs de texto estruturados. | **7** |
-| [mapEditorQuestionsToPublic.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/mapEditorQuestionsToPublic.test.ts) | Valida o mapeamento das perguntas do editor do gestor para o formato público de coleta (`FeedbackQuestionPublic[]`), filtrando textos vazios ou inativos, usado pela prévia ao vivo do formulário. | **7** |
-| [publicQrFeedbackForm.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/publicQrFeedbackForm.test.ts) | Valida as funções auxiliares que gerenciam o formulário de feedback público (ordenação de respostas de subperguntas, identificação de tipos de catálogo e perguntas válidas). | **5** |
-| [formatDocument.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/formatDocument.test.ts) | Testa a formatação estática de CPFs e CNPJs para exibição amigável ao usuário. | **4** |
-| [publicQrFeedbackErrorMessage.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/publicQrFeedbackErrorMessage.test.ts) | Valida o mapeamento de códigos de erro de validação em strings legíveis em português para serem exibidas em alertas do formulário de feedback. | **4** |
-| [publicQrFeedbackTemplateEngine.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/publicQrFeedbackTemplateEngine.test.ts) | Testa a interpolação de variáveis dinâmicas em perguntas customizáveis (ex: substituição de `{{nome_empresa}}`). | **4** |
-| [formatDocumentInput.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/formatDocumentInput.test.ts) | Testa a máscara progressiva de CPF/CNPJ aplicada em tempo real à medida que o usuário digita nos campos de texto. | **3** |
-| [formatPhoneInputBR.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/formatPhoneInputBR.test.ts) | Valida a máscara dinâmica de telefone brasileiro de 8 ou 9 dígitos aplicada progressivamente durante a digitação no input. | **3** |
-| [passwordStrength.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/passwordStrength.test.ts) | Testa a engine de cálculo da força de senhas (Zod base), que retorna progresso percentual, cor visual da barra e o rótulo de complexidade. | **3** |
-| [dashboard.test.tsx](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/dashboard.test.tsx) | Valida a estrutura inicial e renderização dos cartões de métrica e elementos gráficos do painel de controle principal do gestor. | **3** |
-| [home.test.tsx](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/home.test.tsx) | Valida o carregamento estrutural e o estado da página principal de boas-vindas do sistema. | **2** |
-| [digitsOnly.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/digitsOnly.test.ts) | Valida a função utilitária que remove todos os caracteres não numéricos de uma string para processamento limpo. | **2** |
-| [sentiment.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/lib/utils/tests/sentiment.test.ts) | Valida o mapeamento amigável de categorias de sentimentos da IA (`positive`, `neutral`, `negative`) para português (`Positivo`, `Neutro`, `Negativo`). | **1** |
+| Onde ficam | Arquivos | O que cobrem |
+| :--- | :---: | :--- |
+| `components/**/*.test.tsx` | 45 | Componentes, ao lado do arquivo testado: formulários públicos (login, cadastro, "Continuar com Google", reenvio da confirmação, formulário de feedback), páginas legais, onboarding e guia de primeiros passos, layout do gestor (cabeçalho, menu, barra de insights), seções do dashboard (canais, movimento, pico, clientes que voltam, diagnóstico do escopo), comentários, relatório de insights, perfil (exclusão de conta, Configuração de IA), canais de coleta e etiqueta NFC, perguntas do formulário e componentes compartilhados. |
+| `pages/tests/` | 11 | Páginas: home, login, cadastro, dashboard, perfil, métricas de estrelas, comparação de itens, histórico de diagnósticos, comentários, pergunta do formulário e volta do OpenRouter. Lista em [`pages/tests/README.md`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/README.md). |
+| `layouts/tests/` | 2 | `layouts/public.tsx` e `layouts/user.tsx`. |
+| `src/lib/utils/*.test.ts` e `src/lib/utils/tests/` | 37 | Utilitários puros: formatação de telefone, truncamento, força da senha, validação e montagem do formulário público de feedback, mapeamento de erros da IA, períodos e comparação, pico de horários, precisão, rótulos de nota e de sentimento, cliente HTTP, entre outros. |
+| `src/lib/hooks/` e `src/lib/mock/` | 5 | Hooks (operação de IA, geração das perguntas da empresa, link de feedback, marcos de feedbacks) e a definição do menu. |
+| `src/routes/loaders/` e `src/routes/load/loadFeedbacksAll.test.ts` | 4 | Loaders da conclusão do cadastro e da Configuração de IA e a leitura dos filtros da listagem de feedbacks. |
+| `src/routes/actions/actionIaSettings.test.ts` | 1 | Action da Configuração de IA. |
+| `src/services/` | 3 | Services de auth (reenvio da confirmação), de configuração de IA e do guia do sistema. |
 
 ---
 
 ## 2. Testes de Integração (`Integration Tests`)
 
-> **Total: 18 testes em 4 arquivos**
+> **Total: 5 arquivos** (os que levam o prefixo `[Integração]`)
 >
 > Validam os handlers de rota do React Router (Actions e Loaders) que fazem a ponte entre os dados preenchidos nos formulários da interface e a chamada dos serviços que conversam com a API Gateway.
 
-| Arquivo de Teste | Propósito do Arquivo | Qtd. Testes |
-| :--- | :--- | :---: |
-| [actionCollectingData.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/actions/actionCollectingData.test.ts) | Testa a `action` de persistência das configurações de coleta e catálogos (produtos, serviços e departamentos), garantindo a conversão correta dos dados enviados para JSON e preservação de perguntas. | **6** |
-| [actionFeedbackSettings.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/actions/actionFeedbackSettings.test.ts) | Testa a `action` centralizada de configurações de feedback baseada no campo `intent`, validando fluxos válidos de alteração, erros de validação local de strings vazias e mapeamento incorreto de ações. | **5** |
-| [actionPublicQrCodeFeedback.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/actions/actionPublicQrCodeFeedback.test.ts) | Testa a integração do envio do formulário público do QR Code pela `action`, validando a conversão de campos, preenchimento de obrigatórios e envio final aos serviços. | **4** |
-| [loadPublicQrCodeEnterprise.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/load/loadPublicQrCodeEnterprise.test.ts) | Valida o comportamento do `loader` responsável por buscar os dados estruturados e perguntas da empresa ao carregar a página pública de coleta de feedback via QR Code. | **3** |
+| Arquivo de Teste | Propósito do Arquivo |
+| :--- | :--- |
+| [actionCollectingData.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/actions/actionCollectingData.test.ts) | Testa a `action` de persistência das configurações de coleta e catálogos (produtos, serviços e departamentos), garantindo a conversão correta dos dados enviados para JSON e preservação de perguntas. |
+| [actionFeedbackSettings.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/actions/actionFeedbackSettings.test.ts) | Testa a `action` centralizada de configurações de feedback baseada no campo `intent`, validando fluxos válidos de alteração, erros de validação local de strings vazias e mapeamento incorreto de ações. |
+| [actionFeedbackInsightsReport.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/actions/actionFeedbackInsightsReport.test.ts) | Testa a `action` que pede o relatório de insights ao Gateway: repasse do `force` para refazer o relatório e a orientação para configurar o OpenRouter quando o Gateway exige a chave da empresa. |
+| [actionPublicQrCodeFeedback.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/actions/actionPublicQrCodeFeedback.test.ts) | Testa a integração do envio do formulário público do QR Code pela `action`, validando a conversão de campos, preenchimento de obrigatórios e envio final aos serviços. |
+| [loadPublicQrCodeEnterprise.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/src/routes/load/loadPublicQrCodeEnterprise.test.ts) | Valida o comportamento do `loader` responsável por buscar os dados estruturados e perguntas da empresa ao carregar a página pública de coleta de feedback via QR Code. |
 
 ---
 
 ## 3. Testes Fim a Fim (E2E) — agora manuais
 
-> A suíte **E2E automatizada (Playwright)** do `feedback-analytics-web` — os specs `e2e/*.spec.ts`, as fixtures (incluindo o `auth.setup.ts`), o `playwright.config.ts` e os scripts npm `test:e2e`/`:ui`/`:report` — foi **removida** do projeto e do CI.
+> A suíte **E2E automatizada (Playwright)** do `feedback-analytics-web` — os specs `e2e/*.spec.ts`, as fixtures (incluindo o `auth.setup.ts`), o `playwright.config.ts` e os scripts npm `test:e2e`/`:ui`/`:report` — foi **removida** do projeto e do CI em 08/08/2026. Hoje o repositório não tem Playwright nem pasta `e2e/`.
 
 Essa suíte rodava em navegador Chrome real contra o ambiente **homolog** deployado — modelo descontinuado junto com o ambiente de homologação (o deploy passou a ser **main-only**, direto para produção). A cobertura ponta a ponta dos 11 Casos de Uso que ela exercitava (UC-01, UC-02 e UC-04 a UC-12; o UC-03 nunca teve roteiro E2E) passou a ser **manual**, reproduzível clicando na aplicação conforme o runbook:
 

@@ -30,7 +30,7 @@ Consequência prática: num incidente com feedbacks, **avisamos o negócio**, e 
 | Fornecedor | O que faz | Que dado recebe | Onde fica | A conferir |
 |---|---|---|---|---|
 | **Supabase** | Hospeda o PostgreSQL | Todos os dados do banco | Fora do Brasil (região do projeto a confirmar no painel) | Acordo de tratamento de dados (DPA) aceito; plano de backup |
-| **Vercel** | Hospeda a Web e o gateway | Todas as requisições, com IP e navegador nos registros de acesso | Fora do Brasil | DPA aceito; por quanto tempo guarda os registros |
+| **Vercel** | Hospeda a Web, o gateway e o `ia-analyze` | Todas as requisições, com IP e navegador nos registros de acesso | Fora do Brasil | DPA aceito; por quanto tempo guarda os registros |
 | **OpenRouter** e o **provedor do modelo** escolhido pelo negócio | Roda a análise dos comentários e o diagnóstico | Comentários, notas, respostas, pergunta própria, nomes dos itens e contexto do negócio. Nunca nome, e-mail, gênero ou IP do cliente | Fora do Brasil | Política de retenção do OpenRouter e do provedor escolhido. A chamada usa a **chave do próprio negócio**, então o negócio também tem um contrato direto com o OpenRouter |
 | **Brevo** | Envia os e-mails da conta | E-mail do gestor e os links de confirmação e de nova senha | Fora do Brasil (União Europeia) | DPA aceito |
 | **Google** | Login com Google | O pedido de login; devolve nome, e-mail e foto do perfil | Fora do Brasil | Configuração do OAuth publicada |
@@ -54,8 +54,8 @@ A ANPD dispensa os agentes de pequeno porte, como startups, de indicar um encarr
 
 ## Divergências encontradas entre a Política e o sistema
 
-Pontos para corrigir na Web, sem mudança nesta revisão:
+Pontos encontrados em 02/11/2026. O 1 e o 3 já foram corrigidos na Web; o 2 segue aberto:
 
-1. **E-mail:** a Política diz que os e-mails saem pelo **SendGrid**, mas em produção quem envia é o **Brevo** (gateway, configuração SMTP).
+1. **E-mail: corrigido.** A Política dizia que os e-mails saíam pelo **SendGrid**; hoje ela cita o **Brevo**, que é quem envia em produção (gateway, configuração SMTP).
 2. **Limpeza de registros:** a Política diz que os registros de sessão e de controle de envios "são apagados quando deixam de ser necessários", mas nada os apaga hoje ([inventário](inventario-de-dados.md#por-quanto-tempo-fica)).
-3. **Exclusão da conta:** a Política descreve o que acontece quando a conta é excluída, mas a exclusão ainda depende de um pedido por e-mail, porque não há botão.
+3. **Exclusão da conta: corrigido.** A exclusão dependia de um pedido por e-mail. Desde 02/11/2026, o botão "Excluir minha conta", no Perfil, apaga a conta, a empresa e todos os feedbacks, e os Termos citam o botão.

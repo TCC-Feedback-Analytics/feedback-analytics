@@ -4,6 +4,9 @@
 
 Este documento mapeia quem são os stakeholders do Feedback Analytics, o que cada um espera do sistema e como seus interesses moldam decisões de produto, arquitetura e experiência.
 
+!!! note "Material de concepção (jun–jul/2026)"
+    O mapa de stakeholders é da concepção e não foi reescrito. Em 03/11/2026, só as afirmações técnicas foram conferidas contra o código.
+
 ---
 
 ## Visão Geral
@@ -35,13 +38,13 @@ Este documento mapeia quem são os stakeholders do Feedback Analytics, o que cad
 
 ### Usuários Finais
 
-- **Descrição:** São os clientes das "Empresas/Clientes". São eles que efetivamente fornecem os feedbacks através dos canais disponibilizados — atualmente via QR Code. Não têm conta no sistema e não pagam pelo produto.
+- **Descrição:** São os clientes das "Empresas/Clientes". São eles que efetivamente fornecem os feedbacks através dos canais disponibilizados — atualmente QR Code, link e etiqueta NFC. Não têm conta no sistema e não pagam pelo produto.
 - **Principal Interesse / Objetivo:** Fornecer uma opinião de forma rápida, fácil e, preferencialmente, anônima. O processo não pode ter atritos — qualquer etapa desnecessária leva ao abandono.
 - **Impacto no Projeto:**
   - A necessidade de uma **experiência de baixo atrito** guia a simplicidade do formulário público: sem login, sem cadastro, sem steps desnecessários.
   - A preocupação com **privacidade e anonimato** influencia decisões como não coletar nome ou e-mail por padrão.
   - O combate a **spam e abuso** sem prejudicar a experiência levou à criação do mecanismo `tracked_devices`, que evita múltiplos envios do mesmo dispositivo sem exigir login.
-  - A experiência mobile-first é mandatória — o usuário final acessa pelo celular após escanear o QR Code.
+  - A experiência mobile-first é mandatória — o usuário final acessa pelo celular após escanear o QR Code, abrir o link ou encostar na etiqueta NFC.
 
 ---
 
@@ -77,7 +80,8 @@ Este documento mapeia quem são os stakeholders do Feedback Analytics, o que cad
 - **Descrição:** A Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018) impõe obrigações sobre como dados pessoais são coletados, armazenados e tratados — mesmo que o stakeholder não interaja diretamente com o sistema.
 - **Principal Interesse / Objetivo:** Garantir que dados pessoais dos usuários finais sejam tratados com transparência, finalidade definida e segurança.
 - **Impacto no Projeto:**
-  - O mecanismo de **higienização de JWT e dados pessoais** (`higienizacao-jwt-lgpd`) ajuda a evitar que tokens e dados sensíveis persistam além do necessário.
+  - O sistema não guarda CPF nem CNPJ (removidos na migration `0009` do gateway), e a sessão do gestor é um cookie httpOnly, sem dados pessoais num token. A etapa de segurança e LGPD lista cada dado pessoal guardado no [inventário de dados pessoais](../seguranca/inventario-de-dados.md).
+  - O gestor pode excluir a própria conta pelo Perfil, o que apaga a empresa e todos os feedbacks dela.
   - A política de **coleta mínima de dados** nos formulários públicos (sem e-mail ou nome obrigatórios) reduz a superfície de exposição.
   - O **isolamento por tenant** também serve como barreira de conformidade: dados de uma empresa jamais são visíveis para outra.
 

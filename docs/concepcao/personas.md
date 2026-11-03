@@ -2,6 +2,9 @@
 
 > Mapeamento dos perfis reais de usuários do sistema, suas motivações, comportamentos e impacto nas decisões de produto.
 
+!!! note "Material de concepção (jun–ago/2026)"
+    As personas guiaram o desenho do produto e não foram reescritas. Os nomes de telas citados são os da concepção; o que o sistema faz hoje está em [Requisitos e Funcionalidades](./requisitos-e-funcionalidades.md).
+
 ---
 
 ### Persona 1: A Gestora Sobrecarregada
@@ -48,7 +51,7 @@
 - **Frustrações:**
     - Formulários longos, com muitas perguntas obrigatórias ou que pedem login.
     - Ter que procurar o perfil da empresa nas redes sociais para fazer uma reclamação ou elogio no momento em que o fato acontece.
-- **Impacto no Projeto Feedback Analytics:** Lucas é o usuário do **Frontend de Coleta**. A dor do processo complicado justifica a arquitetura **SPA** para carregamento rápido. A necessidade de privacidade justifica o sistema de **tracked_devices** e a **coleta sem identificação obrigatória**.
+- **Impacto no Projeto Feedback Analytics:** Lucas é o usuário do **Frontend de Coleta**. A dor do processo complicado justifica a arquitetura **SPA** para carregamento rápido. A necessidade de privacidade justifica a **coleta sem identificação obrigatória**; o anti-spam por **tracked_devices** evita envios repetidos sem exigir login (ele guarda o IP e o navegador do aparelho, que o gestor vê no detalhe do feedback).
 
 #### Mapa de Empatia
 

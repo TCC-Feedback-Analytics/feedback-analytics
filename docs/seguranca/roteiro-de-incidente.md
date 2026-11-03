@@ -36,11 +36,12 @@ Ao suspeitar: **anote a data e a hora**, abra o registro do incidente (modelo no
 
 ## 2. Conter
 
-Primeiro parar o vazamento; investigar a fundo vem depois. O que fazer para cada credencial (variáveis da Vercel do gateway):
+Primeiro parar o vazamento; investigar a fundo vem depois. O que fazer para cada credencial (variáveis da Vercel do gateway e, no caso do `postgres`, o secret do GitHub):
 
 | O que vazou | Como conter | Efeito colateral |
 |---|---|---|
-| Senha do banco (`DATABASE_URL`) | Trocar a senha no painel do Supabase, atualizar `DATABASE_URL` na Vercel e fazer um novo deploy | Alguns minutos fora do ar |
+| Senha do app no banco (`DATABASE_URL` da Vercel, papel `feedback_app`) | No SQL Editor do Supabase, dar outra senha ao papel (`ALTER ROLE feedback_app WITH LOGIN PASSWORD '...'`), atualizar `DATABASE_URL` na Vercel e fazer um novo deploy | Alguns minutos fora do ar. Quem tinha a senha lia e alterava dados, mas não a estrutura |
+| Senha do `postgres` (secret `DATABASE_URL` do GitHub, usado só pelas migrations) | Trocar a senha do banco no painel do Supabase e atualizar o secret do GitHub | O deploy do gateway não aplica migrations até a troca. Quem tinha a senha podia tudo, inclusive apagar tabelas |
 | Segredo do login (`BETTER_AUTH_SECRET`) | Trocar na Vercel, fazer um novo deploy e apagar as sessões (`DELETE FROM session`) | Todos os gestores precisam entrar de novo |
 | Chave de cifra das chaves de IA (`IA_CONFIG_ENCRYPTION_KEY`) | Trocar na Vercel. As chaves gravadas deixam de abrir: pedir a cada negócio que **revogue a chave no OpenRouter** e cadastre uma nova | Análises param até o negócio cadastrar a chave. Não há script para cifrar de novo |
 | Chave de IA de um negócio | Avisar o negócio para revogar no OpenRouter e cadastrar outra | Análises daquele negócio param até a troca |

@@ -2,7 +2,7 @@
 
 > **Em uma frase:** para cada parte do Feedback Analytics, o que um atacante (ou um erro nosso) poderia fazer, o que já protege no código e o que ainda está aberto.
 
-Parte do [inventário de dados pessoais](inventario-de-dados.md): ele diz **o que** proteger; este documento diz **contra o quê**. Levantado no código do gateway, da Web e do ia-analyze em 02/11/2026.
+Parte do [inventário de dados pessoais](inventario-de-dados.md): ele diz **o que** proteger; este documento diz **contra o quê**. Levantado no código do gateway, da Web e do ia-analyze em 02/11/2026; a situação das mitigações foi revista em 03/11/2026.
 
 ## Como ler
 
@@ -38,7 +38,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **S** | Uma pessoa envia várias respostas fingindo ser clientes diferentes | Uma resposta por aparelho, ponto de coleta e dia. O aparelho é identificado por um hash de navegador, IP e dia (`qrcode.controller.ts`). O gestor pode bloquear um aparelho | ⚠️ Trocar de rede ou de navegador burla o limite. Aceitável para métrica de satisfação, não para votação |
+| **S** | Uma pessoa envia várias respostas fingindo ser clientes diferentes | Uma resposta por aparelho, ponto de coleta e dia. O aparelho é identificado por um hash de navegador, IP e dia (`qrcode.controller.ts`). Um aparelho pode ser bloqueado (`is_blocked`), mas só direto no banco: o painel não tem esse botão | ⚠️ Trocar de rede ou de navegador burla o limite. Aceitável para métrica de satisfação, não para votação |
 | **T** | Alterar a marca de canal ou o ponto de coleta na URL | O ponto de coleta precisa estar **ativo** e ser **da empresa** do pedido. A marca de canal serve só a métricas | ✅ |
 | **T** | Enviar dado malformado ou gigante | O schema do contrato (`publicFeedbackSchema`) valida tudo: nota de 1 a 5, comentário até 5.000 caracteres, nome até 120 | ✅ |
 | **I** | Ver respostas de outros clientes pelo formulário | O formulário só lê o nome da empresa e as perguntas; nenhuma rota pública devolve feedbacks | ✅ |
@@ -67,8 +67,8 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **I** | Acessar o banco por fora do app | Data API do Supabase desligada desde 22/10/2026. RLS ligada, sem policies, nas 13 tabelas originais | ⚠️ Oito tabelas novas estão sem RLS |
-| **E** | Uma credencial do app vazar e dar acesso total | — | ❌ O gateway entra como `postgres` (superusuário). Com a senha vazada, dá para apagar ou ler tudo, inclusive a estrutura |
+| **I** | Acessar o banco por fora do app | Data API do Supabase desligada desde 22/10/2026. RLS ligada nas 24 tabelas (migration `0013`), com uma policy que só deixa passar o papel do app, `feedback_app`; os papéis `anon` e `authenticated` do Supabase não veem nenhuma linha | ✅ |
+| **E** | Uma credencial do app vazar e dar acesso total | Em produção, o gateway entra no banco como `feedback_app`, que só lê e escreve dados ([banco com o mínimo de privilégio](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/banco-menor-privilegio.md)). As migrations rodam como `postgres`, com a senha só no secret do GitHub | ⚠️ Com a senha do app vazada, ainda dá para ler e alterar os dados de todas as empresas, mas não apagar tabelas, desligar a RLS nem criar papéis |
 | **I** | Ler a chave de IA de uma empresa no banco | Chave cifrada com AES-256-GCM (`utils/crypto.ts`), com a chave mestra fora do banco, nas variáveis da Vercel | ✅ |
 | **T** | Perder dados por erro ou ataque | Backups do Supabase | ⚠️ A confirmar no plano contratado; a restauração está no [roteiro de incidente](roteiro-de-incidente.md) |
 | **I** | Guardar dado além do necessário | Sem CPF/CNPJ (migration `0009`) | ⚠️ IP do cliente sem prazo de guarda |
@@ -101,9 +101,9 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | # | Lacuna | Por que importa | Onde entra |
 |---|---|---|---|
-| 1 | Gateway entra no banco como superusuário | Uma senha vazada vira acesso total | Etapa 07, código, item 3 |
-| 2 | Sem "Excluir minha conta" | Direito do titular (LGPD, art. 18) | Etapa 07, código, item 2 |
-| 3 | Oito tabelas sem RLS | Coerência com a decisão de RLS em todas | Etapa 07, código, item 3 |
+| 1 | Gateway entra no banco como superusuário | Uma senha vazada vira acesso total | Etapa 07, código, item 3. **Feito:** o app entra como `feedback_app` em produção (migration `0013`) |
+| 2 | Sem "Excluir minha conta" | Direito do titular (LGPD, art. 18) | Etapa 07, código, item 2. **Feito:** botão no Perfil, publicado em 02/11/2026 |
+| 3 | Oito tabelas sem RLS | Coerência com a decisão de RLS em todas | Etapa 07, código, item 3. **Feito:** RLS nas 24 tabelas (migration `0013`) |
 | 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | Novo, pequeno |
 | 5 | Limite de tentativas de login por instância | Ataque de senha distribuído | Novo: guardar a contagem no banco |
 | 6 | Sem limite por IP no envio público | Encher o banco com respostas | Novo, pequeno |

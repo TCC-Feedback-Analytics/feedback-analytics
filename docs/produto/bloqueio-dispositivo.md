@@ -2,32 +2,34 @@
 
 ## O Que É
 
-É a segunda camada de proteção do sistema de coleta pública. Enquanto o anti-spam por fingerprint bloqueia submissões duplicadas no mesmo dia (HTTP 409), o bloqueio permanente vai além: dispositivos marcados como `is_blocked` são **impedidos indefinidamente** de enviar qualquer feedback, retornando HTTP 403.
+É a segunda camada de proteção do sistema de coleta pública. Enquanto o anti-spam por fingerprint barra submissões duplicadas no mesmo dia (HTTP 409), o bloqueio impede **qualquer** envio de um registro de aparelho marcado como `is_blocked`, retornando HTTP 403.
+
+> **Situação atual:** a verificação existe no envio, mas o bloqueio **não é permanente na prática**. O fingerprint do aparelho inclui o dia, então cada dia gera um registro novo em `tracked_devices`, que nasce desbloqueado. E não há tela nem endpoint para marcar um aparelho como bloqueado: a marca só pode ser feita direto no banco. Detalhes abaixo.
 
 ---
 
 ## Por Que Existe
 
-O limite diário (1 feedback por dispositivo por ponto de coleta por dia) resolve a maioria dos casos — o cliente que tenta enviar duas vezes por engano, o bot simples que não muda de IP.
+O limite diário (1 feedback por aparelho por ponto de coleta por dia) resolve a maioria dos casos — o cliente que tenta enviar duas vezes por engano, o bot simples que não muda de IP.
 
-Mas existem situações que exigem uma resposta mais definitiva:
+Mas existem situações que pedem uma resposta mais definitiva:
 
-- Um dispositivo enviou feedbacks claramente fraudulentos ou ofensivos
-- Um ator mal-intencionado está rotacionando horários para burlar o limite diário
-- É necessário banir permanentemente uma origem específica sem depender do ciclo de 24h
+- Um aparelho enviou feedbacks claramente fraudulentos ou ofensivos
+- Um ator mal-intencionado está tentando burlar o limite diário
+- É preciso barrar uma origem específica sem depender do limite por ponto de coleta
 
-O bloqueio permanente existe para esses casos. É uma ferramenta de **moderação**, não de controle de frequência.
+O bloqueio foi pensado para esses casos. É uma ferramenta de **moderação**, não de controle de frequência.
 
 ---
 
 ## A Diferença Entre 409 e 403
 
-| Situação | Código | Significado | Duração |
+| Situação | Código | Significado | Duração na prática |
 |---|---|---|---|
-| Mesmo dispositivo, mesmo ponto, mesmo dia | `409 Conflict` | Limite diário atingido | Até meia-noite — no dia seguinte libera |
-| Dispositivo banido (`is_blocked = true`) | `403 Forbidden` | Dispositivo bloqueado permanentemente | Indefinido — só remove manualmente |
+| Mesmo aparelho, mesmo ponto, mesmo dia | `409 Conflict` | Limite diário atingido | Até o dia virar no servidor (meia-noite UTC em produção) |
+| Registro do aparelho com `is_blocked = true` | `403 Forbidden` | Aparelho bloqueado | Enquanto durar aquele fingerprint: o mesmo dia |
 
-O `409` é automático e temporário — parte do fluxo normal. O `403` é intencional e permanente — resultado de uma decisão de moderação.
+O `409` é automático e temporário — parte do fluxo normal. O `403` depende de uma marca feita por alguém no registro do aparelho.
 
 ---
 
@@ -36,16 +38,25 @@ O `409` é automático e temporário — parte do fluxo normal. O `403` é inten
 ```
 Cliente submete o formulário
         ↓
-API calcula o fingerprint do dispositivo
+API valida payload, empresa, ponto de coleta e respostas
         ↓
-Consulta tabela tracked_devices pelo fingerprint
+API calcula o fingerprint: MD5(User-Agent | IP | início do dia)
+        ↓
+Consulta tracked_devices pela empresa + fingerprint
         ↓
   ┌── is_blocked = true → retorna HTTP 403 (DEVICE_BLOCKED)
   │
-  └── is_blocked = false → verifica limite diário normalmente
+  └── senão → verifica o limite diário normalmente
 ```
 
-O bloqueio é verificado **antes** da checagem de duplicidade diária — é a primeira barreira.
+O bloqueio é verificado **antes** da checagem de duplicidade diária, mas **depois** das validações do formulário (payload, empresa, ponto de coleta ativo e respostas).
+
+---
+
+## Por Que o Bloqueio Não Dura
+
+- **Um registro por dia.** Como o início do dia entra no hash, no dia seguinte o mesmo aparelho chega com outro fingerprint. A consulta não encontra o registro bloqueado e cria um novo, com `is_blocked = false`. O bloqueio só pega os envios do mesmo dia (no fuso do servidor).
+- **Sem ferramenta de moderação.** Nenhuma tela nem endpoint grava `is_blocked = true`, nem as colunas `blocked_reason`, `blocked_at` e `blocked_by`. O código só **lê** a marca. Na Web, o detalhe de um feedback em Feedbacks recebidos mostra se o registro do aparelho está bloqueado ("Blocked: Sim/Não"), sem botão para mudar.
 
 ---
 
@@ -53,20 +64,21 @@ O bloqueio é verificado **antes** da checagem de duplicidade diária — é a p
 
 | Aspecto | Impacto |
 |---|---|
-| **Moderação sem login** | Permite banir origens específicas sem exigir autenticação dos clientes |
-| **Proteção persistente** | Não depende do ciclo de 24h — o bloqueio permanece ativo enquanto não for removido |
+| **Moderação sem login** | Permite barrar uma origem específica sem exigir autenticação dos clientes |
 | **Separação de camadas** | 409 cuida da frequência; 403 cuida da moderação — responsabilidades distintas |
-| **Integridade dos dados** | Dispositivos problemáticos não conseguem contaminar o banco mesmo rotacionando horários |
+| **Alcance** | O bloqueio de um registro vale para todos os pontos de coleta da empresa naquele dia |
+| **Limite atual** | Sem tela para bloquear e com fingerprint diário, a camada hoje tem efeito pequeno |
 
 ---
 
 ## Detalhes Técnicos
 
-- O campo `is_blocked` fica na tabela `tracked_devices`, associado ao fingerprint do dispositivo
-- A verificação ocorre no controller de submissão pública, antes de qualquer outra validação de negócio
-- O erro retornado é `API_ERROR_DEVICE_BLOCKED` com status HTTP `403 Forbidden`
-- O desbloqueio é manual — não há expiração automática para `is_blocked = true`
-- Um dispositivo bloqueado em um ponto de coleta está bloqueado em **todos** os pontos — o bloqueio é global por fingerprint
+- O campo `is_blocked` fica na tabela `tracked_devices`, associado ao fingerprint e à empresa (`enterprise_id`); a consulta é sempre por empresa + fingerprint
+- A verificação ocorre em `src/controllers/public/qrcode.controller.ts` do API Gateway, depois das validações do formulário e antes da checagem do limite diário
+- O erro retornado é `DEVICE_BLOCKED` (`API_ERROR_DEVICE_BLOCKED`) com status HTTP `403 Forbidden`
+- Não há expiração automática para `is_blocked = true`, mas o registro só é encontrado enquanto o fingerprint do dia for o mesmo
+- O bloqueio é por empresa: o mesmo aparelho em outra empresa tem outro registro
+- Todo registro novo nasce com `is_blocked = false`
 
 ---
 

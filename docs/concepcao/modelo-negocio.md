@@ -4,6 +4,9 @@ Este documento descreve como o Feedback Analytics funciona como negócio: para q
 
 Entender o modelo de negócio é tão importante quanto entender o código. Ele responde a pergunta mais fundamental do projeto: **por que este produto existe e como ele se sustenta.**
 
+!!! note "Material de concepção (jun–jul/2026)"
+    Este documento registra o modelo de negócio pensado na concepção e não foi reescrito. Em 03/11/2026, só as afirmações técnicas foram conferidas contra o código. O que o sistema faz hoje está em [Requisitos e Funcionalidades](./requisitos-e-funcionalidades.md).
+
 ---
 
 ## Proposta de Valor
@@ -54,7 +57,7 @@ Todo novo cadastro recebe **4 meses de uso gratuito** com acesso completo ao Pla
 
 Esse período existe por uma razão estratégica: feedback analytics é um produto que precisa de volume de dados para mostrar seu valor. Em 4 meses, a empresa já terá coletado feedbacks suficientes para ver insights reais e entender o que está funcionando e o que não está. O trial não é um desconto — é o tempo necessário para o produto provar o seu valor.
 
-> **Implementação técnica:** ao criar a conta, o trigger `on_auth_user_created` inicializa automaticamente `trial_ends_at = NOW() + 4 months` e `subscription_status = 'TRIAL'` na tabela `enterprise`. O badge de status no dashboard reflete em tempo real o ciclo de vida: `TRIAL` (âmbar) → `ACTIVE` (verde) / `EXPIRED` (vermelho) / `CANCELED` (cinza).
+> **Implementação técnica:** ao criar a conta, o gateway grava `trial_ends_at = NOW() + 4 months` e `subscription_status = 'TRIAL'` na tabela `enterprise` (`src/auth/enterpriseOnSignup.ts`, no lugar do antigo trigger `on_auth_user_created`). O badge de status, no menu da conta e no Perfil, mostra o ciclo de vida: `TRIAL` (âmbar, com os dias restantes) → `ACTIVE` (verde) / `EXPIRED` (vermelho) / `CANCELED` (cinza). Ainda não há cobrança: nada no código muda o status depois do cadastro nem bloqueia o acesso ao fim do trial.
 
 ### Plano Básico
 

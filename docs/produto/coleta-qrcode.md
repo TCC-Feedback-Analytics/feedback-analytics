@@ -6,6 +6,8 @@
 
 Um scan. Uma avaliação. Pronto.
 
+O mesmo formulário também abre por mais dois **canais de coleta**: um **link** (para enviar por mensagem, e-mail ou redes) e uma **etiqueta NFC** (o cliente encosta o celular e o formulário abre). Os três levam às mesmas perguntas e às mesmas métricas do escopo.
+
 ---
 
 ## Por Que Existe
@@ -24,22 +26,58 @@ O QR Code resolve tudo isso: está no balcão, na embalagem, no cardápio, na no
 ## Como Funciona
 
 ```
-Cliente escaneia o QR Code
+Cliente escaneia o QR Code (ou abre o link, ou encosta na etiqueta NFC)
         ↓
-Redirecionado para URL pública única do ponto de coleta
+Abre o formulário público (/feedback/qrcode) com a empresa, o ponto de coleta
+ou o item e a marca do canal na URL (canal=qr | link | nfc)
         ↓
-Frontend chama o API Gateway com o ID do ponto de coleta
+Frontend chama o API Gateway (GET /api/public/enterprise/:id)
         ↓
-API valida se a empresa existe e está ativa
+API confirma que a empresa existe e resolve o ponto de coleta ATIVO do escopo
         ↓
-Formulário é exibido com as perguntas configuradas
+Sem ponto de coleta ativo → tela de erro ("QR Code indisponível")
         ↓
-Cliente preenche nota, mensagem e dados opcionais
+Formulário é exibido com as perguntas do escopo e o campo de comentário dele
         ↓
-Submissão enviada com fingerprint do dispositivo (anti-spam)
+Cliente dá a nota (obrigatória), responde as perguntas e, se quiser,
+comenta e informa nome, e-mail e gênero
+        ↓
+Envio (POST /api/public/qrcode/feedback) com o canal; o servidor calcula
+o fingerprint do aparelho (anti-spam)
         ↓
 Feedback persistido no banco → tela de confirmação exibida
 ```
+
+---
+
+## Canais de Coleta
+
+Cada escopo (a avaliação da empresa ou um item do catálogo) tem a seção **Canais de coleta** na configuração, com um card por canal:
+
+| Canal | Como o gestor usa | Marca na URL |
+|---|---|---|
+| **QR Code** | Baixa a imagem em `.png` e imprime | `canal=qr` |
+| **Link** | Copia ou compartilha (pelo compartilhamento do celular, quando existe) | `canal=link` |
+| **Etiqueta NFC** | Grava o endereço numa etiqueta: direto pelo navegador no Chrome do Android (Web NFC) ou, no iPhone, por um app gravador de NFC | `canal=nfc` |
+
+- Os três apontam para o **mesmo ponto de coleta** do escopo: a marca só diz por onde o cliente chegou. Ela é gravada em `feedback.channel` (`QR`, `LINK` ou `NFC`), e o Dashboard mostra quantas avaliações chegaram por canal ("Por onde chegaram").
+- Marca ausente, desconhecida ou o antigo valor `QRCODE` grava `null` (sem canal), sem recusar a resposta.
+- **Testar o formulário:** o painel abre o formulário com `canal=teste`. Esses feedbacks ficam marcados como `TEST` e aparecem na lista de Feedbacks recebidos com a marca "Teste", mas ficam **fora** de todas as métricas, do mínimo de feedbacks e da análise da IA.
+- Com a coleta do escopo pausada, nenhum canal recebe respostas.
+
+---
+
+## Campo de Comentário por Escopo
+
+O comentário é **opcional** para o cliente e configurável em cada escopo:
+
+| Modo | No formulário |
+|---|---|
+| **Padrão** (`DEFAULT`) | O convite "Conte-nos mais sobre sua experiência" |
+| **Pergunta própria** (`CUSTOM`) | Uma pergunta do gestor, de 10 a 150 caracteres, no lugar do convite. Ela é guardada junto com o comentário (`feedback.comment_prompt`) e vai para a IA, que lê o texto como resposta a ela |
+| **Oculto** (`HIDDEN`) | Sem campo de comentário; se algum texto chegar, o servidor o descarta |
+
+Sem comentário, o feedback não vai para a IA nem conta como "aguardando análise".
 
 ---
 
@@ -48,8 +86,8 @@ Feedback persistido no banco → tela de confirmação exibida
 | Aspecto | Impacto |
 |---|---|
 | **Taxa de resposta** | Tende a aumentar a coleta ao reduzir barreiras de acesso |
-| **Presença física** | QR Code pode estar em qualquer lugar: balcões, embalagens, mesas, recibos |
-| **Acessibilidade** | Funciona em qualquer smartphone com câmera, sem instalar nada |
+| **Presença física** | QR Code e etiqueta NFC podem estar em qualquer lugar: balcões, embalagens, mesas, recibos |
+| **Acessibilidade** | Funciona em qualquer smartphone com câmera (ou com NFC), sem instalar nada |
 | **Tempo de resposta** | O cliente avalia no momento exato da experiência, enquanto a memória é fresca |
 | **Volume de dados** | Mais feedbacks coletados = análises de IA mais precisas e representativas |
 
@@ -57,11 +95,12 @@ Feedback persistido no banco → tela de confirmação exibida
 
 ## Detalhes Técnicos
 
-- Cada ponto de coleta tem uma **URL pública única** com o `collection_point_id` como parâmetro
-- Antes de exibir o formulário, o backend valida se a empresa está ativa (`enterprise_public`)
-- Se a empresa ou o item do catálogo estiver inativo, o formulário não é exibido — o cliente vê uma tela de erro explicativa
-- A submissão **não requer autenticação** — é uma rota pública com proteção via fingerprint
-- O QR Code é gerado como imagem vetorial e pode ser baixado em `.png` ou compartilhado via `navigator.share`
+- O endereço do formulário leva `enterprise`, e opcionalmente `collection_point` e `item`, mais a marca `canal`. Na etiqueta NFC o `item` fica de fora, para o endereço caber na memória da etiqueta
+- Antes de exibir o formulário, o backend confirma que a empresa existe (view `enterprise_public`) e resolve o ponto de coleta do tipo QR Code com status `ACTIVE`. Sem ele, o formulário não é exibido — o cliente vê uma tela de erro explicativa
+- O envio também exige o ponto de coleta ativo (senão `404 collection_point_not_found`) e respostas que batam exatamente com as perguntas ativas do escopo (senão `400 invalid_payload`)
+- A submissão **não requer autenticação** — é uma rota pública com proteção via fingerprint (1 envio por aparelho, por ponto de coleta, por dia)
+- O comentário aceita até 5000 caracteres. Dos dados opcionais de quem respondeu, só nome, e-mail e gênero são gravados (no cadastro do cliente, deduplicado por e-mail na empresa)
+- A imagem do QR Code é gerada em PNG por um serviço externo (`api.qrserver.com`) a partir do endereço do formulário e pode ser baixada; o botão de compartilhar envia o link (pelo `navigator.share` ou, sem ele, copiando)
 
 ---
 

@@ -1,17 +1,22 @@
 # Testes — Backend (`feedback-analytics-api-gateway`)
 
-Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço **API Gateway**. Os testes cobrem as rotas, os controladores (*controllers*), as validações de esquema (*Zod schemas*) e a integração com serviços adjacentes, isolando o banco de dados e as chamadas externas por meio de mocks. As suítes que exigiam um **banco/ambiente real** (integração e e2e de *cutover*) foram removidas do CI e passaram a ser um [runbook manual](./manuais-api-gateway.md).
+Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço **API Gateway**. Os testes cobrem as rotas, os controladores (*controllers*), os serviços, os repositórios (o SQL que o Drizzle monta), a fila e o worker da IA, isolando o banco de dados e as chamadas externas por meio de mocks. As suítes que exigiam um **banco/ambiente real** (integração e e2e de *cutover*) foram removidas do CI e passaram a ser um [runbook manual](./manuais-api-gateway.md).
+
+!!! info "Conferido em 03/11/2026"
+    Inventário refeito contra o repositório: **48 arquivos** em `src/tests/*.test.ts`. A tabela antiga, de 8 arquivos e 77 testes, citava suítes que não existem mais (`auth.test.ts`) e um mock do Supabase que saiu com a migração para Better Auth e Drizzle. O número de testes muda a cada PR; o total atual sai no fim do `npm test`.
 
 ---
 
 ## Status da Cobertura
 
-Os testes do API Gateway utilizam o **Vitest** como motor de testes e o **Supertest** para simular requisições HTTP reais diretamente contra a aplicação Express. O banco de dados Supabase é completamente mockado em memória nas fixtures de teste para garantir a velocidade e a repetibilidade das asserções.
+Os testes do API Gateway utilizam o **Vitest** como motor de testes (`vitest.config.ts`: ambiente `node`, arquivos `src/tests/**/*.test.ts`) e o **Supertest** para simular requisições HTTP reais diretamente contra a aplicação Express (14 dos 48 arquivos). O banco não é consultado: os testes mockam o cliente Drizzle (`../db/client.js`), os repositórios, o middleware de autenticação e os providers do IA Analyze. Os testes de SQL usam `drizzle.mock()`, que monta a consulta sem conectar, e conferem o texto e os parâmetros gerados.
 
-> **Total geral de testes do API Gateway: 77 testes distribuídos em 8 arquivos**
+> **Total: 48 arquivos de teste em `src/tests/`**
 
 !!! info "O que roda no CI (e o que virou manual)"
-    Os 8 arquivos abaixo são testes **unitários/de rota mockados** (`src/tests/*.test.ts`) e **seguem automatizados no CI**. Além deles, o CI mantém o **smoke de migrations** (`schema-migrations.yml`): sobe um Postgres efêmero no runner, **sem credenciais**, e roda `drizzle-kit check` para validar o schema versus as migrations.
+    Os arquivos abaixo são testes **unitários/de rota mockados** e **seguem automatizados no CI** (job `unit-tests` do `ci.yml`). Além deles, o CI mantém o **smoke de migrations** (`schema-migrations.yml`): sobe um Postgres efêmero no runner, **sem credenciais**, aplica as migrations e o seed e roda `drizzle-kit check` para validar o schema versus as migrations.
+
+    A única suíte contra **Postgres real** que restou é `onboarding.database.test.ts`, opt-in: só roda com `ONBOARDING_TEST_DATABASE_URL` definida e fica pulada no `npm test` comum e no CI.
 
     As antigas suítes que dependiam de um **banco/ambiente real** — os testes de **integração** (`src/tests/integration/*.itest.ts`) e o **e2e de cutover** (`src/tests/e2e/authCutover.e2e.ts`), com os configs `vitest.integration.config.ts`/`vitest.e2e.config.ts` e os scripts `test:integration`/`test:e2e` — foram **removidas** do repositório e do CI. Sua cobertura passou a ser **manual**: veja o runbook **[Testes manuais — API Gateway](./manuais-api-gateway.md)**.
 
@@ -22,27 +27,36 @@ Os testes do API Gateway utilizam o **Vitest** como motor de testes e o **Supert
 No repositório do API Gateway (`feedback-analytics-api-gateway`):
 
 ```bash
-npm test
-# ou, explicitamente:
-npx vitest run
+npm test                # vitest run (execução única)
+npm run test:watch      # modo watch
+npm run test:coverage   # com cobertura (V8)
+```
+
+A suíte contra Postgres real roda à parte, apontando para um banco de teste (o local do `npm run db:local:up` serve):
+
+```bash
+ONBOARDING_TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/feedback npm test -- src/tests/onboarding.database.test.ts
 ```
 
 ---
 
 ## Testes Automatizados
 
-Abaixo está o detalhamento sistemático de cada arquivo de teste presente no serviço, especificando sua finalidade técnica e o volume de asserções executadas.
+Abaixo, os 48 arquivos agrupados pelo que cobrem. Todos ficam em [`src/tests/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/src/tests).
 
-| Arquivo de Teste | Propósito Técnico | Qtd. Testes |
-| :--- | :--- | :---: |
-| [auth.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/auth.test.ts) | **Fluxo de Autenticação e Gestão de Contas:** Valida os endpoints de Login (`/login`), Registro de Conta (`/register`), Recuperação de Senha (`/forgot-password`) e Logout (`/logout`). Garante regras como bloqueio de payloads inválidos por Zod, erro de CPFs inválidos, recusa de senhas divergentes, tratamento de e-mails não verificados e a política de **privacidade anti-enumeração** (retornando status 200 de sucesso quando o e-mail inserido já estiver cadastrado). | **15** |
-| [feedbacks.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/feedbacks.test.ts) | **Histórico e Estatísticas de Feedbacks:** Testa a consulta protegida de feedbacks (`GET /api/protected/user/feedbacks`) e a agregação de dados para os cards do dashboard (`GET /api/protected/user/feedbacks/stats`). Valida a paginação padrão, proteção contra requisições anônimas (retorna 401), filtros de busca por categoria do catálogo/nota e tratamento de empresas não existentes. | **7** |
-| [ia-analyze.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/ia-analyze.test.ts) | **Integração com Serviço Serverless de IA:** Valida as pontes de comunicação com a IA (`/analyze-raw` e `/regenerate-insights`). Garante o tratamento correto de erros específicos do motor de IA (`IaAnalyzeServiceError` retornando códigos de erro tipados ao frontend), falhas genéricas de conexão HTTP (retornando status 500) e restrição de tokens de acesso JWT. | **6** |
-| [qrcode-feedback.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/qrcode-feedback.test.ts) | **Coleta de Feedback via QR Code Público:** Valida a ingestão pública de dados de feedbacks via QR Code (`POST /api/public/qrcode/feedback`) e a leitura dos metadados da empresa (`GET /api/public/enterprise/:id`). Cobre regras como bloqueio contra múltiplos envios diários de um mesmo dispositivo (*fingerprint anti-spam*), validações de campos obrigatórios e tratamento de ID empresarial inválido. | **8** |
-| [health.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/health.test.ts) | **Verificação de Integridade (Liveness/Readiness):** Valida a resposta do endpoint de healthcheck (`GET /api/health`), garantindo que o gateway responda com sucesso e status `{ ok: true }`. | **1** |
-| [statistics.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/statistics.test.ts) | **Funções Estatísticas Puras (`src/libs/statistics`):** Cobre as funções determinísticas e sem efeitos colaterais que alimentam as lentes de Satisfação e Sentimento: `wilsonInterval`, `wilsonLowerBound` e `pctInterval` (intervalos de confiança de Wilson para proporções), `netSentimentScore` (NSS), `netSatisfaction` (top-2 menos bottom-2), `confidenceTier` (faixas de Cochran), `ratingStats` (média de notas com IC t e *clamp* em [1,5]), `csatTopTwoBox` (CSAT Top-2-Box) e `bayesianAverage` (encolhimento estilo IMDb). | **22** |
-| [classifierEval.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/classifierEval.test.ts) | **Métricas de Avaliação de Classificador (`src/libs/eval/classifierEval.ts`):** Valida o cálculo de `cohensKappa` (concordância corrigida pelo acaso), `classMetrics`/macro-F1 (precision, recall e F1 por classe agregados), `buildConfusionMatrix` (matriz de confusão humano × modelo) e `interpretKappa` (rotulagem do kappa nas faixas de Landis & Koch). | **12** |
-| [ia-analyze-scope.test.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/ia-analyze-scope.test.ts) | **Regressão do Bug de Escopo nos Repositórios de IA (`iaAnalyze.repository`):** Cobre `fetchAlreadyAnalyzedFeedbacks` e `fetchFeedbacksForAnalysis`, garantindo que a filtragem por `collection_point_id` do escopo seja aplicada **antes** do `LIMIT` (a janela de `limit` vale dentro do escopo) e que, sem escopo, o comportamento por empresa seja preservado. | **6** |
+| Área | Arquivos de teste | O que cobre |
+| :--- | :--- | :--- |
+| **Conta e autenticação** | `registerPassword`, `googleSignup`, `accountDeletion`, `email`, `onboarding`, `onboarding.database` | Força da senha no cadastro (zxcvbn), configuração do "Entrar com Google", o que é apagado antes de excluir a conta, envio de e-mail na Vercel e a API do guia de primeiros passos (esta última também contra Postgres real, opt-in). |
+| **Isolamento multi-tenant** | `tenantScope` | O filtro por `enterprise_id` que a aplicação força em toda consulta. |
+| **Empresa, coleta e QR Code** | `enterprise-controller`, `collection-points-qr-controller`, `qrcode-feedback`, `commentField` | Controllers da empresa e dos pontos de coleta, a coleta pública de feedback (`POST /api/public/qrcode/feedback`, com anti-spam por dispositivo) e o campo de comentário por escopo. |
+| **Feedbacks e métricas** | `feedbacks`, `customers`, `customersSql`, `channelBreakdown`, `commentParticipation`, `heatmap`, `heatmapSql`, `timeline`, `timelineSql`, `period`, `scopeMetrics`, `questionsRatingWeight` | Listagem protegida de feedbacks, clientes que voltam, canais de chegada, participação nos comentários, dias e horários de pico, movimento no tempo, período das métricas, métricas do escopo e o peso de cada pergunta na nota — os arquivos `*Sql` conferem o SQL gerado. |
+| **Estatística e avaliação** | `statistics`, `classifierEval` | Funções puras de `src/libs/statistics` (intervalos de Wilson, NSS, CSAT, média bayesiana etc.) e as métricas do avaliador do classificador (`src/libs/eval/classifierEval.ts`: kappa de Cohen, macro-F1, matriz de confusão). |
+| **Análise de IA** | `ia-analyze`, `iaAnalyze-async`, `iaAnalyze-cache`, `iaAnalyze-completion`, `iaAnalyze-pending`, `iaAnalyze-provider-errors`, `iaAnalyzeRepository`, `insightsCache`, `insightsJob` | Rotas da análise e do relatório, enfileiramento sempre assíncrono, cache dos insights, recusa de resposta incompleta do IA Analyze, seleção dos pendentes do escopo, repasse dos códigos de erro seguros e a síntese do relatório. |
+| **Diagnóstico do escopo** | `scopeDiagnosis`, `scopeDiagnosisJob`, `scopeDiagnosisRoutes`, `scopeDiagnosisService` | Período anterior e intervalo do movimento, o job na fila, as rotas e o serviço que faz o pedido. |
+| **Perguntas da empresa** | `companyQuestionsAutoGenerate`, `companyQuestionsFailureNotice` | Geração automática das perguntas e o aviso quando ela falha. |
+| **Configuração de IA (BYO-key)** | `iaConfig`, `iaConfigRepository`, `requireUserIaKey`, `openRouterModels` | Rotas de configuração da chave OpenRouter, atualização atômica do modelo, a exigência da chave da empresa e o catálogo de modelos do OpenRouter. |
+| **Fila e worker** | `drainJobs`, `iaJobRepository`, `workerLoop` | Worker assíncrono e retomável, posse e isolamento dos jobs no SQL e o loop local que drena a fila fora da Vercel. |
+| **Saúde** | `health` | `GET /api/health` responde `{ ok: true }`. |
 
 ---
 
@@ -63,9 +77,14 @@ npx tsx scripts/eval-classifier.ts scripts/gold-sentiment.sample.json
 
 ## Estrutura de Mocks
 
-Para manter os testes unitários isolados de redes externas ou do banco Supabase real, é configurado um mock global para o Supabase no arquivo de fixture:
+Não há mais fixture global de banco: cada arquivo declara os próprios `vi.mock`. Os mais comuns:
 
-* **[supabase-mock.ts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/src/tests/helpers/supabase-mock.ts):** Mocka as funções do cliente `createSupabaseServerClient`, interceptando chamadas de autenticação e persistência (como chamadas a `auth.signUp`, `auth.signInWithPassword`, `from().select()`, `from().insert()`, etc.) e retornando dados estáticos previsíveis definidos para teste.
+* **`../db/client.js`** — substitui o `getDb()` do Drizzle, para nenhum teste abrir conexão.
+* **`../repositories/*.repository.js`** — os repositórios devolvem dados fixos definidos no teste.
+* **`../middlewares/auth.js`** — o `requireAuth` injeta um usuário e uma empresa de teste, sem passar pelo Better Auth.
+* **`../providers/*.provider.js`** e **`../libs/iaJob/kickWorker.js`** — cortam as chamadas ao IA Analyze e o disparo do worker.
+
+O `vitest.config.ts` define `DATABASE_URL`, `BETTER_AUTH_SECRET` e `BETTER_AUTH_URL` de teste, porque o `index.ts` monta o Better Auth no import; o `DATABASE_URL` só serve para o `getDb()` instanciar sem erro.
 
 ---
 

@@ -1,5 +1,8 @@
 # Documentação de Design — Protótipo de Média Fidelidade
 
+!!! note "Material de concepção (jun/2026)"
+    Este documento registra o protótipo feito no Figma na fase de concepção e não foi atualizado com o produto. As telas, os campos e os fluxos descritos aqui não refletem necessariamente a interface atual (por exemplo, o CPF/CNPJ mostrado no Perfil não existe mais no sistema e o comentário do formulário é opcional). O que o sistema faz hoje está em [Requisitos e Funcionalidades](../requisitos-e-funcionalidades.md).
+
 ## Visão Geral
 
 O protótipo de média fidelidade detalha os componentes estáticos, as tabelas de dados, a hierarquia tipográfica e os campos de formulário presentes em cada tela mapeada na arquitetura (baixa fidelidade). 

@@ -8,14 +8,14 @@ hide:
 
 # Feedback Analytics
 
-A voz dos seus clientes ajudando a decidir — com apoio de IA. Colete por QR Code, deixe a IA analisar e receba insights no painel, sem precisar de equipe de dados.
+A voz dos seus clientes ajudando a decidir — com apoio de IA. Colete por QR Code, link ou NFC, deixe a IA analisar e receba insights no painel, sem precisar de equipe de dados.
 
 [Ver a arquitetura :material-arrow-right-thin:](arquitetura/visao-geral.md){ .md-button .md-button--primary }
 [Ver no GitHub :material-github:](https://github.com/TCC-Feedback-Analytics/feedback-analytics){ .md-button }
 
 </div>
 
-O **Feedback Analytics** transforma a opinião dos seus clientes em decisões estratégicas — de forma automatizada e sem exigir equipe de dados. Muitas empresas, especialmente as de pequeno e médio porte, não têm um canal estruturado para ouvir o cliente: os feedbacks ficam espalhados entre Google, Instagram e iFood, e o gestor acaba decidindo por intuição, não por evidência. Nós resolvemos isso reunindo coleta, análise e decisão em um único fluxo: o cliente avalia escaneando um QR Code, uma inteligência artificial lê tudo automaticamente e o gestor recebe um painel com recomendações prontas. Você deixa de adivinhar o que está dando errado e ganha mais clareza sobre onde agir.
+O **Feedback Analytics** transforma a opinião dos seus clientes em decisões estratégicas — de forma automatizada e sem exigir equipe de dados. Muitas empresas, especialmente as de pequeno e médio porte, não têm um canal estruturado para ouvir o cliente: os feedbacks ficam espalhados entre Google, Instagram e iFood, e o gestor acaba decidindo por intuição, não por evidência. Nós resolvemos isso reunindo coleta, análise e decisão em um único fluxo: o cliente avalia pelo QR Code, por um link ou por uma etiqueta NFC, uma inteligência artificial lê os comentários e o gestor recebe um painel com métricas e recomendações prontas. Você deixa de adivinhar o que está dando errado e ganha mais clareza sobre onde agir.
 
 ## Como funciona
 
@@ -25,33 +25,33 @@ O **Feedback Analytics** transforma a opinião dos seus clientes em decisões es
 
     ---
 
-    A empresa gera um QR Code geral ou QR Codes exclusivos por produto, serviço ou departamento; o cliente escaneia, avalia em menos de um minuto e vai embora, sem criar conta nem instalar app.
+    A empresa ativa a coleta geral ou a de cada produto, serviço ou departamento, por QR Code, link ou etiqueta NFC, e escolhe o campo de comentário de cada escopo; o cliente avalia em menos de um minuto e vai embora, sem criar conta nem instalar app.
 
 - :material-brain: __2. Analise__
 
     ---
 
-    Um pipeline de IA interpreta cada feedback automaticamente, classificando sentimento e extraindo temas, palavras-chave e aspectos.
+    A IA, com a conta OpenRouter da própria empresa, roda em segundo plano: classifica o sentimento dos comentários, extrai temas, palavras-chave e aspectos, diagnostica o escopo e gera as perguntas do formulário.
 
 - :material-chart-box: __3. Decida__
 
     ---
 
-    O dashboard apresenta um painel de insights por escopo, com saldo de sentimento, temas recorrentes e recomendações acionáveis para transformar a voz do cliente em ação.
+    O dashboard mostra as métricas por escopo e período, compara itens do catálogo e traz a análise dos comentários, com o tom, os assuntos que mais impactam e recomendações acionáveis para transformar a voz do cliente em ação.
 
 </div>
 
 ## Para quem é
 
-O Feedback Analytics é feito para quem atende o cliente **presencialmente** e quer ouvi-lo ali, no ponto de atendimento: **pequenas e médias empresas**, **profissionais autônomos** e o **pequeno comerciante** — restaurantes, salões, lojas de bairro e prestadores de serviço. A coleta acontece por QR Code no balcão, na mesa ou na recepção, logo após o atendimento, enquanto a experiência ainda está fresca. É para quem precisa de informação estruturada para decidir melhor, mas não tem orçamento para ferramentas complexas, nem equipe de dados, nem tempo de ler feedback por feedback.
+O Feedback Analytics é feito para quem atende o cliente **presencialmente** e quer ouvi-lo ali, no ponto de atendimento: **pequenas e médias empresas**, **profissionais autônomos** e o **pequeno comerciante** — restaurantes, salões, lojas de bairro e prestadores de serviço. A coleta acontece por QR Code ou etiqueta NFC no balcão, na mesa ou na recepção, ou por um link, logo após o atendimento, enquanto a experiência ainda está fresca. É para quem precisa de informação estruturada para decidir melhor, mas não tem orçamento para ferramentas complexas, nem equipe de dados, nem tempo de ler feedback por feedback.
 
 ## Estrutura do sistema
 
-A plataforma é **serverless** (Vercel Functions + CDN) e distribuída em **repositórios independentes**, todos compartilhando o mesmo banco (Supabase):
+A plataforma é **serverless** (Vercel Functions + CDN) e distribuída em **repositórios independentes**, com um banco PostgreSQL (hospedado no Supabase) acessado só pelo API Gateway:
 
 - **feedback-analytics-web** — frontend React: formulário público de coleta e dashboard protegido da empresa.
-- **feedback-analytics-api-gateway** — API REST e ponto único de entrada: centraliza autenticação, regras de negócio e orquestra Supabase + as chamadas de IA.
-- **feedback-analytics-ia-analyze** — serviço isolado de análise por IA (provedor LLM externo); só o Gateway o acessa.
+- **feedback-analytics-api-gateway** — API REST e ponto único de entrada: centraliza a autenticação (Better Auth, com sessão em cookie httpOnly), as regras de negócio, as métricas e o acesso ao banco (Drizzle), e põe todo trabalho de IA numa fila processada em segundo plano.
+- **feedback-analytics-ia-analyze** — serviço isolado de IA, sem banco: chama o LLM da empresa (OpenRouter) para analisar comentários, diagnosticar o escopo e sugerir perguntas; só o Gateway o acessa.
 - **feedback-analytics-contracts** — pacote `@feedback/lib-shared` com os tipos e contratos compartilhados entre os serviços.
 
 [Ver como os serviços se conectam → Arquitetura](arquitetura/visao-geral.md)
@@ -112,4 +112,4 @@ A plataforma é **serverless** (Vercel Functions + CDN) e distribuída em **repo
 
 ---
 
-A documentação está organizada em **Produto**, **Concepção & Requisitos**, **Arquitetura**, **Referência Técnica** e **Guias**.
+A documentação está organizada em **Produto**, **Concepção & Requisitos**, **Arquitetura**, **Segurança e LGPD**, **Referência Técnica** e **Guias**.

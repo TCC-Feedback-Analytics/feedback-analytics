@@ -2,7 +2,7 @@
 
 ## O Que É
 
-É o pipeline de inteligência artificial que transforma feedbacks de texto livre em insights estruturados — sentimentos (com intensidade e confiança), aspectos por feedback (ABSA), categorias e palavras-chave. O diferencial está no **Filtro Semântico Anti-Poluição**: antes de extrair as palavras mais relevantes, o sistema remove automaticamente os termos que fazem parte das próprias perguntas do formulário.
+É o pipeline de inteligência artificial que transforma os comentários dos clientes em insights estruturados — sentimentos (com intensidade e confiança), aspectos por feedback (ABSA), categorias e palavras-chave. O diferencial está no **Filtro Semântico Anti-Poluição**: as categorias e palavras-chave precisam sair do que o cliente **escreveu**, e não do texto das perguntas do formulário nem dos rótulos das respostas.
 
 ---
 
@@ -12,13 +12,13 @@
 
 Imagine que a empresa pergunta: *"Como foi o atendimento?"*, *"Como foi a qualidade?"* e *"Como foi o custo-benefício?"*.
 
-Sem o filtro, as palavras **"atendimento"**, **"qualidade"** e **"custo-benefício"** aparecem em absolutamente todos os feedbacks — afinal, os clientes as leem nas perguntas. A IA identifica essas palavras como as mais frequentes e as coloca no topo de todas as nuvens de palavras e categorias.
+Sem o filtro, a IA recebe essas perguntas junto com cada feedback e tende a devolvê-las como tema: **"atendimento"**, **"qualidade"** e **"custo-benefício"** aparecem em quase todos os resultados, junto com os rótulos marcados ("boa", "ótima"), mesmo quando o cliente não escreveu nada sobre isso.
 
-**Resultado**: a análise dos comentários mostra que os clientes falam muito de "atendimento" e "qualidade". Isso é verdade, mas é completamente inútil — são as palavras das perguntas, não a voz real do cliente.
+**Resultado**: a análise dos comentários mostra que os clientes falam muito de "atendimento" e "qualidade". Isso parece verdade, mas é inútil — são as palavras das perguntas, não a voz real do cliente.
 
 ### A solução com o filtro
 
-Com o Filtro Anti-Poluição, o motor de IA recebe as perguntas configuradas pela empresa e é instruído a **ignorar esses termos** na extração. O que sobra são as palavras que o cliente usou espontaneamente:
+Com o Filtro Anti-Poluição, as perguntas respondidas em cada feedback vão para a IA só como **contexto**: ela é instruída a não copiá-las, e o resultado é conferido contra o texto do comentário. O que sobra são as palavras que o cliente usou espontaneamente:
 
 - "demora" → o cliente está reclamando do tempo de espera
 - "simpático" → o atendente foi bem avaliado
@@ -31,30 +31,56 @@ Essas são as palavras que geram decisões reais.
 ## Como Funciona
 
 ```
-Gestor dispara análise pelo painel
+Gestor clica em "Analisar comentários com IA"
         ↓
-API busca feedbacks ainda não analisados
+API enfileira um job (202) e o worker assume
         ↓
-Feedbacks são agrupados por escopo (Empresa, Produto, Serviço, Departamento)
+Worker busca os feedbacks do escopo com comentário e ainda não analisados
+(os do "Testar o formulário" ficam de fora)
         ↓
-Para cada batch, o sistema monta o payload:
-  - Textos dos feedbacks
-  - Perguntas configuradas pela empresa (para o filtro)
-  - Dados de contexto do negócio (objetivo, resumo da empresa)
+Confere: contexto da empresa completo, chave de IA da empresa
+e pelo menos 10 feedbacks com comentário no escopo
         ↓
-Payload enviado ao provedor LLM externo configurável
+Agrupa por escopo (Empresa, Produto, Serviço, Departamento) e item,
+e fatia em lotes de até 20 feedbacks
         ↓
-LLM retorna por feedback (excluindo os termos das perguntas):
-  - sentimento (positivo / neutro / negativo)
-  - intensidade graduada do sentimento geral (sentiment_score ∈ [-1,1])
-  - confiança da classificação (confidence ∈ [0,1])
-  - categorias e keywords
-  - aspectos (ABSA): cada aspecto com sentimento e intensidade próprios
+Para cada lote, monta o payload:
+  - Texto de cada comentário (e a pergunta própria do escopo, quando houver)
+  - Nota em estrelas e respostas às perguntas, com o texto de cada pergunta
+  - Ponto de coleta e item do catálogo
+  - Contexto do negócio (objetivo, meta de análise, resumo, produtos)
         ↓
-Sistema monta insights globais: resumo situacional + recomendações
+Payload enviado ao LLM da empresa (OpenRouter, com a chave e o modelo dela)
         ↓
-Resultados persistidos → painel atualizado
+Resposta validada: um resultado para cada feedback, sentimento válido,
+resumo e recomendações em pt-BR
+        ↓
+Por feedback: sentimento, intensidade (sentiment_score ∈ [-1,1]),
+confiança (confidence ∈ [0,1]), aspectos (ABSA), categorias e keywords
+        ↓
+Categorias e keywords passam pelo saneamento (filtro) e pela taxonomia
+        ↓
+Resultados persistidos em feedback_analysis
+        ↓
+No relatório: os insights de cada lote são consolidados numa síntese final
+(resumo + recomendações) → feedback_insights_report
 ```
+
+---
+
+## As Três Camadas do Filtro
+
+1. **No prompt.** A IA recebe a regra de que categorias e palavras-chave vêm **exclusivamente** do comentário. Ela não pode copiar o texto das perguntas nem das subperguntas, nem usar os rótulos "péssimo", "ruim", "mediana", "boa" e "ótima". Quando o escopo tem pergunta própria no campo de comentário, o texto é lido como resposta a ela, e a pergunta também não pode virar termo.
+2. **No saneamento.** Cada categoria e palavra-chave devolvida pela IA é normalizada (minúsculas, sem acento e sem pontuação) e descartada quando:
+    - é um dos rótulos de resposta ou um valor marcado pelo cliente;
+    - é igual ao texto inteiro de uma pergunta ou subpergunta que o cliente respondeu naquele feedback;
+    - não está **ancorada** no comentário, ou seja, não aparece no texto nem divide com ele ao menos uma palavra relevante (4 letras ou mais, fora as palavras muito comuns);
+    - repete um termo já aceito.
+
+    Ficam no máximo **6 palavras-chave** e **4 categorias** por feedback.
+3. **Na taxonomia.** As categorias aceitas são mapeadas para rótulos fixos por escopo (veja abaixo).
+
+> O saneamento compara cada termo com a pergunta **inteira**, não palavra por palavra. Uma palavra que está na pergunta (como "atendimento") só fica no resultado se o cliente a escreveu no comentário — aí ela é a voz dele.
 
 ---
 
@@ -73,26 +99,25 @@ Resultados persistidos → painel atualizado
 
 ## Resiliência: Fallback Local
 
-Caso o provedor LLM externo esteja indisponível ou retorne uma resposta inválida (alucinações, JSON malformado), o sistema aciona um **mecanismo de fallback local** baseado em *stopwords*:
+O fallback local cobre o caso em que a IA responde, mas **nenhuma palavra-chave sobrevive ao saneamento** de um feedback:
 
-- Filtra palavras comuns do português (artigos, preposições, conjunções)
-- Remove os termos das perguntas (mesmo filtro anti-poluição)
-- Extrai as palavras restantes como keywords brutas
-- O feedback continua sendo processado mesmo quando a IA externa falha — o fallback local evita que ele seja descartado nesses casos
+- As palavras-chave saem do próprio comentário: palavras com 4 letras ou mais, sem as palavras muito comuns do português (artigos, preposições, conjunções) e sem os cinco rótulos de resposta — até **4** palavras
+- Sem nenhuma categoria válida, o feedback fica com as **2 primeiras palavras-chave** como categorias
+- Esse caminho não remove as palavras das perguntas: ele só usa o que está escrito no comentário
 
-Isso garante que uma instabilidade do provedor externo não corrompa o painel com dados vazios.
-
-> Observação: o saneamento de termos (remoção das palavras das perguntas e de *stopwords*) roda **sempre** no pós-processamento das keywords devolvidas pelo LLM — não é um caminho de exceção. O fallback a partir da própria mensagem só entra em ação quando a lista saneada fica vazia.
+Quando a chamada ao LLM **falha** — provedor fora do ar, JSON inválido, resposta incompleta ou fora do pt-BR depois da nova tentativa —, não há resultado local. O serviço de IA devolve erro sem resultado parcial, e nada é gravado para aquele lote. No gateway, o job tenta de novo os erros temporários e termina como falho nos demais, com o código do erro; os feedbacks do lote continuam aguardando análise.
 
 ---
 
 ## Detalhes Técnicos
 
-- O contexto de negócio da empresa (`collecting_data`) é injetado no prompt para personalizar as análises
-- O processamento é **assíncrono** — não bloqueia a interface do cliente durante a coleta
-- Limite padrão: 50 feedbacks por execução (máx. 100), com mínimo de 10 para análise relevante
+- O contexto de negócio da empresa (`collecting_data_enterprise`) é injetado no prompt para personalizar as análises. A análise exige os três campos de contexto preenchidos: `company_objective`, `analytics_goal` e `business_summary`
+- O processamento é **assíncrono**, numa fila com worker: o pedido responde `202` na hora e a Web acompanha o job, sem bloquear a coleta nem a tela
+- Só feedbacks **com comentário** vão para a IA. O mínimo é de **10** feedbacks com comentário no escopo; sem isso, o job falha com `insufficient_feedbacks_for_analysis`
+- A Web não limita a quantidade: cada execução pega todos os comentários pendentes do escopo, do mais antigo para o mais novo. A API aceita um `limit` opcional, de no máximo 100
+- Os lotes têm até **20** feedbacks por chamada ao LLM (`IA_MAX_FEEDBACKS_PER_BATCH`, no gateway), para a resposta caber no teto de tokens de saída do modelo
 - Os resultados são persistidos em `feedback_analysis` (por feedback) e `feedback_insights_report` (por escopo)
-- O serviço usa o OpenRouter com a chave e o modelo configurados no perfil de cada empresa. O Gateway cifra a credencial no banco e a envia ao `ia-analyze` apenas nos headers internos `x-llm-*`; `IA_ANALYZE_REMOTE_URL` aponta somente a URL do serviço
+- O serviço usa o OpenRouter com a chave e o modelo configurados no perfil de cada empresa. Sem chave, o job falha com `ia_config_required`. O Gateway cifra a credencial no banco e a envia ao `ia-analyze` apenas nos headers internos `x-llm-*`; `IA_ANALYZE_REMOTE_URL` aponta somente a URL do serviço
 - Para proteger o teto de tokens do modelo, cada mensagem de feedback é truncada em **2000 caracteres** (`MAX_FEEDBACK_MESSAGE_CHARS`, com marca `… [truncado]`) e as respostas dinâmicas enviadas no payload são limitadas a **20** (`MAX_DYNAMIC_ANSWERS`) — o conteúdo útil de praticamente todo feedback real cabe nesses limites
 
 ---

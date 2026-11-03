@@ -3,6 +3,9 @@
 !!! note "Status (jul/2026)"
     Este registro documenta duas decisões: **(1)** adotar uma arquitetura **Serverless** (em vez de monolito) — que **permanece válida** — e **(2)** organizar o código inicialmente em **Monorepo**. A decisão (2) **evoluiu**: o projeto foi separado em **repositórios independentes** (multi-repo). O raciocínio Serverless abaixo continua atual; apenas a co-localização do código foi superada — veja [Evolução: de Monorepo para Multi-repo](#evolução-de-monorepo-para-multi-repo) no final.
 
+!!! info "Situação em nov/2026"
+    As duas conclusões seguem valendo: Serverless na Vercel e multi-repo. As tabelas e os workflows com caminhos de pasta (`apps/web`, `backends/api-gateway`, `services/ia-analyze`, `shared/`) descrevem o monorepo da época; hoje cada serviço tem o próprio repositório e o próprio workflow de deploy, e os contratos vêm do pacote `@feedback/lib-shared`, fixado por tag (Gateway e Web na `v1.8.0`, IA-Analyze na `v1.7.0`). O schema do banco vive no gateway (`drizzle/`), e o app entra com o papel `feedback_app`, cuja policy de RLS não filtra por empresa — o filtro por `enterprise_id` continua na aplicação, como dito no fim deste registro.
+
 O projeto tem dois serviços com perfis de carga radicalmente diferentes. A arquitetura Serverless resolve isso; o monolito não consegue tratar recursos distintos para cada um.
 
 ## Por que o monolito falha para nosso projeto
@@ -14,7 +17,7 @@ O projeto tem dois serviços com perfis de carga radicalmente diferentes. A arqu
 
 - I/O-bound: Significa que o tempo gasto em uma operação é dominado por espera, não por processamento. No caso do nosso API Gateway, a maior parte do tempo de uma requisição é esperando o banco de dados responder. O servidor não está fazendo cálculo pesado. Ele manda a query, fica aguardando, recebe o resultado e devolve. CPU quase zerada.
 
-- CPU-bound + I/O de rede externa: No caso do nosso IA-Analyze, ele recebe lotes de textos, encaminha ao provedor LLM configurado (OpenRouter ou Gemini), valida schemas via Zod, aplica regras semânticas de antipoluição e sanitiza os resultados antes de devolver.
+- CPU-bound + I/O de rede externa: No caso do nosso IA-Analyze, ele recebe lotes de textos, encaminha ao provedor LLM configurado (OpenRouter ou Gemini), valida o formato e o idioma (pt-BR) da resposta e sanitiza os resultados contra o texto original antes de devolver.
 
 *No monolito síncrono, ambos competem pelo mesmo processo Node.js e requisições HTTP longas acabam derrubadas por timeouts de borda.*
 
@@ -134,7 +137,7 @@ O frontend não é uma função — é um conjunto de arquivos estáticos (HTML,
 O Gateway é uma aplicação Node.js/Express que valida sessões (Better Auth), atende endpoints da empresa e da coleta pública, e enfileira requisições analíticas em segundo plano (`ia_analysis_job`). O processamento de IA é desacoplado por worker, respondendo `202 Accepted` de forma imediata à interface.
 
 **`feedback-analytics-ia-analyze` - Microserviço isolado de inferência**
-O serviço de IA recebe requisições protegidas internas originadas pelo worker do Gateway, conecta-se ao provedor LLM configurado (OpenRouter ou Google Gemini via headers `x-llm-*`), valida os dados contra esquemas Zod e retorna as classificações de sentimentos, categorias, aspectos e a síntese executiva.
+O serviço de IA recebe requisições protegidas internas originadas pelo worker do Gateway, conecta-se ao provedor LLM configurado (OpenRouter ou Google Gemini via headers `x-llm-*`), valida o formato e o idioma da resposta e retorna as classificações de sentimentos, categorias, aspectos e a síntese executiva (além do diagnóstico do escopo e das perguntas sugeridas para a empresa).
 
 ### Escalabilidade automática
 
@@ -170,5 +173,5 @@ Com repositórios separados, sincronizar um contrato pode exigir **mais de um pu
 | `feedback-analytics-api-gateway` | API Gateway / BFF |
 | `feedback-analytics-ia-analyze` | Serviço de análise por IA |
 | `feedback-analytics-contracts` | Pacote `@feedback/lib-shared` (contratos) |
-| `feedback-analytics` | Documentação central + schema do banco |
+| `feedback-analytics` | Documentação central (o schema do banco passou para o gateway, em `drizzle/`; os dumps SQL daqui ficam como legado) |
 
