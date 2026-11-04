@@ -484,18 +484,26 @@ Rotas: `/user/profile`, `/user/qrcode/enterprise`, `/user/edit/types-feedback`, 
   1. Sem estar autenticado, navegue diretamente para `/user/dashboard`.
 - **Resultado esperado:** você é redirecionado para `/login`.
 
-### CT-UC12-09 — Troca de e-mail (limitação conhecida: tela em branco)
+### CT-UC12-09 — Troca de e-mail
 
-- **Objetivo:** registrar o comportamento atual da troca de e-mail no Perfil.
-- **Pré-condições:** logado.
+- **Objetivo:** confirmar que a troca de e-mail só vale depois da confirmação pelo endereço novo.
+- **Pré-condições:** logado numa conta **descartável** e com acesso à caixa de um e-mail novo (no ambiente local, o Mailpit). A troca muda o e-mail de login da conta.
 - **Passos:**
   1. Navegue para `/user/profile`, na seção **"Dados pessoais e acesso"**.
-  2. No campo **Email** (dica "Após alterar, confirme nos dois emails (antigo e novo)"), clique em **"Editar"**, digite um e-mail novo e clique em **"Salvar"**.
+  2. No campo **Email** (dica "Após alterar, confirme pelo link enviado ao novo e-mail"), clique em **"Editar"**, digite um e-mail novo e clique em **"Salvar"**.
   3. Recarregue a página.
-- **Resultado esperado (hoje):** no passo 2, a área logada inteira **fica em branco**, sem aviso de sucesso nem de erro; no passo 3, o Perfil volta com o e-mail **antigo** e nenhum e-mail de confirmação é enviado.
+  4. Na caixa do e-mail novo, abra **"Confirme seu novo e-mail"** e clique em **"Confirmar meu novo e-mail"**.
+  5. Volte a `/user/profile`.
+- **Resultado esperado:** passo 2 → toast **"Confirme no novo e-mail!"**, e você continua no Perfil; passo 3 → o Perfil ainda mostra o e-mail **antigo**; passo 4 → o link abre `/auth/success`; passo 5 → o Perfil mostra o e-mail **novo**. Se o e-mail novo já for de outra conta, a tela mostra o mesmo toast, mas nenhum e-mail sai e a troca não acontece.
 
-!!! warning "Limitação conhecida"
-    O gateway responde `400 update_failed` a toda troca de e-mail (o `changeEmail` do Better Auth não está ligado), e a Web não trata esse erro: ele sobe para a tela de erro da área logada, que hoje não mostra nada. Quando a troca for corrigida, o esperado passa a ser o aviso "Email atualizado!" e a confirmação nos dois e-mails.
+### CT-UC12-10 — Troca de telefone
+
+- **Objetivo:** confirmar que o telefone é salvo num passo só, sem código por SMS.
+- **Pré-condições:** logado.
+- **Passos:**
+  1. Navegue para `/user/profile` e clique no campo **Telefone**.
+  2. Digite um número no formato `+55` seguido do DDD e do número e clique em **"Salvar"**.
+- **Resultado esperado:** toast **"Telefone atualizado!"**, o campo volta ao modo de visualização e mostra o número novo. Não há passo de código: o sistema não tem provedor de SMS.
 
 ### CT-UC12-15 — Excluir minha conta
 
@@ -534,5 +542,5 @@ Rotas: `/user/profile`, `/user/qrcode/enterprise`, `/user/edit/types-feedback`, 
 - **Latência:** telas com carregamento assíncrono podem levar até ~15s; aguarde o estado final antes de concluir que houve falha.
 - **UC-04 é a mais sensível a dados:** exige empresa válida, coleta ativa (ponto de coleta ativo, o mesmo para QR Code, link e NFC) e dispositivo sem envio prévio no mesmo ponto e no mesmo dia — prepare esses dados antes de testar.
 - **Casos com IA** (CT-UC08-07, CT-UC09-10, CT-UC11-05) consomem a cota da chave OpenRouter da empresa. **Casos destrutivos** (CT-UC12-15) só em conta descartável.
-- **Ordem que evita retrabalho:** CT-UC05-02 (ativar a coleta) antes de UC-04 e CT-UC05-08; UC-04 antes de CT-UC09-09; CT-UC12-09 por último na sessão logada, porque deixa a tela em branco até recarregar.
+- **Ordem que evita retrabalho:** CT-UC05-02 (ativar a coleta) antes de UC-04 e CT-UC05-08; UC-04 antes de CT-UC09-09; CT-UC12-09 por último na sessão logada, porque troca o e-mail de login da conta.
 - **IDs dos casos:** seguem os documentos de cada caso de uso (`concepcao/casos-de-uso/uc-xx-*.md`). Os casos que entraram depois da suíte Playwright usam o ID do cenário correspondente nesses documentos (ex.: CT-UC04-02, CT-UC12-09) ou um número novo no fim da lista (ex.: CT-UC01-08, CT-UC09-09).

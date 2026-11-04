@@ -30,14 +30,18 @@ O **logout** e o **Guia do Sistema** ficam no **menu de conta no topo do layout*
 3. O sistema valida o nome (de 2 a 120 caracteres) e salva.
 4. O sistema confirma com o toast "Nome atualizado!" e o nome atualizado aparece no perfil.
 
-**Atualizar telefone (dois passos):**
+**Atualizar e-mail:**
+
+1. O gestor clica em "Editar" no campo "Email" (dica "Após alterar, confirme pelo link enviado ao novo e-mail"), informa o novo endereço e salva.
+2. O gateway pede a troca ao `changeEmail` do Better Auth, que manda o e-mail "Confirme seu novo e-mail" para o endereço novo. A tela mostra o toast "Confirme no novo e-mail!".
+3. A troca só vale depois que o gestor clica no link: até lá, a conta continua com o e-mail antigo. O link passa pelo `/api/auth/verify-email` do Better Auth e volta para `/auth/success`.
+
+**Atualizar telefone:**
 
 1. O gestor clica em "Editar" no campo de telefone — a tela muda para o modo de edição.
-2. Informa o novo número no formato `+55` seguido do DDD e do número e clica em "Enviar SMS".
-3. O gateway já grava o novo número nesse passo e a tela mostra o toast "Código enviado!". **Não há provedor de SMS:** nenhum código é enviado de fato.
-4. A tela muda para o modo de verificação ("Digite o código de 6 dígitos que você recebeu").
-5. O gestor digita um código e clica em "Confirmar" (ver a limitação abaixo).
-6. O gestor pode cancelar no modo de edição ou de verificação para voltar ao modo de visualização. Depois de "Enviar SMS", o número novo já está salvo.
+2. Informa o novo número no formato `+55` seguido do DDD e do número e clica em "Salvar".
+3. O gateway grava o número direto — **não há provedor de SMS** nem código de confirmação — e a tela mostra o toast "Telefone atualizado!" e volta ao modo de visualização.
+4. "Cancelar" volta ao modo de visualização sem alterar o número.
 
 **Excluir a conta:**
 
@@ -45,12 +49,6 @@ O **logout** e o **Guia do Sistema** ficam no **menu de conta no topo do layout*
 2. O dialog lista o que será apagado e pede a senha, se a conta tem login por senha, e a palavra **EXCLUIR** para liberar o botão "Excluir para sempre".
 3. O gateway apaga a conta, a empresa e todos os dados dela (feedbacks, análises, catálogo, perguntas, pontos de coleta, aparelhos, configuração de IA, jobs e diagnósticos) e limpa o cookie de sessão.
 4. O dialog mostra "Sua conta foi excluída." e o botão "Ir para o início", que recarrega a página em `/`.
-
-> **Limitações conhecidas.**
->
-> - **Troca de e-mail:** o campo "Email" é editável e diz "Após alterar, confirme nos dois emails (antigo e novo)", mas a troca **não acontece**. O gateway sempre responde `400 update_failed`, porque o `changeEmail` do Better Auth não está ligado. A action do Perfil não trata o erro: a falha sobe para a tela de erro da área logada, que hoje não renderiza nada, e a área logada fica **em branco** até recarregar a página.
-> - **Confirmação do telefone:** a Web envia só o código para `POST /api/protected/user/phone/verify`, e o gateway exige também o telefone, então responde `400 invalid_payload`. A falha cai na mesma tela em branco. O número já foi gravado no passo "Enviar SMS".
-> - **Falhas ao salvar o nome:** também não são tratadas pela action e levam à mesma tela em branco, em vez de um toast de erro.
 
 ---
 
@@ -60,8 +58,9 @@ O **logout** e o **Guia do Sistema** ficam no **menu de conta no topo do layout*
 |---|---|
 | Nome vazio ou com menos de 2 caracteres | A validação do campo bloqueia o envio |
 | Telefone fora do padrão (`+55` + DDD + número) | A validação do formulário bloqueia o envio antes de chamar a API |
-| Troca de e-mail | Sempre falha no gateway (`400 update_failed`) e a área logada fica em branco (ver as limitações acima) |
-| Confirmação do código do telefone | Falha no gateway (`400 invalid_payload`) e a área logada fica em branco (ver as limitações acima) |
+| Falha ao salvar nome, e-mail ou telefone | Toast de erro ("Erro ao atualizar nome", "Erro ao atualizar email" ou "Erro ao atualizar telefone") e o gestor continua no Perfil |
+| Novo e-mail já usado por outra conta | A tela mostra o mesmo toast de sucesso, mas nenhum e-mail sai e a troca não acontece: o Better Auth não revela que o endereço já existe |
+| Erro inesperado na área logada | Tela "Algo deu errado", com "Tentar de novo" e "Voltar ao início" (`/user/dashboard`) |
 | Exclusão com senha errada | O dialog mostra "Senha incorreta. Confira e tente de novo." |
 | Exclusão sem senha (conta só com Google) e entrada há mais de 24 h | O dialog mostra "Por segurança, saia, entre de novo e volte aqui para excluir a conta." |
 | Outra falha na exclusão | O dialog mostra "Não foi possível excluir a conta agora. Tente de novo em instantes." |
@@ -82,9 +81,9 @@ O **logout** e o **Guia do Sistema** ficam no **menu de conta no topo do layout*
 - **[CT-UC12-06]** ✅ *Coberto E2E* - Logout: o logout redireciona para a página de login. (Spec: `[CT-UC12-06] Logout redireciona para página de login`.)
 - **[CT-UC12-07]** ✅ *Coberto E2E* - Rota protegida: usuário não autenticado é redirecionado para o login ao acessar rota protegida. (Spec: `[CT-UC12-07] Usuário não autenticado é redirecionado para login ao acessar rota protegida`.)
 - **[CT-UC12-08]** 📝 *Planejado / não implementado* - Caminho feliz — nome: gestor edita o nome, salva e confirma que o novo nome aparece no perfil.
-- **[CT-UC12-09]** 📝 *Planejado / não implementado* - Caminho feliz — e-mail: gestor informa novo e-mail válido e recebe a mensagem de sucesso (a confirmação nos dois e-mails é feita fora do app). **Hoje falha:** o gateway responde `400 update_failed` e a área logada fica em branco (ver as limitações conhecidas).
-- **[CT-UC12-10]** 📝 *Planejado / não implementado* - Caminho feliz — telefone: gestor informa novo número, clica em "Enviar SMS", insere o código e o telefone é atualizado. **Hoje:** não há SMS, o número é gravado no primeiro passo e a confirmação falha com `400 invalid_payload` (ver as limitações conhecidas).
-- **[CT-UC12-11]** 📝 *Planejado / não implementado* - Caminho feliz — cancelar telefone: durante o modo de edição ou verificação, clicar em "Cancelar" deve voltar ao modo de visualização sem alterar o número.
+- **[CT-UC12-09]** 📝 *Planejado / não implementado* - Caminho feliz — e-mail: gestor informa novo e-mail válido, recebe o toast "Confirme no novo e-mail!" e o link no endereço novo; depois do clique, o Perfil mostra o e-mail novo.
+- **[CT-UC12-10]** 📝 *Planejado / não implementado* - Caminho feliz — telefone: gestor informa novo número, clica em "Salvar" e o telefone é atualizado, com o toast "Telefone atualizado!".
+- **[CT-UC12-11]** 📝 *Planejado / não implementado* - Caminho feliz — cancelar telefone: durante o modo de edição, clicar em "Cancelar" deve voltar ao modo de visualização sem alterar o número.
 - **[CT-UC12-12]** 🔵 *Unidade já atende* - Exceção — nome vazio: tentar salvar com campo de nome vazio deve bloquear o envio.
-- **[CT-UC12-13]** 🔵 *Unidade já atende* - Exceção — telefone inválido: informar número fora do padrão `+55 DDD NÚMERO` deve bloquear o formulário antes de enviar o SMS.
-- **[CT-UC12-14]** ⛔ *Obsoleto* - Exceção — código inválido: sem provedor de SMS, o gateway não confere o código (`/phone/verify` é um no-op), então não existe código errado a testar.
+- **[CT-UC12-13]** 🔵 *Unidade já atende* - Exceção — telefone inválido: informar número fora do padrão `+55 DDD NÚMERO` deve bloquear o formulário antes de chamar a API.
+- **[CT-UC12-14]** ⛔ *Obsoleto* - Exceção — código inválido: sem provedor de SMS, a tela não tem mais o passo do código e salva o número direto, então não existe código errado a testar.
