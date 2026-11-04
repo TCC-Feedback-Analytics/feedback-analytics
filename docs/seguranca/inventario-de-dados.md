@@ -74,7 +74,7 @@ O `GET /api/protected/user/feedbacks` (`feedbackList.repository.ts`) devolve ao 
 | **Supabase** | Tudo acima (hospeda o banco) | Hospedagem do PostgreSQL |
 | **Vercel** | As requisições da Web e da API, com IP e navegador nos registros de acesso. Nos registros do `ia-analyze`, o adaptador do OpenRouter grava só código, modelo, tarefa, contagens e status, sem chave, prompt nem comentário; o adaptador do Gemini grava até 300 caracteres da mensagem de erro do SDK | Hospedagem da Web, do gateway e do `ia-analyze` |
 | **OpenRouter e o modelo escolhido pela empresa** | Comentários, notas, respostas, pergunta própria, nomes de itens e o contexto do negócio. **Nunca** nome, e-mail, gênero ou IP do cliente | Análise dos comentários, diagnóstico do escopo e geração das perguntas, com a chave da própria empresa |
-| **Brevo** | E-mail do gestor e os links de confirmação e de nova senha | Envio dos e-mails da conta |
+| **Brevo** | E-mail do gestor e os links de confirmação, de troca de e-mail e de nova senha | Envio dos e-mails da conta |
 | **Google** | O pedido de login com Google | Login social, quando o gestor escolhe |
 
 Os papéis de cada fornecedor na LGPD ficam no registro de [controlador e operador](controlador-e-operador.md).

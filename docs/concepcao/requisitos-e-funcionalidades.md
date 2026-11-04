@@ -42,7 +42,7 @@
   - Telas de apoio: todas as métricas de estrelas (dias e horários de pico, clientes que voltam) e a comparação de dois itens do catálogo.
 - **Perfil do Usuário:**
   - Atualiza o nome.
-  - Mostra o campo de e-mail, mas a troca ainda não acontece: o `changeEmail` do Better Auth está desligado, e o gateway responde `400 update_failed`.
+  - Troca o e-mail pelo `changeEmail` do Better Auth: o link vai para o endereço novo, e a troca só vale depois do clique.
   - Atualiza o telefone, salvo direto, sem verificação por SMS.
 - **Gestão Institucional da Empresa:**
   - Visualizar o cadastro da empresa (data de criação e status da conta), no Perfil.
@@ -224,7 +224,7 @@ Status: **Implementado** (como pedido), **Implementado (mudou)** (existe, de out
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
 | **RF-001** | Autenticação de Usuário: cadastro, login, logout e confirmação de e-mail pelo **Better Auth** no gateway (não pelo Supabase), com sessão em cookie httpOnly. O cadastro pede nome do negócio, e-mail, celular e senha, sem CPF/CNPJ. | Implementado (mudou) | Alta |
-| **RF-002** | Gestão de Perfil: o nome é atualizado. A troca de e-mail não acontece (`changeEmail` desligado no Better Auth, `400 update_failed`), e o telefone é salvo direto, sem verificação por SMS (`/phone/verify` não faz nada). | Parcial | Alta |
+| **RF-002** | Gestão de Perfil: o nome é atualizado; o e-mail é trocado pelo `changeEmail` do Better Auth, depois da confirmação pelo link enviado ao endereço novo; e o telefone é salvo direto, sem verificação por SMS (a Web não chama mais o `/phone/verify`). | Implementado (mudou) | Alta |
 | **RF-003** | Gestão de Empresa: o Perfil mostra o cadastro da empresa (data de criação e status da conta) e edita o contexto para a IA; o `PATCH /enterprise` só atualiza a versão e o aceite dos termos. | Parcial | Alta |
 | **RF-004** | Coleta de Dados de Contexto: injeção de regras de negócio da empresa para refino dos prompts da IA. Salvar o contexto também dispara a geração automática das perguntas (RF-025). | Implementado | Alta |
 | **RF-005** | Geração e Gestão de QR Codes: QR da empresa e de cada item do catálogo, com até 3 perguntas por escopo e até 3 subperguntas cada, e ativação/desativação de cada ponto de coleta. | Implementado | Alta |

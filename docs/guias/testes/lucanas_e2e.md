@@ -23,6 +23,7 @@ Estes cenários eram desativados nos testes E2E do Playwright (`test.skip(true, 
 | **[CT-UC01-01]** | Confirmação de e-mail ao criar conta | `uc-01-cadastro-conta.spec.ts` | Exige acessar uma caixa de e-mails real para clicar no link de validação. |
 | **[UC-02, exceção "Conta não ativada"]** | Login com conta criada mas pendente de confirmação | `uc-02-login.spec.ts` | Requer manter uma conta no banco de dados fixamente com e-mail não verificado. |
 | **[CT-UC11-05]** | Executar nova análise chamando a API de IA | `uc-11-insights-ia.spec.ts` | A requisição HTTP real para a API do Gemini (o provedor da época; hoje cada empresa usa a própria chave OpenRouter) foi interceptada e mockada para **não consumir créditos financeiros** da conta do projeto. |
+| **[CT-UC12-09]** | Troca de e-mail no Perfil | `uc-12-gestao-perfil.spec.ts` *(não implementado)* | Exige acessar a caixa do e-mail novo para clicar no link de confirmação. |
 
 ---
 
@@ -35,8 +36,6 @@ Estes cenários envolvem integrações com recursos físicos do sistema operacio
 | **[CT-UC04-02]** | Bloqueio de múltiplos feedbacks do mesmo dispositivo, no mesmo ponto de coleta, no dia | `uc-04-envio-feedback-qrcode.spec.ts` | A validação utiliza fingerprinting persistido. No Playwright, cada teste executa em um *browser context* limpo (sem cookies ou localStorage herdados), permitindo submissões consecutivas sem simular o bloqueio diário. Hoje o fingerprint é calculado no servidor (MD5 de navegador, IP e dia): uma janela anônima no mesmo navegador e na mesma rede **não** escapa da deduplicação. |
 | **[CT-UC05-03]** | Download do arquivo `.png` com o nome da empresa | `uc-05-geracao-qrcode.spec.ts` *(não implementado)* | Testar o download físico de uma imagem gerada via canvas e validar sua integridade estrutural (e nome do arquivo) é complexo no ambiente headless. |
 | **[CT-UC05-05]** | Acionamento da API nativa de compartilhamento (`navigator.share`) | `uc-05-geracao-qrcode.spec.ts` *(não implementado)* | A Web Share API necessita de suporte e permissão nativa do sistema operacional (SO) e geralmente falha ou não tem efeito em navegadores de teste. |
-| **[CT-UC12-10]** | Envio de código de verificação por SMS para telefone | `uc-12-gestao-perfil.spec.ts` *(não implementado)* | Exige a simulação física de recebimento de SMS e extração do código numérico de 6 dígitos. Hoje não há provedor de SMS: o número é gravado já no "Enviar SMS" e o código não é conferido. |
-
 ---
 
 ## 3. ❌ Cenários Não Cobertos nos Testes E2E (Não Atende)

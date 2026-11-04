@@ -76,7 +76,7 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 | UC-06 | Gestor decide quais tipos de feedback a empresa coleta (Produtos, Serviços, Departamentos) |
 | UC-07 | Gestor cadastra itens do catálogo e configura, por item, perguntas, campo de comentário e canais de coleta |
 | UC-08 | Gestor preenche o contexto do negócio e conecta a IA; com os dois, a IA cria as 3 perguntas do formulário geral |
-| UC-12 | Gestor atualiza nome e telefone (a troca de e-mail hoje falha), consulta os dados da empresa e pode excluir a conta |
+| UC-12 | Gestor atualiza nome, e-mail e telefone, consulta os dados da empresa e pode excluir a conta |
 
 ---
 

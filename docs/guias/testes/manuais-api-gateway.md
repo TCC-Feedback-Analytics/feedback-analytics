@@ -164,14 +164,16 @@ Todos sob `$BASE/public/auth`. Valores de erro são os que o teste verifica.
 
 > O intervalo de 60 s do reenvio vem de `RESEND_EMAIL_COOLDOWN_SECONDS`; há também limite por e-mail (5 por hora) e por IP (20 a cada 15 min). Os contadores ficam no banco (`auth_rate_limit`): um `db:reset` zera tudo.
 
-### Troca de e-mail (limitação conhecida)
+### Troca de e-mail
 
-**Objetivo:** registrar o comportamento atual de `PATCH /protected/user/email`.
-**Passos:** `curl -i -b cookies-a.txt -X PATCH "$BASE/protected/user/email" -H 'Content-Type: application/json' -d '{"email":"novo-a@x.local"}'`.
-**Resultado esperado (hoje):** **400**, `error` = `update_failed`; o e-mail da conta não muda (`GET $BASE/protected/user/auth_user` segue com `a@x.local`). Com `{"email":"nao-eh-email"}` → **400** `invalid_payload`.
+**Objetivo:** a troca de e-mail só vale depois da confirmação pelo endereço novo.
+**Passos:**
+1. `curl -i -b cookies-a.txt -X PATCH "$BASE/protected/user/email" -H 'Content-Type: application/json' -d '{"email":"novo-a@x.local"}'`.
+2. `GET $BASE/protected/user/auth_user` com o cookie A.
+3. No Mailpit, abra **"Confirme seu novo e-mail"** (enviado para `novo-a@x.local`) e clique no link.
+4. Repita o passo 2.
 
-!!! warning "Limitação do gateway"
-    A troca de e-mail não acontece: o `changeEmail` do Better Auth não está ligado (`user.changeEmail.enabled` em `src/auth/auth.ts`), então todo pedido válido termina em `400 update_failed`. Quando a troca for ligada, o esperado passa a ser **200** com o e-mail pedido e um link de confirmação no Mailpit.
+**Resultado esperado:** passo 1 → **200** com `{"user":{"id":…,"email":"a@x.local"},"pending_email":"novo-a@x.local"}`; passo 2 → ainda `a@x.local`; passo 3 → o link passa por `/api/auth/verify-email` e volta para `<web>/auth/success`; passo 4 → `novo-a@x.local`. Com `{"email":"nao-eh-email"}` → **400** `invalid_payload`. Com um e-mail que já é de outra conta → **200**, mas nenhum e-mail sai e a conta não muda (o Better Auth não revela que o endereço existe).
 
 ### Guia do sistema (onboarding)
 
