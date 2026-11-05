@@ -292,7 +292,7 @@ O upsert usa **somente** a chave composta `(enterprise_id, scope_type, catalog_i
 
 **Por quê:** o serviço não tem autenticação de usuário. O token garante que apenas o API Gateway — e não agentes externos — pode acionar análises.
 
-**Como é validado:** `utils/isInternalRequestAuthorized.ts` compara o header com a variável de ambiente. Se inválido, retorna `401 unauthorized_internal_request` imediatamente, antes de qualquer processamento. Sem a variável configurada, `analyze` e `synthesize-insights` aceitam a requisição (uso em desenvolvimento local); `diagnose-scope` e `generate-company-questions` só aceitam fora da Vercel e fora de `NODE_ENV=production` — lá, respondem `503 internal_auth_not_configured`.
+**Como é validado:** `utils/isInternalRequestAuthorized.ts` compara o header com a variável de ambiente. Se inválido, retorna `401 unauthorized_internal_request` imediatamente, antes de qualquer processamento. Sem a variável configurada, as rotas só aceitam a requisição fora da Vercel e fora de `NODE_ENV=production` (uso em desenvolvimento local); lá, todas respondem `503 internal_auth_not_configured`.
 
 **Credencial do LLM:** o Gateway envia o provedor, a chave e o modelo da empresa nos headers internos `x-llm-*`; o serviço não guarda chave de nenhuma empresa.
 
