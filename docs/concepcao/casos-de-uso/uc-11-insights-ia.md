@@ -25,7 +25,7 @@
    - **Resumo dos comentários e recomendações:** o texto da IA e a lista de ações sugeridas.
 6. Na aba **Comentários** (`/user/insights/comments`), o gestor vê a lista dos comentários analisados no escopo, cada um com a nota em estrelas, o tom lido pela IA e as categorias. Os filtros **Todos · Positivos · Neutros · Negativos · Nota e texto não combinam**, cada um com a contagem, ficam no endereço (`?filtro=`). Os antigos endereços de Feedbacks › Analisados levam para esta lista, já filtrada.
 
-> **Pré-condições para análise:** os três campos de contexto devem estar preenchidos em UC-08 — Resumo do Negócio, Objetivo da Empresa e Objetivo Analítico — e a IA da empresa precisa estar configurada (chave OpenRouter e modelo; a chave global do `ia-analyze` só entra com `REQUIRE_USER_IA_KEY=false` no gateway). Com o contexto incompleto, os botões ficam desabilitados e a Visão geral mostra "Para analisar os comentários, preencha as informações da empresa em Editar > Configuração de Coleta de Dados." com o link "Configurar agora", que abre o Perfil. Feedbacks de teste e feedbacks sem comentário não vão para a IA.
+> **Pré-condições para análise:** os três campos de contexto devem estar preenchidos em UC-08 — Resumo do Negócio, Objetivo da Empresa e Objetivo Analítico — e a IA da empresa precisa estar configurada (chave OpenRouter e modelo; a chave global do `ia-analyze` só entra com `REQUIRE_USER_IA_KEY=false` no gateway). Com o contexto incompleto, os botões ficam desabilitados e a Visão geral mostra "Para analisar os comentários, preencha o contexto da empresa em Minha conta > Contexto da empresa para IA." com o link "Configurar agora", que abre o Perfil. Feedbacks de teste e feedbacks sem comentário não vão para a IA.
 
 > As métricas por **pergunta do formulário** não dependem da IA e saíram desta seção: ficam no Dashboard e na página de cada pergunta (UC-09).
 
@@ -43,7 +43,7 @@
 
 | Situação | O que o sistema faz |
 |---|---|
-| Contexto de negócio incompleto (qualquer um dos 3 campos em branco) | Botões de análise ficam desabilitados; mensagem com o link "Configurar agora", que abre o Perfil (`/user/profile#dados-da-empresa`). Se a análise for disparada mesmo assim, o toast "Configuração necessária" pede para preencher as informações da empresa |
+| Contexto de negócio incompleto (qualquer um dos 3 campos em branco) | Botões de análise ficam desabilitados; mensagem com o link "Configurar agora", que abre o Perfil (`/user/profile#contexto-da-ia`). Se a análise for disparada mesmo assim, o toast "Configuração necessária" pede para preencher as informações da empresa |
 | IA da empresa não configurada | O job falha com `ia_config_required`, e a tela mostra "Configure sua chave OpenRouter em Editar > Configuração de IA antes de iniciar uma análise." |
 | Escopo não-Empresa selecionado sem escolher item de catálogo | Botões ficam desabilitados até o item ser selecionado ("Selecione um item do catálogo no topo da página para este escopo.") |
 | Menos de 10 feedbacks no escopo | "Apenas Analisar" fica desabilitado ("Mínimo de 10 feedbacks"); se o job chegar ao gateway, a tela mostra "Há poucos feedbacks neste contexto para uma análise relevante. É necessário no mínimo 10 feedbacks." |

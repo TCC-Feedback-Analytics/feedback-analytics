@@ -420,7 +420,7 @@ Endpoint **público**: `POST $BASE/public/qrcode/feedback`. Escrita atômica (di
 
 > `channel` é o canal de coleta: `QR`, `LINK`, `NFC` ou `TEST` (o "Testar o formulário" do Dashboard). Valor ausente, desconhecido ou o antigo `QRCODE` não recusa o envio: o feedback é gravado com `channel` nulo ("sem a marca de canal").
 
-> O "dispositivo" é um fingerprint `md5(user-agent | ip | dia)`. Via `curl` do mesmo host/dia, o fingerprint se repete; troque o header `User-Agent` para simular outro dispositivo.
+> O "dispositivo" é um fingerprint `md5(user-agent | ip)`, sem o dia. Via `curl` do mesmo host, o fingerprint se repete em qualquer dia (o limite de um envio por ponto vira à meia-noite de Brasília); troque o header `User-Agent` para simular outro dispositivo.
 
 ### Feedback anônimo com respostas (empresa A)
 

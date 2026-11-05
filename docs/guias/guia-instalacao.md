@@ -51,10 +51,10 @@ Cada serviço tem seu próprio `.env.example` — **copie-o para `.env` e preenc
 O `.env.example` já vem com o valor local:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=
 ```
 
-> O frontend fala **apenas com o API Gateway** — não acessa o banco diretamente. Se você deixar `VITE_API_BASE_URL` vazia, a Web chama `/api` no próprio endereço e o proxy do `vite.config.ts` repassa para `http://localhost:3000`.
+> O frontend fala **apenas com o API Gateway** — não acessa o banco diretamente. Com `VITE_API_BASE_URL` vazia, a Web chama `/api` no próprio endereço e o proxy do `vite.config.ts` repassa para `http://localhost:3000`, como a Vercel faz em produção.
 
 Em produção a configuração é outra: o `vercel.json` da Web repassa `/api/*` ao Gateway, para o cookie de sessão ficar no domínio do próprio site. Por isso, no projeto `feedback-analytics-web` da Vercel, `VITE_API_BASE_URL` fica **vazia** e `VITE_PUBLIC_API_BASE_URL` recebe a URL pública do Gateway (usada nas rotas públicas que contam por IP: formulário do cliente e reenvio da confirmação). `VITE_GOOGLE_AUTH_ENABLED=true` mostra o "Continuar com Google". Como variáveis `VITE_*` são incorporadas ao bundle durante o build, qualquer alteração exige um novo deploy do web. Detalhes no [README da Web](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web#readme).
 
@@ -90,7 +90,7 @@ O SMTP já vem apontado para o Mailpit (`SMTP_HOST=127.0.0.1`, `SMTP_PORT=1025`,
     Sem `BETTER_AUTH_SECRET` o api-gateway **não sobe**. Gere um valor aleatório com `openssl rand -base64 32` e mantenha-o secreto.
 
 !!! warning "Preencha `IA_ANALYZE_REMOTE_URL` no local"
-    O `.env.example` traz `IA_ANALYZE_REMOTE_PREVIEW_ALIAS_URL` preenchida, e o Gateway usa essa URL quando `IA_ANALYZE_REMOTE_URL` está vazia. Para o Gateway local chamar o IA Analyze local, defina `IA_ANALYZE_REMOTE_URL=http://localhost:4100` (ou esvazie a variável de preview).
+    O `.env.example` traz `IA_ANALYZE_REMOTE_URL` e `IA_ANALYZE_REMOTE_PREVIEW_ALIAS_URL` vazias: assim o Gateway local chama o IA Analyze em `http://localhost:4100`. Preenchida, a variável de preview teria prioridade sobre o localhost.
 
 !!! note "Autenticação saiu do Supabase Auth → Better Auth"
     O login/cadastro/sessão usam **Better Auth**, montado no Gateway, com a sessão em cookie httpOnly. O Supabase ficou só como **provedor do Postgres** em produção. As tabelas do Better Auth (`user`, `session`, `account`, `verification`) ficam no mesmo Postgres e são criadas pelas migrations. Não use mais `SUPABASE_URL`, `SUPABASE_ANON_KEY` nem `AUTH_PROVIDER`.
@@ -128,7 +128,7 @@ npm run db:reset        # recria o schema pelas migrations + seed determinístic
 O `db:reset` roda, nesta ordem:
 
 1. `node scripts/db-local.mjs` — apaga e recria os schemas, aplica as migrations (`drizzle-kit migrate`) e o seed `db/local/seed.sql`: duas empresas (A `aaaaaaaa-0000-0000-0000-000000000001` e B `bbbbbbbb-0000-0000-0000-000000000001`), com pontos de coleta, perguntas, feedbacks, análises e um relatório de insights cada.
-2. `npm run db:seed:e2e` — cria o usuário de teste do Better Auth (e-mail verificado e senha) com `E2E_TEST_EMAIL` e `E2E_TEST_PASSWORD` e o vincula à empresa de `E2E_TEST_ENTERPRISE_ID` (a empresa A serve). Exige também `DATABASE_URL` e `BETTER_AUTH_SECRET`; sem essas variáveis o `db:reset` falha neste passo, com o schema e o seed SQL já aplicados. Pode ser rodado sozinho e é idempotente.
+2. `npm run db:seed:e2e` — cria o usuário de teste do Better Auth (e-mail verificado e senha) com `E2E_TEST_EMAIL` e `E2E_TEST_PASSWORD`, com telefone (`E2E_TEST_PHONE`; vazio, gerado a partir do e-mail) para o login não cair em "Complete seu cadastro", e o vincula à empresa de `E2E_TEST_ENTERPRISE_ID` (a empresa A serve). Exige também `DATABASE_URL` e `BETTER_AUTH_SECRET`; sem essas variáveis o `db:reset` falha neste passo, com o schema e o seed SQL já aplicados. Pode ser rodado sozinho e é idempotente.
 
 Depois, entre no app com o e-mail e a senha do usuário de teste.
 
@@ -196,7 +196,7 @@ Se ambos retornarem `ok: true`, o ambiente está funcionando. Abra http://localh
 
 | Erro | Causa | Solução |
 |---|---|---|
-| `400 ia_config_required` | Empresa sem chave OpenRouter | Configure a chave e o modelo em **Configuração de IA** |
+| `409 ia_config_required` | Empresa sem chave OpenRouter | Configure a chave e o modelo em **Configuração de IA** |
 | `401 unauthorized_internal_request` | Tokens internos diferentes | Iguale `IA_ANALYZE_REMOTE_TOKEN` (gateway) e `IA_ANALYZE_INTERNAL_TOKEN` (ia-analyze) |
 | `422 collecting_data_required_for_analysis` | Empresa sem contexto para a IA | Preencha o objetivo da empresa, o objetivo analítico e o resumo do negócio |
 | `422 insufficient_feedbacks_for_analysis` | Menos de 10 feedbacks no escopo | Colete mais feedbacks antes de analisar |

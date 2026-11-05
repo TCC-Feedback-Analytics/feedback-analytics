@@ -27,14 +27,14 @@ API Gateway valida o payload, a empresa, o ponto de coleta ativo
 e as respostas (precisam bater com as perguntas ativas do escopo)
         ↓
 Calcula o fingerprint do aparelho:
-  MD5(User-Agent | IP do cliente | início do dia atual)
+  MD5(User-Agent | IP do cliente)
         ↓
 Procura o aparelho em tracked_devices (empresa + fingerprint)
         ↓
   ┌── Registro com is_blocked = true → HTTP 403 (DEVICE_BLOCKED)
   │
-  ├── Registro já tem feedback neste collection_point_id desde o
-  │   início do dia → HTTP 409 Conflict (DEVICE_ALREADY_SUBMITTED)
+  ├── Registro já tem feedback neste collection_point_id desde a
+  │   meia-noite de Brasília → HTTP 409 Conflict (DEVICE_ALREADY_SUBMITTED)
   │
   └── Senão → numa transação: cria o registro do aparelho (se for novo),
               grava o feedback e as respostas
@@ -59,21 +59,21 @@ O QR Code, o link e a etiqueta NFC de um mesmo escopo levam ao **mesmo ponto de 
 
 ---
 
-## O Efeito Real do Dia no Fingerprint
+## O Dia Fica Fora do Fingerprint
 
-O início do dia entra no cálculo do hash. Por isso o fingerprint do mesmo aparelho **muda todo dia**, e cada dia vira um **registro novo** em `tracked_devices`. Na prática:
+O fingerprint é só navegador e IP, sem o dia. O mesmo aparelho, no mesmo navegador e na mesma rede, é o **mesmo registro** em `tracked_devices` em qualquer dia. Na prática:
 
-- **O limite diário vale dentro desse registro.** No dia seguinte o aparelho chega com outro fingerprint e responde de novo.
-- **O dia vira no fuso do servidor.** O corte usa a meia-noite do horário local do servidor; em produção o servidor roda em UTC, então o dia do anti-spam vira à meia-noite UTC (21h no horário de Brasília).
-- **O bloqueio (`is_blocked`) também vale só para o registro daquele dia** (ver [Bloqueio de Dispositivo](./bloqueio-dispositivo.md)).
-- **Métricas que contam aparelhos enxergam um dia por vez.** O `feedback_count` do registro conta só os feedbacks daquele dia, e "Clientes que voltam" só reconhece quem avaliou de novo no mesmo dia (ver [Métricas e estatísticas](./metricas-e-estatisticas.md)).
+- **O limite diário é conferido pela data do envio.** O aparelho que já respondeu naquele ponto hoje recebe `409`; amanhã responde de novo.
+- **O dia vira à meia-noite de Brasília**, onde está o público do produto, mesmo com o servidor da Vercel em UTC.
+- **O bloqueio (`is_blocked`) vale até ser desfeito** (ver [Bloqueio de Dispositivo](./bloqueio-dispositivo.md)).
+- **Métricas que contam aparelhos enxergam vários dias.** O `feedback_count` do registro soma todos os envios do aparelho, e "Clientes que voltam" reconhece quem avaliou de novo em outro dia (ver [Métricas e estatísticas](./metricas-e-estatisticas.md)).
 - **O fingerprint não é único por pessoa.** Dois aparelhos que mandem o mesmo user agent pelo mesmo IP (por exemplo, na mesma rede Wi-Fi) geram o mesmo fingerprint e dividem o limite; a mesma pessoa em outra rede ou outro navegador gera outro.
 
 ---
 
 ## Bloqueio de Dispositivo
 
-Além do limite diário (HTTP 409), existe uma segunda verificação: registros marcados com `is_blocked = true` em `tracked_devices` recebem **HTTP 403 Forbidden** em qualquer ponto de coleta da empresa. Como o fingerprint muda a cada dia, esse bloqueio só pega o registro do dia em que foi marcado.
+Além do limite diário (HTTP 409), existe uma segunda verificação: registros marcados com `is_blocked = true` em `tracked_devices` recebem **HTTP 403 Forbidden** em qualquer ponto de coleta da empresa, em qualquer dia, enquanto a marca durar.
 
 | Situação | Código HTTP | Motivo |
 |---|---|---|
@@ -95,11 +95,11 @@ Além do limite diário (HTTP 409), existe uma segunda verificação: registros 
 
 ## Detalhes Técnicos
 
-- O fingerprint é calculado em `src/controllers/public/qrcode.controller.ts` do API Gateway, com o `crypto` do Node: `MD5(userAgent | clientIP | dayEpoch)`, em que `dayEpoch` é o início do dia (00:00 no horário local do servidor) em segundos. O cliente não envia fingerprint nenhum
+- O fingerprint é calculado em `src/controllers/public/qrcode.controller.ts` do API Gateway, com o `crypto` do Node: `MD5(userAgent | clientIP)`, sem o dia. O cliente não envia fingerprint nenhum. O limite diário usa a meia-noite de Brasília (`startOfTodayInBrasilia`)
 - A verificação do limite diário também é feita na aplicação. As funções antigas do banco — `generate_device_fingerprint`, `can_device_send_feedback` e `register_device_feedback` — ainda existem (migration `0001` do gateway), mas **não são chamadas** pelo fluxo atual
-- A tabela `tracked_devices` guarda, por empresa (`enterprise_id`), o fingerprint, o user agent, o IP, o vínculo opcional com o cliente (`customer_id`), `is_blocked`/`blocked_*`, `feedback_count` e datas (`last_feedback_at`, `created_at`) — **não** possui `collection_point_id`. O vínculo por ponto de coleta/dia é consultado na tabela `feedback` (filtrando por `tracked_device_id` + `collection_point_id` + `created_at` desde o início do dia)
+- A tabela `tracked_devices` guarda, por empresa (`enterprise_id`), o fingerprint, o user agent, o IP, o vínculo opcional com o cliente (`customer_id`), `is_blocked`/`blocked_*`, `feedback_count` e datas (`last_feedback_at`, `created_at`) — **não** possui `collection_point_id`. O vínculo por ponto de coleta/dia é consultado na tabela `feedback` (filtrando por `tracked_device_id` + `collection_point_id` + `created_at` desde a meia-noite de Brasília)
 - O bloqueio diário (409) é por `collection_point_id` — o mesmo aparelho em pontos diferentes passa normalmente
-- O bloqueio por `is_blocked` (403) vale para todos os pontos de coleta da empresa, mas só para o registro (fingerprint) daquele dia
+- O bloqueio por `is_blocked` (403) vale para todos os pontos de coleta da empresa, em qualquer dia
 - Aparelho, feedback e respostas são gravados numa única transação; a atualização de `feedback_count`, `last_feedback_at`, user agent e IP do registro roda depois e não invalida o feedback se falhar
 
 ---

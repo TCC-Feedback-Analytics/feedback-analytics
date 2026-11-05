@@ -38,7 +38,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **S** | Uma pessoa envia várias respostas fingindo ser clientes diferentes | Uma resposta por aparelho, ponto de coleta e dia. O aparelho é identificado por um hash de navegador, IP e dia (`qrcode.controller.ts`). Um aparelho pode ser bloqueado (`is_blocked`), mas só direto no banco: o painel não tem esse botão | ⚠️ Trocar de rede ou de navegador burla o limite. Aceitável para métrica de satisfação, não para votação |
+| **S** | Uma pessoa envia várias respostas fingindo ser clientes diferentes | Uma resposta por aparelho, ponto de coleta e dia. O aparelho é identificado por um hash de navegador e IP (`qrcode.controller.ts`), e o dia vira à meia-noite de Brasília. Um aparelho pode ser bloqueado (`is_blocked`), mas só direto no banco: o painel não tem esse botão | ⚠️ Trocar de rede ou de navegador burla o limite. Aceitável para métrica de satisfação, não para votação |
 | **T** | Alterar a marca de canal ou o ponto de coleta na URL | O ponto de coleta precisa estar **ativo** e ser **da empresa** do pedido. A marca de canal serve só a métricas | ✅ |
 | **T** | Enviar dado malformado ou gigante | O schema do contrato (`publicFeedbackSchema`) valida tudo: nota de 1 a 5, comentário até 5.000 caracteres, nome até 120 | ✅ |
 | **I** | Ver respostas de outros clientes pelo formulário | O formulário só lê o nome da empresa e as perguntas; nenhuma rota pública devolve feedbacks | ✅ |

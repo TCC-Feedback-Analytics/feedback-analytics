@@ -15,7 +15,7 @@
 ### Parte 1 — Gerenciar itens na lista por tipo
 
 1. O gestor acessa a lista de um tipo do catálogo (`/user/edit/feedback-{products,services,departments}`).
-2. O sistema exibe os itens cadastrados, cada um com seu nome, eventual descrição e um selo de status do QR Code ("QR ativo" ou "QR inativo"). Com itens na lista, o gestor pode buscar por nome ou descrição e filtrar pelo status do QR Code ("Limpar filtros" volta ao padrão).
+2. O sistema exibe os itens cadastrados, cada um com seu nome, eventual descrição e um selo de status da coleta ("Coleta ativa" ou "Coleta inativa"). Com itens na lista, o gestor pode buscar por nome ou descrição e filtrar pelo status do QR Code ("Limpar filtros" volta ao padrão).
 3. Para **cadastrar** um item, o gestor clica em "Cadastrar {item}", informa o nome e, se quiser, a descrição no dialog e clica em "Cadastrar"; para **remover**, usa o botão "Remover" do item. Ambas as ações disparam o **salvamento em lote** do catálogo.
 4. O sistema confirma com o toast "Catálogo atualizado!" e a lista é atualizada.
    - **Efeito colateral:** ao salvar o catálogo de produtos, o sistema atualiza automaticamente o campo de contexto de IA (`main_products_or_services`) com os itens cadastrados.
@@ -36,7 +36,7 @@ A tela dedicada do item espelha a Avaliação da empresa e tem **quatro blocos i
 ### Parte 3 — Controlar a coleta do item
 
 10. Em "Canais de coleta", o gestor liga ou pausa a coleta do item ("Ativar coleta" / "Pausar coleta").
-11. O sistema confirma a mudança imediatamente com o toast "QR Code ativado!" ou "QR Code desativado!" — sem necessidade de salvar os outros blocos. O link, o QR Code e o endereço da etiqueta do item só existem com a coleta ativa.
+11. O sistema confirma a mudança imediatamente com o toast "Coleta ativada!" ou "Coleta desativada!" — sem necessidade de salvar os outros blocos. O link, o QR Code e o endereço da etiqueta do item só existem com a coleta ativa.
 
 ---
 
@@ -54,7 +54,7 @@ A tela dedicada do item espelha a Avaliação da empresa e tem **quatro blocos i
 | Erro ao salvar as perguntas de um item | Exibe o toast "Não foi possível salvar" — outros itens não são afetados |
 | Erro ao salvar o campo de comentário | Exibe o toast "Não deu para salvar" |
 | Erro ao ativar ou pausar a coleta de um item | Exibe o toast "Erro na operação" — o estado não é alterado |
-| Gestor remove um item da lista | O item não é apagado do banco: fica inativo e some da lista, preservando o histórico. A coleta do item **não** é pausada por isso: o gateway não confere o status do item, e o formulário daquele item continua aceitando respostas (pelo QR Code, pelo link ou pela etiqueta NFC) enquanto o ponto de coleta estiver ativo. Para parar a coleta, pause-a na tela do item antes de removê-lo |
+| Gestor remove um item da lista | O item não é apagado do banco: fica inativo e some da lista, preservando o histórico. O formulário daquele item para de aceitar respostas, pelo QR Code, pelo link ou pela etiqueta NFC: o envio público confere o status do item e responde `404 collection_point_not_found` |
 | Gestor pausa a coleta de um item | O formulário público daquele item mostra a tela de erro "QR Code indisponível" e bloqueia novos envios (UC-04) |
 
 ---
@@ -72,5 +72,5 @@ A tela dedicada do item espelha a Avaliação da empresa e tem **quatro blocos i
 - **[CT-UC07-05]** 📝 *Planejado / não implementado* - Caminho feliz — coleta por item: em "Canais de coleta", o gestor ativa ou pausa a coleta do item — deve exibir toast de sucesso e atualizar o estado visualmente sem necessidade de salvar os outros blocos.
 - **[CT-UC07-06]** 🔵 *Unidade já atende* - Exceção — pergunta inválida (curta): tentar salvar pergunta com menos de 20 caracteres deve bloquear o envio e destacar o campo com erro.
 - **[CT-UC07-07]** 🔵 *Unidade já atende* - Exceção — pergunta inválida (longa): tentar salvar pergunta com mais de 150 caracteres deve bloquear o envio.
-- **[CT-UC07-08]** ❌ *Cenário não coberto* - Exceção — item removido: remover um produto com a coleta ativa e verificar o formulário público daquele item. Pelo código atual, o formulário **continua** abrindo e aceitando respostas (ver a exceção "Gestor remove um item da lista").
+- **[CT-UC07-08]** ❌ *Cenário não coberto* - Exceção — item removido: remover um produto com a coleta ativa e verificar o formulário público daquele item. O esperado é o envio recusado como QR pausado (`404 collection_point_not_found`; ver a exceção "Gestor remove um item da lista").
 - **[CT-UC07-09]** ❌ *Cenário não coberto* - Exceção — coleta pausada por item: pausar a coleta de um item e verificar que o formulário público bloqueia novos envios para aquele item.

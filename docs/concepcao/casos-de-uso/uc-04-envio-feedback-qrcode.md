@@ -40,7 +40,7 @@
 | Perguntas não respondidas | Bloqueia o envio e exibe "Responda todas as perguntas antes de enviar." |
 | Subperguntas não respondidas | Bloqueia o envio e exibe "Responda todas as subperguntas antes de enviar." |
 | Comentário em branco | Aceita o envio: o feedback fica só com as estrelas e as respostas, não vai para a IA e não conta como "aguardando análise". Com o campo oculto no escopo, nenhum texto é enviado |
-| Aparelho já enviou feedback para este ponto de coleta hoje (anti-spam diário) | O gateway recusa com `409 DEVICE_ALREADY_SUBMITTED` e a Web mostra "Obrigado por participar": "Este dispositivo já enviou uma resposta para esta empresa hoje. Você poderá compartilhar uma nova opinião amanhã." O aparelho é identificado no backend por um fingerprint de user agent, IP e dia |
+| Aparelho já enviou feedback para este ponto de coleta hoje (anti-spam diário) | O gateway recusa com `409 DEVICE_ALREADY_SUBMITTED` e a Web mostra "Obrigado por participar": "Este dispositivo já enviou uma resposta por aqui hoje. Você poderá compartilhar uma nova opinião amanhã." O aparelho é identificado no backend por um fingerprint de user agent e IP, e o dia vira à meia-noite de Brasília |
 | Aparelho bloqueado | O gateway recusa com `403 DEVICE_BLOCKED` e o formulário mostra "Seu dispositivo está temporariamente bloqueado para novos envios." Hoje o bloqueio só existe no banco: não há tela nem rota para bloquear um aparelho |
 | Falha de rede ou erro do servidor ao enviar | Exibe o toast "Erro ao enviar feedback" e a mensagem inline no formulário — o cliente pode corrigir e tentar novamente |
 

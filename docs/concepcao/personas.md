@@ -51,7 +51,7 @@
 - **Frustrações:**
     - Formulários longos, com muitas perguntas obrigatórias ou que pedem login.
     - Ter que procurar o perfil da empresa nas redes sociais para fazer uma reclamação ou elogio no momento em que o fato acontece.
-- **Impacto no Projeto Feedback Analytics:** Lucas é o usuário do **Frontend de Coleta**. A dor do processo complicado justifica a arquitetura **SPA** para carregamento rápido. A necessidade de privacidade justifica a **coleta sem identificação obrigatória**; o anti-spam por **tracked_devices** evita envios repetidos sem exigir login (ele guarda o IP e o navegador do aparelho, que o gestor vê no detalhe do feedback).
+- **Impacto no Projeto Feedback Analytics:** Lucas é o usuário do **Frontend de Coleta**. A dor do processo complicado justifica a arquitetura **SPA** para carregamento rápido. A necessidade de privacidade justifica a **coleta sem identificação obrigatória**; o anti-spam por **tracked_devices** evita envios repetidos sem exigir login (ele guarda o IP e o navegador do aparelho só no servidor; o gestor não os vê).
 
 #### Mapa de Empatia
 

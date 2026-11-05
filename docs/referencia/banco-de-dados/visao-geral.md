@@ -2,7 +2,7 @@
 
 > Documentação técnica do schema PostgreSQL hospedado no Supabase. Cobre todas as tabelas, relacionamentos, políticas de segurança (RLS), funções, triggers e índices do sistema.
 >
-> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration ([`drizzle/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle), hoje de `0000` a `0013`). Esta página foi conferida contra essas migrations em 03/11/2026; na dúvida, vale o código. Os dumps SQL de `database/sql/` deste repositório são **legado**.
+> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration ([`drizzle/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle), hoje de `0000` a `0014`). Esta página foi conferida contra essas migrations em 03/11/2026; na dúvida, vale o código. Os dumps SQL de `database/sql/` deste repositório são **legado**.
 
 ---
 
@@ -302,9 +302,9 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `id` | uuid PK | Sim | — | **Alto** — gravado opcionalmente em `feedback.tracked_device_id` |
 | `enterprise_id` | uuid FK | Sim | → `enterprise.id` ON DELETE CASCADE | **Crítico** — isolamento multi-tenant |
 | `customer_id` | uuid | Não | Cliente associado quando ele se identifica (sem FK) | **Baixo** — enriquece o registro do dispositivo com dados do cliente; não impacta o fluxo anti-spam |
-| `device_fingerprint` | text | Não | Hash MD5 diário `(user_agent \| ip \| dia)`, calculado no Gateway | **Crítico** — chave de busca do dispositivo no envio; sem ele não há controle de spam |
-| `user_agent` | text | Não | User-Agent do navegador | **Médio** — um dos três componentes do fingerprint; armazenado para auditoria e identificação do dispositivo |
-| `ip_address` | inet | Não | IP do cliente | **Médio** — um dos três componentes do fingerprint; armazenado para auditoria |
+| `device_fingerprint` | text | Não | Hash MD5 `(user_agent \| ip)`, sem o dia, calculado no Gateway | **Crítico** — chave de busca do dispositivo no envio; sem ele não há controle de spam |
+| `user_agent` | text | Não | User-Agent do navegador | **Médio** — um dos dois componentes do fingerprint; armazenado para auditoria e identificação do dispositivo. Não sai para o painel |
+| `ip_address` | inet | Não | IP do cliente | **Médio** — um dos dois componentes do fingerprint; armazenado para auditoria. Não sai para o painel |
 | `is_blocked` | boolean | Não | Bloqueio manual (default `false`); sem tela nem rota, só direto no banco | **Crítico** — conferido pelo Gateway no envio; `true` recusa o feedback com `DEVICE_BLOCKED` |
 | `blocked_reason` | text | Não | Motivo do bloqueio | **Baixo** — informativo para o gestor; sem impacto funcional |
 | `blocked_at` | timestamptz | Não | Data do bloqueio | **Baixo** — auditoria do bloqueio |
@@ -400,7 +400,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `summary` | text | Não | Resumo situacional gerado pela IA | **Crítico** — conteúdo principal exibido no painel de insights da tela de Relatório IA |
 | `recommendations` | text[] | Não | Lista de recomendações acionáveis | **Crítico** — lista de ações sugeridas pela IA exibida no painel de insights |
 
-**Índice único:** `uq_feedback_insights_context` `(enterprise_id, scope_type, catalog_item_id)`. Nas migrations ele **não** tem `NULLS NOT DISTINCT` (o dump legado tinha); como o Postgres trata cada `NULL` como distinto, a unicidade no escopo `COMPANY` (`catalog_item_id` nulo) depende de como o banco foi criado.
+**Unicidade:** constraint `uq_feedback_insights_context` `UNIQUE NULLS NOT DISTINCT (enterprise_id, scope_type, catalog_item_id)` (migration `0014`): o escopo `COMPANY`, com `catalog_item_id` nulo, também tem uma linha só. A `0014` apagou as duplicadas que a versão sem `NULLS NOT DISTINCT` deixava, mantendo a mais recente.
 
 ---
 
@@ -506,9 +506,9 @@ Criadas na migration custom `0001_functions_triggers_rls.sql` (as três funçõe
 |---|---|---|---|---|
 | `validate_questions_of_feedbacks_context` | `questions_of_feedbacks` | BEFORE INSERT/UPDATE | `validate_questions_of_feedbacks_context()` | Integridade de escopo das perguntas |
 | `validate_feedback_insights_report_context` | `feedback_insights_report` | BEFORE INSERT/UPDATE | `validate_feedback_insights_report_context()` | Integridade de escopo dos relatórios |
-| `set_updated_at` | `catalog_items`, `collecting_data_enterprise`, `collection_points`, `customer`, `enterprise`, `feedback`, `feedback_analysis`, `feedback_insights_report`, `feedback_question_subquestions`, `questions_of_feedbacks`, `tracked_devices`, `ia_analysis_job` e `enterprise_ia_config` | BEFORE UPDATE | `update_updated_at_column()` | Auditoria automática de timestamps |
+| `set_updated_at` | `catalog_items`, `collecting_data_enterprise`, `collection_points`, `customer`, `enterprise`, `feedback`, `feedback_analysis`, `feedback_insights_report`, `feedback_question_subquestions`, `questions_of_feedbacks`, `tracked_devices`, `ia_analysis_job`, `enterprise_ia_config` e `feedback_comment_field` (desde a `0014`) | BEFORE UPDATE | `update_updated_at_column()` | Auditoria automática de timestamps |
 
-> Não há trigger de cadastro nem de higienização de metadados: os antigos `on_auth_user_created` e `on_auth_user_metadata_before_update`, do Supabase Auth, saíram no cutover para o Better Auth. A empresa e as perguntas padrão nascem no Gateway (`src/auth/enterpriseOnSignup.ts`). As tabelas do Better Auth atualizam o próprio `updated_at`, e `feedback_comment_field` tem a coluna sem trigger.
+> Não há trigger de cadastro nem de higienização de metadados: os antigos `on_auth_user_created` e `on_auth_user_metadata_before_update`, do Supabase Auth, saíram no cutover para o Better Auth. A empresa e as perguntas padrão nascem no Gateway (`src/auth/enterpriseOnSignup.ts`). As tabelas do Better Auth atualizam o próprio `updated_at`.
 
 ---
 
@@ -554,7 +554,7 @@ Cada tabela tem a policy `feedback_app_all` (`FOR ALL TO feedback_app USING (tru
 | `feedback_question_answers` | `idx_feedback_question_answers_question_id` | `(question_id)` | Análise por pergunta |
 | `feedback_subquestion_answers` | `idx_feedback_subquestion_answers_feedback_id` | `(feedback_id)` | JOIN no carregamento |
 | `feedback_subquestion_answers` | `idx_feedback_subquestion_answers_subquestion_id` | `(subquestion_id)` | Análise por subpergunta |
-| `feedback_insights_report` | `uq_feedback_insights_context` | `(enterprise_id, scope_type, catalog_item_id)` | Upsert do relatório por contexto |
+| `feedback_insights_report` | `uq_feedback_insights_context` (constraint `NULLS NOT DISTINCT`) | `(enterprise_id, scope_type, catalog_item_id)` | Upsert do relatório por contexto |
 | `feedback_insights_report` | `idx_feedback_insights_report_enterprise_updated` | `(enterprise_id, updated_at DESC)` | Listagem dos relatórios mais recentes |
 | `scope_diagnosis` | `idx_scope_diagnosis_scope_created` | `(enterprise_id, scope_type, catalog_item_id, created_at DESC)` | Último diagnóstico e histórico por escopo |
 | `ia_analysis_job` | `idx_ia_analysis_job_claim` | `(status, next_run_at)` | Claim do worker |
@@ -600,7 +600,7 @@ Cada tabela tem a policy `feedback_app_all` (`FOR ALL TO feedback_app USING (tru
 | `ia_analysis_job` | `ia_analysis_job_status_check` | `status` ∈ `{queued, running, waiting_budget, completed, failed}` |
 | `ia_rate_budget` | `ia_rate_budget_window_kind_check` | `window_kind` ∈ `{minute, day}` |
 
-> **Unicidade do relatório de insights — constraint legada removida:** a unique antiga `feedback_insights_report_enterprise_id_key` (`UNIQUE (enterprise_id)`, **1 linha por empresa**) foi dropada antes das migrations Drizzle. Ela era incompatível com os relatórios segmentados por escopo — ao salvar um segundo relatório (ex.: de um item) quando já existia o da empresa, o INSERT batia nessa unique. A unicidade passou a ser o índice composto `uq_feedback_insights_context (enterprise_id, scope_type, catalog_item_id)`.
+> **Unicidade do relatório de insights — constraint legada removida:** a unique antiga `feedback_insights_report_enterprise_id_key` (`UNIQUE (enterprise_id)`, **1 linha por empresa**) foi dropada antes das migrations Drizzle. Ela era incompatível com os relatórios segmentados por escopo — ao salvar um segundo relatório (ex.: de um item) quando já existia o da empresa, o INSERT batia nessa unique. A unicidade passou a ser `uq_feedback_insights_context (enterprise_id, scope_type, catalog_item_id)`, hoje uma constraint `NULLS NOT DISTINCT` (migration `0014`).
 
 ### Regras de cascata por deleção
 

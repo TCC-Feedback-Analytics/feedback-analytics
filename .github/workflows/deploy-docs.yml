@@ -2,10 +2,18 @@ name: Deploy Docs (MkDocs Material → GitHub Pages)
 
 # Publica a documentação de docs/ como site no GitHub Pages.
 # Deploy automático quando a doc muda em main; também pode ser disparado manualmente.
+# Em pull request roda só o build estrito, para link ou âncora quebrada aparecer
+# antes do merge, e não quando derruba a publicação.
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'requirements-docs.txt'
+      - '.github/workflows/deploy-docs.yml'
+  pull_request:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
@@ -19,9 +27,10 @@ permissions:
   pages: write
   id-token: write
 
-# Garante um único deploy de Pages por vez (sem cancelar um em andamento).
+# Garante um único deploy de Pages por vez (sem cancelar um em andamento). Cada
+# pull request tem o seu grupo, para não esperar nem segurar o deploy da main.
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -45,12 +54,14 @@ jobs:
         run: mkdocs build --strict
 
       - name: Upload do artefato do Pages
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

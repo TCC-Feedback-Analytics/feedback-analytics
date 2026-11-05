@@ -10,7 +10,7 @@
 
 ## Fluxo Principal (Caminho Feliz)
 
-1. Na primeira entrada, a área logada abre o dialog **"Contexto e configuração de IA"** com o selo "Obrigatório", que não pode ser fechado. Depois do onboarding, o mesmo dialog abre pelo botão "Editar contexto e LLM" do Perfil (`/user/profile`); por ali ele não tem botão de fechar e só fecha ao salvar.
+1. Na primeira entrada, a área logada abre o dialog **"Contexto e configuração de IA"** com o selo "Obrigatório", que não pode ser fechado. Depois do onboarding, o mesmo dialog abre pelo botão "Editar contexto e LLM" do Perfil (`/user/profile`); por ali o clique fora não fecha; ele fecha ao salvar ou pelo X, que descarta a edição.
 2. O dialog tem **4 passos** num seletor no topo, que indica o passo atual e os já preenchidos ("A IA é opcional; o contexto da empresa é obrigatório"):
    - **1. Seu negócio** — "O que seu negócio faz e para quem?"
    - **2. Sua meta** — "O que você mais quer melhorar nos próximos meses?", com sugestões para tocar
@@ -51,7 +51,7 @@
 
 - O card **"Contexto e LLM da empresa"** do Perfil mostra os quatro itens (Seu negócio, Sua meta, O que descobrir e Modelo LLM) e o selo "Configurado" só com o contexto completo e o modelo salvo; senão, "Incompleto".
 - O campo **"Principais produtos ou serviços"** (`main_products_or_services`) **não** faz parte dos passos editáveis: continua sendo preenchido **automaticamente** ao salvar o catálogo de produtos no UC-07.
-- A antiga tela `/user/edit/collecting-data-enterprise` não existe mais: o endereço redireciona para `/user/profile#dados-da-empresa`, e a action da rota segue recebendo o contexto salvo pelo dialog.
+- A antiga tela `/user/edit/collecting-data-enterprise` não existe mais: o endereço redireciona para `/user/profile#contexto-da-ia`, e a action da rota segue recebendo o contexto salvo pelo dialog.
 
 ---
 

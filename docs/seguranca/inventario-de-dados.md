@@ -52,12 +52,12 @@ Não são dados pessoais em si, mas podem citar pessoas se o gestor escrever.
 | Nota e respostas das perguntas | `feedback.rating`, `feedback_question_answers`, `feedback_subquestion_answers` | Métricas do painel | Provedor de IA (sem nome, e-mail nem IP) |
 | Comentário | `feedback.message` | Ler a opinião e analisar o tom com a IA. É **texto livre**: o cliente pode escrever nele um nome, telefone ou e-mail | Provedor de IA, como foi escrito |
 | Pergunta própria e canal | `feedback.comment_prompt`, `feedback.channel` | Contexto do comentário e métrica por canal | Provedor de IA (a pergunta) |
-| IP do aparelho | `tracked_devices.ip_address` | Anti-spam: limitar respostas repetidas do mesmo aparelho | Gestor da empresa, no detalhe do feedback |
-| Navegador (*user agent*) | `tracked_devices.user_agent` | Anti-spam | Gestor da empresa, no detalhe do feedback |
-| Identificador do aparelho | `tracked_devices.device_fingerprint` | Anti-spam: hash MD5 de navegador, IP e dia (`qrcode.controller.ts`). Não identifica a pessoa sozinho | Gestor da empresa, no detalhe do feedback |
+| IP do aparelho | `tracked_devices.ip_address` | Anti-spam: limitar respostas repetidas do mesmo aparelho | Ninguém fora do servidor |
+| Navegador (*user agent*) | `tracked_devices.user_agent` | Anti-spam | Ninguém fora do servidor |
+| Identificador do aparelho | `tracked_devices.device_fingerprint` | Anti-spam: hash MD5 de navegador e IP (`qrcode.controller.ts`). Não identifica a pessoa sozinho | Ninguém fora do servidor |
 | Bloqueio | `tracked_devices.is_blocked`, `blocked_reason` | Barrar um aparelho que abusa. O painel não tem esse botão: hoje o bloqueio só é feito direto no banco | — |
 
-O `GET /api/protected/user/feedbacks` (`feedbackList.repository.ts`) devolve ao gestor, em cada feedback, o IP, o navegador e o identificador do aparelho, além do nome, do e-mail e do gênero do cliente, quando ele os informou. A Web mostra esses dados na janela de detalhe do feedback.
+O `GET /api/protected/user/feedbacks` (`feedbackList.repository.ts`) devolve ao gestor, em cada feedback, só a quantidade de envios do aparelho e se ele está bloqueado, além do nome, do e-mail e do gênero do cliente, quando ele os informou. IP, navegador e identificador do aparelho ficam no servidor (minimização, desde 05/11/2026).
 
 ## Dados que a IA produz
 
@@ -99,4 +99,4 @@ Pontos para o mapa de ameaças e para o plano da etapa. Só o 4 foi resolvido at
 3. **O comentário vai à IA como foi escrito.** O sistema não manda os dados de identificação do cliente, mas o próprio texto pode trazer um telefone ou e-mail.
 4. **Exclusão de conta pela tela: resolvido em 02/11/2026.** O direito de exclusão (LGPD, art. 18) dependia de um e-mail; hoje o gestor exclui a conta no Perfil.
 5. **Sessões, links e limites vencidos não são limpos.** O risco é baixo, mas o banco acumula dado que não serve mais.
-6. **IP, navegador e identificador do aparelho chegam ao gestor.** Eles servem ao anti-spam, mas a lista de feedbacks os devolve ao painel, que os mostra no detalhe de cada feedback.
+6. **IP, navegador e identificador do aparelho chegavam ao gestor: resolvido em 05/11/2026.** Eles servem só ao anti-spam, e a lista de feedbacks deixou de devolvê-los ao painel.

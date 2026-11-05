@@ -273,9 +273,9 @@ Como cada métrica aparece e os cuidados de leitura:
   - **Por que faixas de 6 horas:** com pouco volume, a grade hora a hora ficaria vazia.
   - **Resumo:** diz onde há mais avaliações e onde está a pior média. A pior média só considera faixas com 10 ou mais avaliações.
 - **Clientes que voltam.**
-  - **Quem é o cliente:** o aparelho usado para avaliar, sem dados pessoais. O número é aproximado, porque a mesma pessoa em outro celular conta como outro cliente.
+  - **Quem é o cliente:** o aparelho usado para avaliar (o mesmo navegador na mesma rede), sem dados pessoais. O número é aproximado, porque a mesma pessoa em outro celular ou em outra rede conta como outro cliente.
   - **Quando a avaliação conta como "de quem volta":** quando o mesmo aparelho já tinha avaliado a empresa antes, em qualquer escopo.
-  - **Limite do aparelho por dia:** o registro do aparelho vem do anti-spam, cujo fingerprint inclui o dia (`MD5(userAgent | IP | dia)`). O mesmo celular vira um registro novo a cada dia, então hoje a métrica só reconhece quem avaliou de novo **no mesmo dia** (em outro ponto de coleta, porque no mesmo o anti-spam barra). Quem volta noutro dia conta como primeira vez (ver [Anti-spam por fingerprint](anti-spam-fingerprint.md)).
+  - **Entre dias:** o registro do aparelho vem do anti-spam, cujo fingerprint é `MD5(userAgent | IP)`, sem o dia. Quem volta noutro dia, no mesmo navegador e na mesma rede, conta como quem volta (ver [Anti-spam por fingerprint](anti-spam-fingerprint.md)).
   - **Sem aparelho identificado:** essas avaliações ficam de fora.
   - **Comparação das notas:** usa a mesma regra de "Diferença incerta" da comparação de períodos.
 

@@ -4,7 +4,7 @@
 
 É a segunda camada de proteção do sistema de coleta pública. Enquanto o anti-spam por fingerprint barra submissões duplicadas no mesmo dia (HTTP 409), o bloqueio impede **qualquer** envio de um registro de aparelho marcado como `is_blocked`, retornando HTTP 403.
 
-> **Situação atual:** a verificação existe no envio, mas o bloqueio **não é permanente na prática**. O fingerprint do aparelho inclui o dia, então cada dia gera um registro novo em `tracked_devices`, que nasce desbloqueado. E não há tela nem endpoint para marcar um aparelho como bloqueado: a marca só pode ser feita direto no banco. Detalhes abaixo.
+> **Situação atual:** a verificação existe no envio e, desde que o fingerprint deixou de levar o dia, o bloqueio vale entre dias. Mas não há tela nem endpoint para marcar um aparelho como bloqueado: a marca só pode ser feita direto no banco. Detalhes abaixo.
 
 ---
 
@@ -26,8 +26,8 @@ O bloqueio foi pensado para esses casos. É uma ferramenta de **moderação**, n
 
 | Situação | Código | Significado | Duração na prática |
 |---|---|---|---|
-| Mesmo aparelho, mesmo ponto, mesmo dia | `409 Conflict` | Limite diário atingido | Até o dia virar no servidor (meia-noite UTC em produção) |
-| Registro do aparelho com `is_blocked = true` | `403 Forbidden` | Aparelho bloqueado | Enquanto durar aquele fingerprint: o mesmo dia |
+| Mesmo aparelho, mesmo ponto, mesmo dia | `409 Conflict` | Limite diário atingido | Até a meia-noite de Brasília |
+| Registro do aparelho com `is_blocked = true` | `403 Forbidden` | Aparelho bloqueado | Até a marca ser desfeita, enquanto o aparelho usar o mesmo navegador e a mesma rede |
 
 O `409` é automático e temporário — parte do fluxo normal. O `403` depende de uma marca feita por alguém no registro do aparelho.
 
@@ -40,7 +40,7 @@ Cliente submete o formulário
         ↓
 API valida payload, empresa, ponto de coleta e respostas
         ↓
-API calcula o fingerprint: MD5(User-Agent | IP | início do dia)
+API calcula o fingerprint: MD5(User-Agent | IP)
         ↓
 Consulta tracked_devices pela empresa + fingerprint
         ↓
@@ -53,10 +53,10 @@ O bloqueio é verificado **antes** da checagem de duplicidade diária, mas **dep
 
 ---
 
-## Por Que o Bloqueio Não Dura
+## Limites do Bloqueio
 
-- **Um registro por dia.** Como o início do dia entra no hash, no dia seguinte o mesmo aparelho chega com outro fingerprint. A consulta não encontra o registro bloqueado e cria um novo, com `is_blocked = false`. O bloqueio só pega os envios do mesmo dia (no fuso do servidor).
-- **Sem ferramenta de moderação.** Nenhuma tela nem endpoint grava `is_blocked = true`, nem as colunas `blocked_reason`, `blocked_at` e `blocked_by`. O código só **lê** a marca. Na Web, o detalhe de um feedback em Feedbacks recebidos mostra se o registro do aparelho está bloqueado ("Blocked: Sim/Não"), sem botão para mudar.
+- **Navegador e rede.** O fingerprint é navegador + IP. O mesmo aparelho em outra rede (ou outro navegador) chega com outro fingerprint, e a consulta cria um registro novo, com `is_blocked = false`.
+- **Sem ferramenta de moderação.** Nenhuma tela nem endpoint grava `is_blocked = true`, nem as colunas `blocked_reason`, `blocked_at` e `blocked_by`. O código só **lê** a marca. Na Web, o detalhe de um feedback em Feedbacks recebidos mostra se o registro do aparelho está bloqueado ("Bloqueado: Sim/Não"), sem botão para mudar.
 
 ---
 
@@ -66,8 +66,8 @@ O bloqueio é verificado **antes** da checagem de duplicidade diária, mas **dep
 |---|---|
 | **Moderação sem login** | Permite barrar uma origem específica sem exigir autenticação dos clientes |
 | **Separação de camadas** | 409 cuida da frequência; 403 cuida da moderação — responsabilidades distintas |
-| **Alcance** | O bloqueio de um registro vale para todos os pontos de coleta da empresa naquele dia |
-| **Limite atual** | Sem tela para bloquear e com fingerprint diário, a camada hoje tem efeito pequeno |
+| **Alcance** | O bloqueio de um registro vale para todos os pontos de coleta da empresa, em qualquer dia |
+| **Limite atual** | Sem tela para bloquear, a camada hoje depende de uma marca feita no banco |
 
 ---
 
@@ -76,7 +76,7 @@ O bloqueio é verificado **antes** da checagem de duplicidade diária, mas **dep
 - O campo `is_blocked` fica na tabela `tracked_devices`, associado ao fingerprint e à empresa (`enterprise_id`); a consulta é sempre por empresa + fingerprint
 - A verificação ocorre em `src/controllers/public/qrcode.controller.ts` do API Gateway, depois das validações do formulário e antes da checagem do limite diário
 - O erro retornado é `DEVICE_BLOCKED` (`API_ERROR_DEVICE_BLOCKED`) com status HTTP `403 Forbidden`
-- Não há expiração automática para `is_blocked = true`, mas o registro só é encontrado enquanto o fingerprint do dia for o mesmo
+- Não há expiração automática para `is_blocked = true`: o registro é encontrado enquanto o aparelho usar o mesmo navegador e a mesma rede
 - O bloqueio é por empresa: o mesmo aparelho em outra empresa tem outro registro
 - Todo registro novo nasce com `is_blocked = false`
 

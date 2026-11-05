@@ -136,7 +136,7 @@ return { ok: false, error: 'update_failed', message: 'Mensagem para o usuário' 
 
 | Variável | Serviço | Obrigatória |
 |---|---|---|
-| `VITE_API_BASE_URL` | Frontend | Só no local (`http://localhost:3000`); vazia em produção |
+| `VITE_API_BASE_URL` | Frontend | Vazia no local (o proxy do Vite repassa `/api`) e em produção; `http://localhost:3000` só para chamar o gateway direto |
 | `VITE_PUBLIC_API_BASE_URL` | Frontend | Em produção (URL pública do Gateway); vazia no local |
 | `VITE_GOOGLE_AUTH_ENABLED` | Frontend | Não (`true` mostra o "Continuar com Google") |
 | `DATABASE_URL` | API Gateway | Sim |

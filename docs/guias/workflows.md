@@ -33,7 +33,7 @@ O CI automático (lint, typecheck e testes de **unidade**; na Web, também o bui
 | `feedback-analytics-web` | lint + typecheck + build + testes unitários (Node 24) | `deploy-web.yml` (manual, só `main`, Node 20) | Site estático (CDN) |
 | `feedback-analytics-api-gateway` | lint + typecheck + testes unitários · smoke de migrations (Node 20) | `deploy-api.yml` (manual, só `main`, aplica as migrations antes) | Serverless Function |
 | `feedback-analytics-ia-analyze` | lint + typecheck + testes unitários (Node 20) | `deploy-ia-analyze.yml` (manual, só `main`) | Serverless Function |
-| `feedback-analytics` (docs) | — (o build MkDocs `--strict` roda dentro do deploy) | `deploy-docs.yml` (push a `main` que mexe na doc, ou manual) | GitHub Pages |
+| `feedback-analytics` (docs) | `deploy-docs.yml` em pull request (só o build MkDocs `--strict`) | `deploy-docs.yml` (push a `main` que mexe na doc, ou manual) | GitHub Pages |
 
 Além deles, o API Gateway tem o `ia-worker.yml`, que chama o worker da fila de IA em produção a cada 5 minutos.
 
@@ -108,8 +108,8 @@ Os passos concretos (steps, `npm ci`, config Vercel) vivem em cada repo, junto d
     - **API Gateway (`deploy-api.yml`)** — gera o bundle com `esbuild` (`index.ts → _bundle.cjs`) e executa `npm run db:migrate` com o secret `DATABASE_URL` antes de publicar; secret ausente ou migration com erro interrompem o deploy. Execuções na mesma branch ficam em fila, sem cancelar a que está em andamento.
     - **Web (`deploy-web.yml`)** — o workflow não builda: envia o código e a Vercel faz o build, por isso as variáveis `VITE_*` ficam no projeto da Vercel. Um deploy novo cancela o anterior.
     - **IA Analyze (`deploy-ia-analyze.yml`)** — sem bundle: o `@vercel/node` roda `src/index.ts` direto. Um deploy novo cancela o anterior.
-- **Worker da fila de IA (`ia-worker.yml`, no api-gateway)** — roda automaticamente a cada cinco minutos (cron `2-59/5 * * * *`, evitando o minuto zero) e também aceita disparo manual. Envia `POST https://feedback-analytics-api-gateway.vercel.app/api/internal/worker/tick` com o header `x-worker-token`; o secret `WORKER_TICK_TOKEN` do GitHub deve ter exatamente o mesmo valor da variável homônima no API Gateway publicado na Vercel. Uma execução por vez, com limite de 6 minutos.
-- **Deploy da documentação (`deploy-docs.yml`, este repo)** — no push a `main` que mexe em `docs/**`, `mkdocs.yml`, `requirements-docs.txt` ou no próprio workflow (ou por disparo manual): instala o MkDocs Material com Python 3.12, roda `mkdocs build --strict` e publica no GitHub Pages. Não roda em Pull Request: um link ou âncora quebrada só aparece depois do push a `main`, quando derruba a publicação.
+- **Worker da fila de IA (`ia-worker.yml`, no api-gateway)** — roda automaticamente a cada cinco minutos (cron `2-59/5 * * * *`, evitando o minuto zero) e também aceita disparo manual. Envia `POST <API_GATEWAY_URL>/api/internal/worker/tick` com o header `x-worker-token`, onde `API_GATEWAY_URL` é a variável do repositório (sem ela, `https://feedback-analytics-api-gateway.vercel.app`); o secret `WORKER_TICK_TOKEN` do GitHub deve ter exatamente o mesmo valor da variável homônima no API Gateway publicado na Vercel. Uma execução por vez, com limite de 6 minutos.
+- **Deploy da documentação (`deploy-docs.yml`, este repo)** — no push a `main` que mexe em `docs/**`, `mkdocs.yml`, `requirements-docs.txt` ou no próprio workflow (ou por disparo manual): instala o MkDocs Material com Python 3.12, roda `mkdocs build --strict` e publica no GitHub Pages. Em pull request com os mesmos caminhos, roda só o build estrito, sem publicar: o link ou a âncora quebrada aparece antes do merge.
 
 Para os detalhes de cada workflow, veja o `.github/workflows/` do respectivo repositório (links no topo desta página).
 
@@ -125,6 +125,7 @@ Os secrets são configurados em cada repositório GitHub em **Settings → Secre
 | `VERCEL_PROJECT_ID_WEB` / `_API_GATEWAY` / `_IA_ANALYZE` | Deploy do respectivo serviço | ID do projeto na Vercel |
 | `DATABASE_URL` | Deploy do API Gateway | Conexão de produção usada por `drizzle-kit migrate` antes do deploy, com o `postgres` (dono das tabelas), não com o `feedback_app` que o app usa na Vercel |
 | `WORKER_TICK_TOKEN` | `ia-worker.yml` do API Gateway | Autentica o agendador no endpoint interno; deve coincidir com a variável da Vercel |
+| `API_GATEWAY_URL` (variável, opcional) | `ia-worker.yml` do API Gateway | Endereço do gateway que o agendador chama; sem ela, `https://feedback-analytics-api-gateway.vercel.app` |
 
 > Os secrets antes usados pelo e2e/homolog (`SUPABASE_*`, `E2E_TEST_*`, `E2E_DATABASE_URL_DEVELOPER`, `BETTER_AUTH_SECRET_DEVELOPER`) **não são mais necessários** no CI. `DATABASE_URL` permanece necessária no GitHub exclusivamente para aplicar migrations no deploy do Gateway, e `WORKER_TICK_TOKEN` para chamar o worker. As variáveis de runtime continuam configuradas no projeto correspondente da Vercel. O `deploy-docs.yml` deste repositório não usa secrets: publica no GitHub Pages com as permissões `pages: write` e `id-token: write` do próprio workflow.
 

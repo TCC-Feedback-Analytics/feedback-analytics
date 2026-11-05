@@ -2,7 +2,7 @@
 
 > Guia conceitual das entidades do banco de dados, seus campos principais e como se relacionam. Para a referência técnica completa (RLS, índices, triggers, funções), consulte [Visão Geral do Banco de Dados](../referencia/banco-de-dados/visao-geral.md).
 >
-> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration (`drizzle/0000` a `0013` hoje). Este guia resume esse schema; na dúvida, vale o código.
+> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration (`drizzle/0000` a `0014` hoje). Este guia resume esse schema; na dúvida, vale o código.
 
 ---
 
@@ -170,14 +170,14 @@ Pontos de coleta de feedback — no banco, sempre do tipo `QR_CODE`. O mesmo pon
 ### 3. Rastreamento e Identificação
 
 #### `tracked_devices`
-Rastreia cada dispositivo que acessa o formulário público via fingerprint diário (MD5 de user-agent + IP + data). Controla limites de envio e bloqueio de spam.
+Rastreia cada dispositivo que acessa o formulário público via fingerprint (MD5 de user-agent + IP). Controla limites de envio e bloqueio de spam.
 
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `id` | uuid | Chave primária |
 | `enterprise_id` | uuid | FK → `enterprise.id` |
 | `customer_id` | uuid | Cliente associado (opcional — só preenchido se o cliente se identificar; sem FK) |
-| `device_fingerprint` | text | Hash MD5 diário (user-agent + IP + data) |
+| `device_fingerprint` | text | Hash MD5 (user-agent + IP) |
 | `user_agent` | text | User-agent do navegador |
 | `ip_address` | inet | IP de origem |
 | `feedback_count` | int | Total de feedbacks enviados por este dispositivo |
@@ -186,7 +186,7 @@ Rastreia cada dispositivo que acessa o formulário público via fingerprint diá
 | `blocked_reason` | text | Motivo do bloqueio |
 | `blocked_at` / `blocked_by` | timestamptz / uuid | Quando e por quem foi bloqueado (sem FK) |
 
-> O fingerprint expira a cada 24h (data compõe o hash), então um dispositivo legítimo que retorna no dia seguinte recebe um novo `tracked_device`.
+> O dia fica fora do hash: o dispositivo que volta noutro dia, no mesmo navegador e na mesma rede, reaproveita o mesmo `tracked_device`. O limite diário é conferido pela data dos feedbacks (meia-noite de Brasília).
 
 ---
 
