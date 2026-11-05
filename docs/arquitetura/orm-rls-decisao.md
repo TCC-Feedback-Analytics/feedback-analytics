@@ -43,7 +43,7 @@ Um ORM conecta ao Postgres por uma **connection string com um único papel**, co
 1. **Drizzle como único caminho de dados** — rotas autenticadas, rotas internas, o Worker e também o formulário público (QR Code, link ou NFC) —, **sempre com filtro explícito por `enterprise_id`**.
 2. **O app entra com o papel `feedback_app`** (migration `0013`): só `SELECT`, `INSERT`, `UPDATE` e `DELETE`; não cria, altera nem apaga estrutura, não desliga a RLS nem cria papéis. As migrations seguem rodando como `postgres`. Em produção, o app já entra como `feedback_app`.
 3. **A RLS fica ligada em todas as tabelas** (as 24 criadas pelas migrations `0000` a `0013`), com a policy `feedback_app_all` (`FOR ALL TO feedback_app USING (true) WITH CHECK (true)`). Ela **não filtra por empresa**: deixa o `feedback_app` ver todas as linhas e barra qualquer outro papel, como o `anon` e o `authenticated` do Supabase. Tabela nova precisa, na mesma migration, de `ENABLE ROW LEVEL SECURITY` e dessa policy.
-4. **Fonte única canônica (Fase 2 consolidada)**: o Drizzle assumiu a autoridade total do schema através de migrations versionadas (`0000_great_talisman.sql` a `0013_banco_menor_privilegio.sql`), substituindo definitivamente os dumps SQL manuais paralelos, que ficam como legado em `database/sql/` (ADR-0001).
+4. **Fonte única canônica (Fase 2 consolidada)**: o Drizzle assumiu a autoridade total do schema através de migrations versionadas (`0000_great_talisman.sql` a `0014_insights_report_nulls_not_distinct.sql`), substituindo definitivamente os dumps SQL manuais paralelos, que ficam como legado em `database/sql/` (ADR-0001).
 
 ## 4. Mitigações (como evitamos o vazamento entre empresas)
 

@@ -8,7 +8,7 @@ No momento em que a empresa é criada, o **API Gateway** grava automaticamente 3
 2. **Qualidade** — O que você achou da qualidade do produto/serviço?
 3. **Custo-Benefício** — Como você avalia a relação entre o valor pago e a qualidade do produto/serviço?
 
-Essas perguntas garantem que o formulário geral nunca comece vazio. Depois, na primeira entrada no painel, o gestor passa pela configuração inicial: conta o contexto da empresa e, se quiser, configura a IA. Com a IA configurada, ela **troca as 3 perguntas padrão por 3 perguntas feitas para aquele negócio**. Para começar a coletar, falta só ativar o QR Code da empresa, primeiro dos "Primeiros passos" do Dashboard. Esse passo liga a coleta da empresa inteira: o cliente passa a responder pelo QR Code, pelo link e pela etiqueta NFC.
+Essas perguntas garantem que o formulário geral nunca comece vazio. Depois, na primeira entrada no painel, o gestor passa pela configuração inicial: conta o contexto da empresa e, se quiser, configura a IA. Com a IA configurada, ela **troca as 3 perguntas padrão por 3 perguntas feitas para aquele negócio**. Para começar a coletar, falta só "Ativar a coleta da empresa", primeiro dos "Primeiros passos" do Dashboard. Esse passo liga a coleta da empresa inteira: o cliente passa a responder pelo QR Code, pelo link e pela etiqueta NFC.
 
 > Antes, as perguntas eram criadas por um trigger do Supabase no cadastro. Hoje a criação fica no gateway (`provisionEnterpriseForUser`), com os mesmos textos.
 
@@ -31,7 +31,7 @@ Com o onboarding automático:
 
 1. Empresa se cadastra → 3 perguntas já configuradas
 2. Conta o contexto da empresa; com a IA configurada, recebe perguntas sob medida
-3. Ativa o QR Code nos "Primeiros passos" do Dashboard
+3. Ativa a coleta da empresa nos "Primeiros passos" do Dashboard
 4. Pode começar a coletar no mesmo minuto
 
 > A diferença entre "preciso configurar tudo antes de começar" e "já posso usar agora" pode determinar se o usuário fica ou vai embora.
@@ -57,7 +57,7 @@ Primeira entrada no painel: configuração inicial
       Worker gera as perguntas e só as grava se as da empresa
       ainda forem as padrão
         ↓
-Dashboard: "Primeiros passos" (ativar o QR Code e, se quiser,
+Dashboard: "Primeiros passos" (ativar a coleta e, se quiser,
 testar o formulário) e o convite para o guia do sistema
 ```
 

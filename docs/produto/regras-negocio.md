@@ -200,10 +200,10 @@ Exceção: desativar `uses_company_products` (`false`) **zera automaticamente** 
 O fingerprint de dispositivo é gerado no backend como:
 
 ```
-MD5(userAgent + "|" + clientIP + "|" + dayEpoch)
+MD5(userAgent + "|" + clientIP)
 ```
 
-Onde `dayEpoch` é o timestamp UNIX do início do dia corrente (`00:00:00` no horário local do servidor, que em produção é UTC). Isso garante que o bloqueio seja por **dia corrido** (não janela de 24 horas). A tabela `tracked_devices` registra o aparelho por `(enterprise_id, device_fingerprint)`; o limite é conferido na tabela `feedback`, por `tracked_device_id` + `collection_point_id` desde o início do dia.
+O dia fica fora do hash: o mesmo navegador na mesma rede é o mesmo aparelho em qualquer dia. A tabela `tracked_devices` registra o aparelho por `(enterprise_id, device_fingerprint)`; o limite é conferido na tabela `feedback`, por `tracked_device_id` + `collection_point_id` desde a meia-noite de Brasília. Isso garante que o limite seja por **dia corrido** (não janela de 24 horas).
 
 - Um dispositivo que enviou feedback para o mesmo ponto de coleta no mesmo dia recebe **`409 Conflict`** (`DEVICE_ALREADY_SUBMITTED`).
 - Um registro de aparelho com `is_blocked = true` recebe **`403`** (`DEVICE_BLOCKED`), conferido antes do limite diário.
@@ -276,8 +276,8 @@ O upsert usa **somente** a chave composta `(enterprise_id, scope_type, catalog_i
 | `insufficient_feedbacks_for_analysis` (no job; `422` no diagnóstico) | Menos de 10 feedbacks com comentário no escopo (no diagnóstico, menos de 10 avaliações no período) | Colete mais feedbacks ou escolha outro escopo/período |
 | `ia_config_required` (no job; `409` no diagnóstico) | Empresa sem chave e modelo de IA | Configure a chave OpenRouter em Configuração de IA |
 | `400 invalid_payload` / `400 upsert_failed` no catálogo ou nas perguntas da empresa | Pergunta com texto inválido | Ajuste o texto para entre 20 e 150 caracteres |
-| `409` na coleta pública | Dispositivo já enviou feedback para este ponto hoje | Aguarde até o próximo dia ou use outro ponto de coleta |
-| `403` na coleta pública | Registro do aparelho marcado com `is_blocked` | Só se resolve no banco; no dia seguinte o aparelho ganha outro registro |
+| `409` na coleta pública | Dispositivo já enviou feedback para este ponto hoje | Aguarde até a meia-noite de Brasília ou use outro ponto de coleta |
+| `403` na coleta pública | Registro do aparelho marcado com `is_blocked` | Só se resolve no banco, tirando a marca do registro |
 | `missing_ia_analyze_remote_url` (no job) | URL do IA Analyze remoto ausente em runtime serverless (modo `remote` ou `VERCEL=1`) | Defina `IA_ANALYZE_REMOTE_URL` (e `IA_ANALYZE_EXECUTION_MODE=remote`). Em serverless não há fallback para `localhost` — `resolvePrimaryBaseUrl` falha alto em vez de mascarar como conexão recusada |
 
 > **Timeout da chamada remota:** `DEFAULT_REMOTE_TIMEOUT_MS` é **280s** (`280_000`), alinhado ao `maxDuration` de 300s do `vercel.json`. Análises de muitos feedbacks são fatiadas por sub-batching (ver [Sub-batching por Tamanho](#sub-batching-por-tamanho)) e o worker chama um lote por vez; ainda assim, se o IA Analyze não responder dentro da janela, o `AbortController` cancela o fetch e o lote falha com `failed_remote_ia_analyze_request`, que volta para a fila como erro temporário.
@@ -422,13 +422,14 @@ Isso garante que termos como "tempo de espera" sejam aceitos mesmo que a mensage
 
 ### Tratamento de Erros do Provedor LLM
 
-Toda falha sai como `IaAnalyzeServiceError` com status `502` e um código:
+Toda falha do provedor sai como `IaAnalyzeServiceError` com status `502` e um código (sem provedor válido, a IA responde antes `409 ia_config_required`):
 
 | Cenário | Código Retornado |
 |---|---|
 | Falha ao chamar o provedor (rede, timeout, credencial no Gemini), depois de esgotar as tentativas com backoff | `failed_ia_request` |
 | Erro HTTP do provedor (cota, limite de requisições, indisponível) | `ia_provider_*` (ex.: `ia_provider_rate_limited`) |
 | Resposta não parseável como JSON | `invalid_ai_response` |
+| Saída cortada pelo limite de tokens, nos dois provedores | `truncated_ai_response` |
 | Resposta fora da estrutura esperada | `invalid_ai_response_schema` |
 | Faltou o resultado de algum feedback, ou um lote falhou depois de outros concluírem | `incomplete_ai_response` |
 | Resumo ou recomendações fora do pt-BR depois da nova tentativa | `invalid_ai_response_language` |

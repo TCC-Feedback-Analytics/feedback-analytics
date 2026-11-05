@@ -108,7 +108,7 @@ Sem comentário, o feedback não vai para a IA nem conta como "aguardando análi
 - O envio também exige o ponto de coleta ativo (senão `404 collection_point_not_found`) e respostas que batam exatamente com as perguntas ativas do escopo (senão `400 invalid_payload`)
 - A submissão **não requer autenticação** — é uma rota pública com proteção via fingerprint (1 envio por aparelho, por ponto de coleta, por dia)
 - O comentário aceita até 5000 caracteres. Dos dados opcionais de quem respondeu, só nome, e-mail e gênero são gravados (no cadastro do cliente, deduplicado por e-mail na empresa)
-- A imagem do QR Code é gerada em PNG por um serviço externo (`api.qrserver.com`) a partir do endereço do formulário e pode ser baixada; o botão de compartilhar envia o link (pelo `navigator.share` ou, sem ele, copiando)
+- A imagem do QR Code é gerada em PNG no próprio navegador (biblioteca `qrcode`), a partir do endereço do formulário, sem enviar dados a terceiros, e pode ser baixada; o botão de compartilhar envia o link (pelo `navigator.share` ou, sem ele, copiando)
 
 ---
 

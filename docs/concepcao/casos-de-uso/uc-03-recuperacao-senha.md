@@ -24,7 +24,7 @@
 2. O link passa pelo `GET /api/public/auth/callback` do gateway, que grava o token no cookie httpOnly `ba_reset` (vale 1 h e só é enviado para a troca de senha) e abre direto a tela de redefinição (`/auth/reset-password`, "Redefina sua senha").
 3. O gestor digita a nova senha (mínimo de 10 caracteres) e a confirmação e clica em "Redefinir senha".
 4. O sistema valida a senha com a mesma regra do cadastro e salva usando o cookie `ba_reset`, não a sessão; com sucesso, o cookie é apagado.
-5. O gestor é redirecionado para o login (`/login?reset=success`) para acessar com a nova senha. Hoje a tela de login não lê esse parâmetro: não aparece aviso de "senha alterada".
+5. O gestor é redirecionado para o login (`/login?reset=success`) para acessar com a nova senha. A tela de login lê esse parâmetro e mostra "Senha alterada. Entre com a nova senha."
 
 ---
 

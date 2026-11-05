@@ -12,7 +12,7 @@
 
 1. O gestor acessa a tela da avaliação desejada: a **Avaliação da empresa** (`/user/edit/feedback-general`) ou a tela de um item do catálogo (`/user/edit/feedback/:kind/:itemId`). A antiga rota `/user/qrcode/enterprise` redireciona para a Avaliação da empresa.
 2. Na seção **"Canais de coleta"** ("Por onde seus clientes respondem"), o sistema exibe o estado da coleta ("Recebendo respostas" ou "Pausado") e, com ela ativa, o QR Code gerado. Na mesma tela ficam as seções **Perguntas** e **Campo de comentário** daquela avaliação.
-3. O gestor liga ou pausa a coleta pelo botão "Ativar coleta" / "Pausar coleta". O interruptor vale para todos os canais de uma vez; o sistema confirma com o toast "QR Code ativado!" ou "QR Code desativado!" e atualiza o estado na tela.
+3. O gestor liga ou pausa a coleta pelo botão "Ativar coleta" / "Pausar coleta". O interruptor vale para todos os canais de uma vez; o sistema confirma com o toast "Coleta ativada!" ou "Coleta desativada!" e atualiza o estado na tela.
 4. Para distribuir o formulário, o gestor usa um dos canais. Cada canal leva a sua marca `canal` na URL, para as métricas por canal (UC-09):
    - **QR Code — "Baixar QR Code":** salva o QR Code como imagem `.png`, com o nome da empresa (ou do item) no arquivo. A tela traz os passos e dicas de impressão.
    - **Link — "Copiar link":** copia o link do formulário para a área de transferência; o botão mostra "Link copiado!" por 2 segundos.

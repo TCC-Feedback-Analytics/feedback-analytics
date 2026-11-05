@@ -10,7 +10,7 @@ Cada seção corresponde a um caso de uso (UC) e a um ou mais casos de teste (CT
 ### Ambiente
 
 - **Produção (recomendado):** use a URL do ambiente deployado (Vercel). A URL base é o domínio de produção do web.
-- **Local (alternativa):** frontend em `http://localhost:5173` (valor padrão da base) e API em `http://localhost:3000` (`VITE_API_BASE_URL`, com a API rodando).
+- **Local (alternativa):** frontend em `http://localhost:5173` (valor padrão da base) e API em `http://localhost:3000` (com a API rodando; o proxy do Vite repassa `/api` para ela).
 - Todas as rotas citadas abaixo são **relativas à URL base** do ambiente escolhido (ex.: `/login` → `https://<base>/login`).
 - Navegador recomendado: Chrome/Chromium (desktop). Para cenários de usuário deslogado, use uma janela anônima.
 
@@ -26,7 +26,7 @@ Cada seção corresponde a um caso de uso (UC) e a um ou mais casos de teste (CT
 
 > O cadastro não pede mais CPF/CNPJ: o documento saiu do sistema (o gateway não guarda esse dado). A UC-01 hoje se apoia no e-mail e no celular da conta de teste.
 
-> **Local com a fixture do gateway:** o usuário criado por `npm run db:seed:e2e` não tem celular. Na primeira entrada, a Web leva a **"Complete seu cadastro"** (`/auth/complete-signup`); preencha o celular e aceite os termos uma vez, e as entradas seguintes vão direto para o Dashboard.
+> **Local com a fixture do gateway:** o usuário criado por `npm run db:seed:e2e` já nasce com celular (`E2E_TEST_PHONE` ou um gerado a partir do e-mail), então o login vai direto para o Dashboard, sem passar por "Complete seu cadastro".
 
 ### Acesso administrativo ao banco (somente para preparar UC-04)
 
@@ -139,7 +139,7 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
 - **Pré-condições:**
   - `enterprise_id` da conta de teste disponível (ID de empresa válido).
   - A empresa precisa ter um **ponto de coleta QR ativo** (`type=QR_CODE`, `status=ACTIVE`), ou seja, a coleta ativada em **Canais de coleta**. Prefira o ponto de escopo empresa (sem item de catálogo). Sem um ponto ativo, a página nem mostra o formulário: aparece "QR Code indisponível: não há ponto de coleta ativo para este código. Verifique o QR Code ou contate a empresa."
-  - O dispositivo não pode ter enviado feedback **para o mesmo ponto no mesmo dia**: o gateway identifica o aparelho por navegador (User-Agent), IP e dia. Para reexecutar: use outro navegador, outro ponto de coleta ou espere o dia seguinte (ou limpe o registro em `tracked_devices` no banco local).
+  - O dispositivo não pode ter enviado feedback **para o mesmo ponto no mesmo dia**: o gateway identifica o aparelho por navegador (User-Agent) e IP, e o dia vira à meia-noite de Brasília. Para reexecutar: use outro navegador, outro ponto de coleta ou espere o dia seguinte (ou limpe o registro em `tracked_devices` no banco local).
 - **Passos:**
   1. Monte a URL com o `enterprise` e o `collection_point` (e `item`, se o ponto for específico de um item), acrescente `&canal=qr` e navegue até ela.
   2. Aguarde a página de coleta carregar ("Sua opinião importa").
@@ -156,7 +156,7 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
 - **Passos:**
   1. Abra de novo a mesma URL do CT-UC04-01.
   2. Preencha e envie o formulário outra vez.
-- **Resultado esperado:** o `POST /api/public/qrcode/feedback` retorna **HTTP 409** e aparece a tela **"Obrigado por participar"**: "Este dispositivo já enviou uma resposta para esta empresa hoje. Você poderá compartilhar uma nova opinião amanhã."
+- **Resultado esperado:** o `POST /api/public/qrcode/feedback` retorna **HTTP 409** e aparece a tela **"Obrigado por participar"**: "Este dispositivo já enviou uma resposta por aqui hoje. Você poderá compartilhar uma nova opinião amanhã."
 
 ### CT-UC04-03 — Enterprise ID inválido exibe "empresa não encontrada"
 
@@ -189,7 +189,7 @@ Rota: `/user/edit/feedback-general` (menu **Configuração da coleta › Avalia�
   1. Em `/user/edit/feedback-general`, se a coleta estiver pausada, clique em **"Ativar coleta"**.
   2. Clique em **"Pausar coleta"** e abra o link da empresa (CT-UC05-04) numa janela anônima.
   3. Clique em **"Ativar coleta"** de novo.
-- **Resultado esperado:** passo 1 → aviso **"QR Code ativado!"** ("Agora os clientes podem enviar feedback"), estado **"Recebendo respostas"** e a imagem do QR Code no cartão **QR Code**; passo 2 → aviso **"QR Code desativado!"** ("Coleta de feedback pausada"), estado **"Pausado"**, e o link abre o aviso "QR Code indisponível" em vez do formulário (o mesmo vale para o QR Code e a etiqueta NFC); passo 3 → a coleta volta a **"Recebendo respostas"** e o **mesmo** QR Code continua valendo.
+- **Resultado esperado:** passo 1 → aviso **"Coleta ativada!"** ("Agora os clientes podem enviar feedback"), estado **"Recebendo respostas"** e a imagem do QR Code no cartão **QR Code**; passo 2 → aviso **"Coleta desativada!"** ("Coleta de feedback pausada"), estado **"Pausado"**, e o link abre o aviso "QR Code indisponível" em vez do formulário (o mesmo vale para o QR Code e a etiqueta NFC); passo 3 → a coleta volta a **"Recebendo respostas"** e o **mesmo** QR Code continua valendo.
 
 ### CT-UC05-04 — Copiar o link e o endereço da etiqueta NFC
 
@@ -241,7 +241,7 @@ Rota: `/user/edit/feedback-products` · **Autenticado**.
 - **Passos:**
   1. Navegue para `/user/edit/feedback-products`.
   2. Aguarde o carregamento (até ~15s).
-- **Resultado esperado:** aparece o cartão **"Produtos"** com o botão **"Cadastrar produto"** e **ou** a lista dos produtos (cada um com o selo "QR ativo"/"QR inativo" e o botão **"Configurar"**) **ou** o estado vazio **"Nenhum produto cadastrado"**. A lista não é mais bloqueada quando o tipo está desligado em `/user/edit/types-feedback`.
+- **Resultado esperado:** aparece o cartão **"Produtos"** com o botão **"Cadastrar produto"** e **ou** a lista dos produtos (cada um com o selo "Coleta ativa"/"Coleta inativa" e o botão **"Configurar"**) **ou** o estado vazio **"Nenhum produto cadastrado"**. A lista não é mais bloqueada quando o tipo está desligado em `/user/edit/types-feedback`.
 
 ### CT-UC07-05 — Coleta por item: perguntas, comentário e canais
 
@@ -253,13 +253,13 @@ Rota: `/user/edit/feedback-products` · **Autenticado**.
   3. Em **Canais de coleta**, ative a coleta do item e copie o link.
   4. Em **Campo de comentário**, escolha **"Pergunta própria"**, escreva `O que você mudaria aqui?` e salve.
   5. Abra o link copiado numa janela anônima.
-- **Resultado esperado:** passo 2 → a tela mostra os dados do item (**"Salvar dados do item"**), as perguntas, o **"Campo de comentário"** e os **Canais de coleta**, com o breadcrumb "Configuração da coleta › Catálogo › <item>"; passo 3 → aviso **"QR Code ativado!"** ("Item disponível para coleta de feedback."); passo 5 → o formulário do item mostra a pergunta própria do item, sem afetar a da empresa (CT-UC05-08). Um id inexistente na URL mostra "Item não encontrado".
+- **Resultado esperado:** passo 2 → a tela mostra os dados do item (**"Salvar dados do item"**), as perguntas, o **"Campo de comentário"** e os **Canais de coleta**, com o breadcrumb "Configuração da coleta › Catálogo › <item>"; passo 3 → aviso **"Coleta ativada!"** ("Item disponível para coleta de feedback."); passo 5 → o formulário do item mostra a pergunta própria do item, sem afetar a da empresa (CT-UC05-08). Um id inexistente na URL mostra "Item não encontrado".
 
 ---
 
 ## UC-08 — Configuração de coleta e contexto de IA
 
-Rota: `/user/profile` · **Autenticado**. O contexto da empresa para a IA fica no cartão **"Contexto e LLM da empresa"** do Perfil e é editado na janela aberta por **"Editar contexto e LLM"** (a mesma do onboarding), em quatro passos: **1. Seu negócio** (resumo do negócio), **2. Sua meta** (objetivo da empresa), **3. O que descobrir** (objetivo da análise) e **4. Modelo LLM**. A rota antiga `/user/edit/collecting-data-enterprise` redireciona para `/user/profile#dados-da-empresa`.
+Rota: `/user/profile` · **Autenticado**. O contexto da empresa para a IA fica no cartão **"Contexto e LLM da empresa"** do Perfil e é editado na janela aberta por **"Editar contexto e LLM"** (a mesma do onboarding), em quatro passos: **1. Seu negócio** (resumo do negócio), **2. Sua meta** (objetivo da empresa), **3. O que descobrir** (objetivo da análise) e **4. Modelo LLM**. A rota antiga `/user/edit/collecting-data-enterprise` redireciona para `/user/profile#contexto-da-ia`.
 
 ### CT-UC08-01 — Página de configuração de coleta carrega com formulário visível
 
@@ -308,7 +308,7 @@ Rota: `/user/profile` · **Autenticado**. O contexto da empresa para a IA fica n
 
 Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe o **escopo** (empresa ou um item) e o **período**; todas as seções seguem essa escolha.
 
-> **Conta sem nenhum feedback:** no lugar das seções de métricas, o Dashboard mostra as boas-vindas e a prévia "Aguardando os primeiros feedbacks". Os **"Primeiros passos"** (ativar o QR Code e, se quiser, testar o formulário) aparecem no topo quando a coleta da empresa está pausada ao abrir o Dashboard, como na conta nova (CT-UC09-13). Os CT-UC09-02 a 04, 09 e 10 pedem uma conta com feedbacks.
+> **Conta sem nenhum feedback:** no lugar das seções de métricas, o Dashboard mostra as boas-vindas e a prévia "Aguardando os primeiros feedbacks". Os **"Primeiros passos"** (ativar a coleta e, se quiser, testar o formulário) aparecem no topo quando a coleta da empresa está pausada ao abrir o Dashboard, como na conta nova (CT-UC09-13). Os CT-UC09-02 a 04, 09 e 10 pedem uma conta com feedbacks.
 
 ### CT-UC09-01 — Dashboard carrega e exibe saudação personalizada
 
@@ -375,7 +375,7 @@ Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe
 - **Passos:**
   1. Abra o menu **"Comparar itens"** (`/user/compare`).
   2. Com dois ou mais itens do mesmo tipo, escolha o tipo, os dois itens e o período.
-- **Resultado esperado:** sem dois itens do mesmo tipo, a página mostra o passo a passo para chegar lá ("Cadastre os itens no Catálogo", "Ative o QR Code de cada item", "Volte aqui e escolha os dois"). Com eles, aparece **"Leitura lado a lado"**, uma tabela com **Nº de avaliações**, **Média**, **Positivas (4–5★)**, **Críticas (1–2★)**, **Tom dos comentários**, **Escreveram comentário** e **Precisão da média**, e a coluna **"Quem está melhor"** (com "Diferença incerta" quando as margens se sobrepõem).
+- **Resultado esperado:** sem dois itens do mesmo tipo, a página mostra o passo a passo para chegar lá ("Cadastre os itens no Catálogo", "Ative a coleta de cada item", "Volte aqui e escolha os dois"). Com eles, aparece **"Leitura lado a lado"**, uma tabela com **Nº de avaliações**, **Média**, **Positivas (4–5★)**, **Críticas (1–2★)**, **Tom dos comentários**, **Escreveram comentário** e **Precisão da média**, e a coluna **"Quem está melhor"** (com "Diferença incerta" quando as margens se sobrepõem).
 
 ### CT-UC09-13 — Primeiros passos e "Testar o formulário"
 
@@ -386,7 +386,7 @@ Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe
   2. No cartão **"Primeiros passos"**, clique em **"Ativar QR Code"**.
   3. Clique em **"Testar o formulário"**, responda na janela e clique em **Enviar Feedback**.
   4. Abra `/user/feedbacks/all`.
-- **Resultado esperado:** passo 1 → o cartão mostra **"Ativar o QR Code da empresa"** e **"Testar o formulário (opcional)"**, este desabilitado com "Ative o QR Code para poder testar."; passo 2 → o primeiro passo vira **"QR Code ativado"** ("Os clientes já conseguem responder pelo QR Code, pelo link e pela etiqueta NFC."); passo 3 → a janela "Testar o formulário" abre o mesmo formulário do cliente e, depois do envio, mostra **"Pronto! Seu teste chegou."**, fecha sozinha e o cartão passa a **"Tudo pronto ✓"**; passo 4 → o feedback aparece com a marca **"Teste"** e o canal "Teste do formulário", e não entra em "Por onde chegaram" (CT-UC09-09) nem nas métricas. Se o aparelho já respondeu no dia, a janela mostra "Você já respondeu por este aparelho.". **"Pular"** conclui o passo sem testar.
+- **Resultado esperado:** passo 1 → o cartão mostra **"Ativar a coleta da empresa"** e **"Testar o formulário (opcional)"**, este desabilitado com "Ative o QR Code para poder testar."; passo 2 → o primeiro passo vira **"Coleta ativada"** ("Os clientes já conseguem responder pelo QR Code, pelo link e pela etiqueta NFC."); passo 3 → a janela "Testar o formulário" abre o mesmo formulário do cliente e, depois do envio, mostra **"Pronto! Seu teste chegou."**, fecha sozinha e o cartão passa a **"Tudo pronto ✓"**; passo 4 → o feedback aparece com a marca **"Teste"** e o canal "Teste do formulário", e não entra em "Por onde chegaram" (CT-UC09-09) nem nas métricas. Se o aparelho já respondeu no dia, a janela mostra "Você já respondeu por este aparelho.". **"Pular"** conclui o passo sem testar.
 
 ---
 
@@ -532,7 +532,7 @@ Rotas: `/user/profile`, `/user/qrcode/enterprise`, `/user/edit/types-feedback`, 
 | `/user/insights/questions` | `/user/dashboard` |
 | `/user/edit/feedback-settings` | `/user/edit/types-feedback` |
 | `/user/qrcode/enterprise` | `/user/edit/feedback-general` |
-| `/user/edit/collecting-data-enterprise` | `/user/profile#dados-da-empresa` |
+| `/user/edit/collecting-data-enterprise` | `/user/profile#contexto-da-ia` |
 
 ---
 
