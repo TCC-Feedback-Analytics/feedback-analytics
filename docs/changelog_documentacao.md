@@ -2,7 +2,7 @@
 
 Categoria: Gestão de Projeto
 v4.0: Não tem
-Última edição: 3 de novembro de 2026
+Última edição: 10 de novembro de 2026
 
 ---
 
@@ -33,6 +33,7 @@ Registra todas as alterações significativas feitas nas páginas de documentaç
 
 | Versão | Data | Descrição |
 | --- | --- | --- |
+| v5.0.0 | 10/11/2026 | Política de Privacidade redigida e implementada |
 | v5.0.0 | 18/06/2026 | Novo design das rotas protegidas, robustez nas análises |
 | v4.0.0 | 16/05/2026 | Versão estável da nova arquitetura macro e micro |
 | v3.0.0 | 16/05/2026 | Versão anterior do sistema (Legado). |
