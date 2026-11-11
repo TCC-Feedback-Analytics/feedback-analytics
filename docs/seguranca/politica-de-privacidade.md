@@ -103,7 +103,8 @@ Na condição de titular de dados pessoais, você pode solicitar a qualquer mome
 
 ### Canal de atendimento
 Para exercer quaisquer desses direitos sobre dados cadastrais da sua conta, entre em contato pelo nosso canal formal:
-* **E-mail de contato:** `feedbackanalytics2026@gmail.com`
+
+**E-mail de contato:** `feedbackanalytics2026@gmail.com`
 
 *Nota aos clientes finais que responderam a um formulário:* como os feedbacks pertencem à empresa avaliada (controladora), você pode direcionar seu pedido de acesso ou exclusão diretamente ao estabelecimento comercial correspondente ou entrar em contato conosco pelo e-mail acima para auxiliarmos no encaminhamento.
 
