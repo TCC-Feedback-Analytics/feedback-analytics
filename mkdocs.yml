@@ -136,6 +136,7 @@ nav:
       - Mapa de ameaças (STRIDE): seguranca/mapa-de-ameacas.md
       - Controlador e operador: seguranca/controlador-e-operador.md
       - Roteiro de incidente: seguranca/roteiro-de-incidente.md
+      - Política de Privacidade: seguranca/politica-de-privacidade.md
   - Referência Técnica:
       - Banco de dados (schema): referencia/banco-de-dados/visao-geral.md
       - Padrões de projeto: referencia/padroes-projeto.md
