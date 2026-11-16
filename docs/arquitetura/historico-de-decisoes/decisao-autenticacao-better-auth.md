@@ -4,7 +4,7 @@
     A autenticação do sistema **saiu do Supabase Auth** e passou para o **Better Auth**. O **banco continua sendo o mesmo Postgres** (hospedado no Supabase, acessado direto por `DATABASE_URL` + Drizzle). "Sair do Supabase" aqui significou sair do **Auth + SDK**, não do banco.
 
 !!! info "Situação em nov/2026"
-    A decisão segue valendo. Depois dela, entraram a **entrada com o Google** (pelo handler nativo do Better Auth, em `/api/auth/*`) e a **exclusão da conta**; os e-mails de produção passaram do SendGrid para a **Brevo**; e o app passou a entrar no banco com o papel **`feedback_app`**, de menor privilégio, com a RLS ligada em todas as tabelas (migration `0013`).
+    A decisão segue valendo. Depois dela, entraram a **entrada com o Google** (pelo handler nativo do Better Auth, em `/api/auth/*`) e a **exclusão da conta**; os e-mails de produção passaram do SendGrid para a **Brevo**; e o app passou a entrar no banco com o papel **`feedback_app`**, de menor privilégio, com a RLS ligada em todas as tabelas (migration `0013`). A sessão é conferida no banco a cada requisição, sem JWT nem `cookieCache`. Em produção, o `BETTER_AUTH_URL` é a URL da Web, que repassa `/api/*` ao Gateway. Na entrada com o Google, os tokens do Google não são gravados na tabela `account` (hook `discardOAuthTokens`, na `developer`; ainda não na `main`).
 
 ## Em uma frase
 

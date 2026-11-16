@@ -2,7 +2,7 @@
 
 ## Arquitetura Serverless (Macro)
 
-A infraestrutura do projeto roda integralmente na **Vercel**, sem servidores dedicados. Cada serviço é uma unidade independente que dorme até receber uma requisição — o modelo **Serverless Functions** da Vercel.
+Os três serviços rodam na **Vercel**, sem servidores dedicados. O Postgres fica hospedado no Supabase, e o cron de reserva da fila de IA roda no GitHub Actions. O Gateway e o IA Analyze dormem até receber uma requisição, no modelo **Serverless Functions** da Vercel; a Web é um site estático na CDN.
 
 | Serviço (repositório) | Builder | Tipo de Deploy | `maxDuration` |
 |---|---|---|---|
@@ -10,7 +10,7 @@ A infraestrutura do projeto roda integralmente na **Vercel**, sem servidores ded
 | `feedback-analytics-api-gateway` | `@vercel/node` | Serverless Function | 300s |
 | `feedback-analytics-ia-analyze` | `@vercel/node` | Serverless Function | 300s |
 
-- **Frontend (web):** arquivos estáticos (HTML, CSS, JS) gerados no build e servidos diretamente pela CDN da Vercel. Em produção, a Web chama `/api/*` no próprio domínio e o `vercel.json` dela repassa ao Gateway, para o cookie de sessão ser do próprio site. O React 19 acompanha os jobs de IA por polling resiliente via `useIaOperation`.
+- **Frontend (web):** arquivos estáticos (HTML, CSS, JS) gerados no build e servidos diretamente pela CDN da Vercel. Em produção, a Web chama `/api/*` no próprio domínio e o `vercel.json` dela repassa ao Gateway, para o cookie de sessão ser do próprio site. As rotas públicas que contam por IP (formulário do cliente e reenvio da confirmação) vão direto ao Gateway, pela `VITE_PUBLIC_API_BASE_URL`. O React 19 acompanha os jobs de IA por polling resiliente via `useIaOperation`.
 - **API-Gateway:** ponto central em Node.js/Express. Além de tratar autenticação (Better Auth) e regras de negócio, hospeda o **Worker Assíncrono**, que consome a fila `ia_analysis_job` via `SELECT ... FOR UPDATE SKIP LOCKED`. Fora da Vercel, o worker roda em loop junto com o servidor; na Vercel, ele anda um passo depois de cada pedido (`kickWorker`, com `waitUntil`), no polling de status e pelo cron de reserva `ia-worker.yml` (a cada 5 minutos).
 - **IA-Analyze:** microsserviço isolado de inferência, sem banco. Recebe do Worker, por chamadas HTTP internas protegidas por token, os lotes de feedbacks, a síntese dos insights, o diagnóstico do escopo e a geração das perguntas da empresa, e chama o OpenRouter com a chave e o modelo da empresa, via padrão Strategy (o adaptador do Gemini fica só como reserva legada).
 
@@ -32,7 +32,7 @@ Cada serviço vive em seu **próprio repositório**, com escopo, responsabilidad
 | `feedback-analytics-ia-analyze` | Serviço serverless | Processamento de IA com escopo e volume próprios |
 | `feedback-analytics` (este) | Documentação | Concepção, produto, decisões e requisitos (o schema do banco vive no gateway, em `drizzle/`) |
 
-O pacote de contratos resolve a sincronização de tipos: quando o formato de comunicação entre Gateway e IA-Analyze muda, uma nova versão do `@feedback/lib-shared` propaga o contrato e o TypeScript avisa imediatamente se algum lado quebrou. Cada serviço fixa a versão por **tag do Git**: hoje o Gateway e a Web estão na `v1.8.0` e o IA-Analyze na `v1.7.0`.
+O pacote de contratos resolve a sincronização de tipos: quando o formato de comunicação entre Gateway e IA-Analyze muda, uma nova versão do `@feedback/lib-shared` propaga o contrato e o TypeScript avisa imediatamente se algum lado quebrou. Cada serviço fixa a versão por **tag do Git**: hoje a Web está na `v1.9.0`, o Gateway na `v1.8.0` e o IA-Analyze na `v1.7.0`.
 
 A partir daqui, cada serviço tem sua própria arquitetura interna — veja os links em **Veja Também**.
 
@@ -68,7 +68,7 @@ O sistema tem uma topologia **hub-and-spoke**: o API Gateway é o hub central. O
 
 1. O Frontend chama os endpoints de autenticação do Gateway (`/api/public/auth/login|register|logout|...`), que usam **Better Auth** por baixo; a entrada com o Google passa pelo handler nativo do Better Auth (`/api/auth/*`). A sessão é mantida em um **cookie httpOnly** definido pelo Gateway
 2. Todas as requisições ao Gateway são enviadas com `credentials: 'include'`, levando o cookie de sessão automaticamente
-3. O middleware `requireAuth` valida a sessão via **Better Auth** (a partir do cookie) e injeta `req.user` e `req.enterpriseId` na request
+3. O middleware `requireAuth` valida a sessão via **Better Auth** (a partir do cookie, conferida no banco a cada requisição, sem JWT nem `cookieCache`) e injeta `req.user` e `req.enterpriseId` na request
 4. O Gateway lê/escreve no banco (Postgres via Drizzle, sempre filtrando por `enterprise_id`) e, quando há trabalho de IA, enfileira um job
 
 
@@ -85,7 +85,7 @@ Todo trabalho de IA passa pela fila `ia_analysis_job`, que é ao mesmo tempo a f
 2. **Acionamento e lease pelo Worker:**
    - O worker anda por quatro caminhos: `kickWorker()` logo depois do pedido (na Vercel, `waitUntil` mantém a função viva até o passo terminar); `kickWorkerIfPending()` no polling de status e ao carregar páginas; o cron de reserva do GitHub Actions (`ia-worker.yml`, a cada 5 minutos), que chama `POST /api/internal/worker/tick` com o token `WORKER_TICK_TOKEN`; e, fora da Vercel, um loop local.
    - O Worker pega o job com `SELECT ... FOR UPDATE SKIP LOCKED`, sem concorrência destrutiva entre instâncias. O status passa para `running` e o job ganha um lease de 10 minutos, renovado por heartbeat; um job abandonado pode ser retomado depois que o lease vence.
-   - Antes de cada chamada à IA, o Worker reserva orçamento no `ia_rate_budget` (por minuto e por dia, por empresa). Sem orçamento, o job fica em `waiting_budget` até a próxima janela.
+   - Antes de cada chamada à IA, o Worker reserva orçamento no `ia_rate_budget` (por minuto e por dia, por empresa). Sem orçamento, o job fica em `waiting_budget` até a próxima janela. Os limites vêm de `IA_RPM_LIMIT` e `IA_RPD_LIMIT`; vazios, não há limite.
 
 3. **Fracionamento de Lotes e Headers Dinâmicos:**
    - O Worker busca os feedbacks não analisados da empresa e os fatia em lotes (`IA_MAX_FEEDBACKS_PER_BATCH`, padrão 20 feedbacks).
@@ -98,7 +98,7 @@ Todo trabalho de IA passa pela fila `ia_analysis_job`, que é ao mesmo tempo a f
 
 5. **Persistência Incremental e Conclusão:**
    - O Worker salva as análises de cada lote em `feedback_analysis` (uma por feedback) e grava o progresso (`done`/`total`) e o checkpoint no próprio job (`options.checkpoint`), para retomar de onde parou.
-   - No relatório (*"Gerar insights"*), o Worker junta os insights parciais de todos os lotes do escopo (sem corte em 100) e chama a síntese final no `ia-analyze`; o resumo e as recomendações vão para `feedback_insights_report`.
+   - No relatório (*"Gerar insights"*), o Worker anda em etapas: analisa os pendentes, se pedido; gera um insight parcial por lote do escopo (sem corte em 100); e faz uma síntese por relatório em `/internal/ia-analyze/synthesize-insights`. O resumo e as recomendações vão para `feedback_insights_report`.
    - O diagnóstico do escopo vai para `scope_diagnosis`, e as perguntas geradas pela IA substituem as padrão em `questions_of_feedbacks` enquanto a empresa não as editou.
    - Ao finalizar, o job passa para `completed` (ou `failed`, depois das retentativas), e a interface do frontend exibe os dados atualizados.
 
@@ -118,6 +118,8 @@ Os tipos TypeScript que transitam entre Gateway e IA Analyze **não são duplica
 | `scope-diagnosis.contract.ts` | Pedido e resposta do diagnóstico do escopo |
 | `company-question-suggestions.contract.ts` | Pedido e resposta da geração das perguntas da empresa |
 
+Exceção hoje: o pedido e a resposta da síntese dos insights (`/internal/ia-analyze/synthesize-insights`) ainda não estão no pacote. Os tipos `IaInsightsSynthesisRequest` e `IaInsightsSynthesisResponse` vivem copiados em `types/insightsSynthesis.types.ts`, no Gateway e no IA Analyze.
+
 ---
 
 ## Tecnologias
@@ -128,15 +130,15 @@ Os tipos TypeScript que transitam entre Gateway e IA Analyze **não são duplica
 | Roteamento / Data Fetching | React Router DOM | 7.x |
 | Formulários | React Hook Form + Zod | 7.x / 4.x |
 | Estilo | Tailwind CSS | 4.x |
-| Build | Vite | 7.x |
-| Backend Runtime | Node.js | 20.x |
+| Build | Vite | 8.x |
+| Runtime | Node.js | 20.x no Gateway · 22.x no IA Analyze · 24.x no build da Web |
 | Backend Framework | Express | 5.x |
-| Autenticação | Better Auth (sessão em cookie httpOnly) | — |
-| ORM / Acesso a dados | Drizzle ORM (SQL-first) | — |
+| Autenticação | Better Auth (sessão em cookie httpOnly) | 1.7.x |
+| ORM / Acesso a dados | Drizzle ORM (SQL-first) | 0.45.x |
 | Banco de Dados | PostgreSQL (hospedado no Supabase, acessado direto via `DATABASE_URL`) | — |
 | E-mail transacional | SMTP (Brevo em produção · Mailpit no local) | — |
-| IA | OpenRouter com chave e modelo configurados por empresa no perfil (BYO-key); credencial cifrada no Gateway e enviada ao IA Analyze por headers internos | — |
-| Testes | Vitest + Testing Library | — |
+| IA | OpenRouter com chave e modelo configurados por empresa em Configuração de IA (BYO-key); credencial cifrada no Gateway e enviada ao IA Analyze por headers internos | — |
+| Testes | Vitest (Testing Library na Web, Supertest no Gateway e no IA Analyze) | 5.x |
 | Distribuição | Multi-repo + pacote `@feedback/lib-shared` | — |
 
 ---

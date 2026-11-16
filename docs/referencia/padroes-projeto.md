@@ -26,8 +26,8 @@ O projeto usa **Conventional Commits** em Português do Brasil. Formato (o escop
 
 | Camada | Convenção | Exemplo |
 |---|---|---|
-| Componentes React | `PascalCase.tsx` | `InsightsControlsBar.tsx` |
-| Páginas | `camelCase.tsx` | `editFeedbackSettings.tsx` |
+| Componentes React | `PascalCase.tsx` (há arquivos antigos em `camelCase.tsx`) | `InsightsControlsBar.tsx` |
+| Páginas | `camelCase.tsx` | `editFeedbackGeneral.tsx` |
 | Actions (React Router) | `action + PascalCase.ts` | `actionFeedbackSettings.ts` |
 | Loaders (React Router) | `loader + PascalCase.ts` | `loaderFeedbackGeneral.ts` |
 | Serviços frontend | `service + PascalCase.ts` | `serviceFeedbacks.ts` |
@@ -53,7 +53,7 @@ O projeto usa **Conventional Commits** em Português do Brasil. Formato (o escop
 ```
 
 **Regras:**
-- **Actions** sempre retornam `{ ok: boolean, error?: string, message?: string }`
+- **Actions** retornam `{ ok: boolean, error?: string, message?: string }`, às vezes com campos a mais (como `jobId`), ou um `redirect()` quando o sucesso leva a outra página
 - **Loaders** sempre retornam dados tipados da página
 - Use `useRouteLoaderData('user')` para acessar dados do loader pai
 
@@ -67,7 +67,7 @@ Route → Controller → Service → Repository → Postgres (Drizzle)
 
 - **Controller**: valida autorização, extrai body, retorna HTTP response — sem lógica de negócio
 - **Service**: orquestra a lógica, chama repositories e providers externos
-- **Repository**: queries Drizzle puras, sem `if`s de negócio, sempre filtradas por `enterprise_id` (helpers de `src/db/tenantScope.ts`)
+- **Repository**: queries Drizzle puras, sem `if`s de negócio, sempre filtradas por `enterprise_id` (de preferência pelos helpers de `src/db/tenantScope.ts`)
 - **Libs** (`libs/`): lógica de domínio reutilizável — a maior parte pura (estatística, período, montagem dos lotes da IA)
 
 Fluxos sem regra de negócio própria podem ir direto do Controller ao Repository (ex.: pontos de coleta e formulário público).
@@ -77,7 +77,7 @@ Fluxos sem regra de negócio própria podem ir direto do Controller ao Repositor
 ## Contratos Compartilhados
 
 !!! note "Regra de Ouro"
-    Nunca duplique tipos entre serviços. Todo tipo que transita entre `api-gateway` e `ia-analyze` deve viver no pacote [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts), em `interfaces/contracts/ia-analyze/`. Cada serviço fixa a versão do pacote por tag do Git (hoje, `v1.8.0` no Gateway e na Web e `v1.7.0` no IA-Analyze).
+    Nunca duplique tipos entre serviços. Todo tipo que transita entre `api-gateway` e `ia-analyze` deve viver no pacote [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts), em `interfaces/contracts/ia-analyze/`. Cada serviço fixa a versão do pacote por tag do Git (hoje, `v1.9.0` na Web, `v1.8.0` no Gateway e `v1.7.0` no IA-Analyze). Exceção a corrigir: os tipos da síntese dos insights (`IaInsightsSynthesisRequest` e `IaInsightsSynthesisResponse`) ainda estão copiados em `types/insightsSynthesis.types.ts` nos dois serviços.
 
 ---
 
@@ -140,19 +140,21 @@ return { ok: false, error: 'update_failed', message: 'Mensagem para o usuário' 
 | `VITE_PUBLIC_API_BASE_URL` | Frontend | Em produção (URL pública do Gateway); vazia no local |
 | `VITE_GOOGLE_AUTH_ENABLED` | Frontend | Não (`true` mostra o "Continuar com Google") |
 | `DATABASE_URL` | API Gateway | Sim |
-| `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` | API Gateway | Sim |
+| `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` | API Gateway | Sim (em produção, a `BETTER_AUTH_URL` é a URL da Web, que repassa `/api/*` ao Gateway) |
+| `COOKIE_CROSS_SITE` | API Gateway | Não (`false` em produção) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | API Gateway | Só com a entrada pelo Google ligada |
 | `PUBLIC_SITE_URL` / `CORS_ALLOWED_ORIGINS` | API Gateway | Sim |
-| `CORS_ALLOW_VERCEL_PROJECT_PAIR` | API Gateway | Sim (`false` em produção sem previews pareados) |
+| `CORS_ALLOW_VERCEL_PROJECT_PAIR` | API Gateway | Não (vazia, liga o pareamento só em preview; `false` desliga) |
 | `CORS_VERCEL_WEB_PROJECT_SLUG` / `CORS_VERCEL_API_PROJECT_SLUG` | API Gateway | Somente com pareamento de previews habilitado |
 | `WORKER_TICK_TOKEN` | API Gateway e GitHub Actions | Sim em produção; mesmo valor nos dois lados |
+| `IA_ANALYZE_EXECUTION_MODE` | API Gateway | Sim em produção (`remote`) |
 | `IA_ANALYZE_REMOTE_TOKEN` | API Gateway | Sim no modo remoto |
 | `IA_ANALYZE_INTERNAL_TOKEN` | IA Analyze | Sim; mesmo valor de `IA_ANALYZE_REMOTE_TOKEN` |
 | `IA_ANALYZE_REMOTE_URL` | API Gateway | Sim |
 | `IA_CONFIG_ENCRYPTION_KEY` | API Gateway | Sim |
-| `REQUIRE_USER_IA_KEY` | API Gateway | Sim (`true`) |
-| `SMTP_HOST` / `SMTP_PORT` / `MAIL_FROM` | API Gateway | Sim |
+| `REQUIRE_USER_IA_KEY` | API Gateway | Não (padrão `true`; `false` reativa o fallback global) |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | API Gateway | Sim (usuário e senha só em produção, com a Brevo) |
 | `IA_LLM_CONCURRENCY` | IA Analyze | Não |
 | `PORT` | Gateway (3000) / IA (4100) | Não |
 
-O endereço do Gateway no frontend vem só dessas duas variáveis; não mantenha slugs ou URLs da Vercel fixos no código. Em produção, a `VITE_API_BASE_URL` fica vazia: a Web chama `/api/*` no próprio domínio e o `vercel.json` repassa ao Gateway, para o cookie de sessão ser do site. As rotas públicas que contam por IP (formulário do cliente e reenvio da confirmação) vão direto ao Gateway pela `VITE_PUBLIC_API_BASE_URL`. Faça novo deploy do web depois de alterar qualquer uma delas.
+No código do frontend, o endereço do Gateway vem só dessas duas variáveis; não mantenha slugs ou URLs da Vercel fixos no código. A exceção é o destino do repasse, fixo no `vercel.json` da Web. Em produção, a `VITE_API_BASE_URL` fica vazia: a Web chama `/api/*` no próprio domínio e o `vercel.json` repassa ao Gateway, para o cookie de sessão ser do site. As rotas públicas que contam por IP (formulário do cliente e reenvio da confirmação) vão direto ao Gateway pela `VITE_PUBLIC_API_BASE_URL`. Faça novo deploy do web depois de alterar qualquer uma delas.

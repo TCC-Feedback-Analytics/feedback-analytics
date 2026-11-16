@@ -2,7 +2,7 @@
 
 > Documentação técnica do schema PostgreSQL hospedado no Supabase. Cobre todas as tabelas, relacionamentos, políticas de segurança (RLS), funções, triggers e índices do sistema.
 >
-> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration ([`drizzle/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle), hoje de `0000` a `0014`). Esta página foi conferida contra essas migrations em 03/11/2026; na dúvida, vale o código. Os dumps SQL de `database/sql/` deste repositório são **legado**.
+> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration ([`drizzle/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle), hoje de `0000` a `0014`). Esta página foi conferida contra essas migrations em 16/11/2026; na dúvida, vale o código. Os dumps SQL de `database/sql/` deste repositório são **legado**.
 
 ---
 
@@ -31,7 +31,7 @@ O banco de dados é a camada de persistência central da plataforma. Ele garante
 - **Multi-tenancy na aplicação:** cada linha de dados de negócio está vinculada a um `enterprise_id`, e o Gateway sempre filtra por ele (`src/db/tenantScope.ts`). A RLS não filtra por empresa — ver [Segurança e RLS](#segurança-e-rls).
 - **Menor privilégio:** o app usa o papel `feedback_app`, que não cria, altera nem apaga estrutura. A RLS ligada em todas as tabelas barra qualquer outro papel, como o `anon` e o `authenticated` do Supabase.
 - **Integridade por cascata:** deleções propagam-se via `ON DELETE CASCADE` onde há FK; o que não tem FK em cascata o Gateway apaga ao excluir a conta.
-- **Onboarding pela aplicação:** ao criar a conta, o Gateway (gancho do Better Auth) cria a empresa e semeia as 3 perguntas institucionais padrão. Não há trigger de cadastro no banco.
+- **Onboarding pela aplicação:** ao criar a conta, o Gateway cria a empresa e semeia as 3 perguntas institucionais padrão. No cadastro com senha, quem faz isso é o controller de registro; no login com Google, o gancho do Better Auth. Não há trigger de cadastro no banco.
 
 ---
 
@@ -45,7 +45,7 @@ O banco de dados é a camada de persistência central da plataforma. Ele garante
 | **Autenticação** | **Better Auth** (tabelas `user`/`session`/`account`/`verification` no próprio Postgres) — sessão em cookie httpOnly, validada no api-gateway |
 | **Segurança** | Row Level Security (RLS) habilitado em todas as 24 tabelas, com a policy `feedback_app_all` |
 | **Schema do projeto** | `public` (o drizzle-kit atua só nele: `schemaFilter: ['public']`) |
-| **Recursos do Postgres usados** | `gen_random_uuid()`, `pg_advisory_xact_lock()`, `md5()`, índices parciais e por expressão, `FOR UPDATE SKIP LOCKED` |
+| **Recursos do Postgres usados** | `gen_random_uuid()`, índices parciais e por expressão, `UNIQUE NULLS NOT DISTINCT` (Postgres 15 ou mais novo) e `FOR UPDATE SKIP LOCKED`. `md5()` e `pg_advisory_xact_lock()` só aparecem nas funções antigas de anti-spam, que o Gateway não chama |
 
 ---
 
@@ -93,7 +93,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 
 > **Tabelas auxiliares do Better Auth:**
 > - `public.session`: Gerencia sessões ativas (`user_id`, `token` único, `expires_at`, `ip_address`, `user_agent`).
-> - `public.account`: Guarda os provedores de entrada (senha, Google), os tokens do provedor e o hash da senha (`user_id`, `account_id`, `provider_id`, `password`).
+> - `public.account`: Guarda os provedores de entrada (senha, Google) e o hash da senha (`user_id`, `account_id`, `provider_id`, `password`). As colunas `access_token`, `refresh_token` e `id_token` existem, mas o Gateway grava a conta do Google sem elas (`discardOAuthTokens`, na criação e em toda atualização).
 > - `public.verification`: Armazena tokens temporários de verificação e recuperação de senha (`identifier`, `value`, `expires_at`).
 >
 > `session` e `account` têm FK para `user` com `ON DELETE CASCADE`; `verification` não tem FK.
@@ -102,7 +102,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 
 ### `public.user_onboarding`
 
-> Estado do guia do sistema (tour da Web) por usuário. Chave primária composta `(user_id, tour_key, version)`.
+> Estado do guia do sistema (tour da Web) por usuário (migration `0004`). Chave primária composta `(user_id, tour_key, version)`.
 
 | Coluna | Tipo | Obrigatório | Descrição | Impacto no Projeto |
 |---|---|---|---|---|
@@ -116,7 +116,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 
 ### `public.auth_rate_limit`
 
-> Contador durável do limite de reenvio do e-mail de confirmação (`src/libs/resendRateLimit.ts`), compartilhado entre as instâncias serverless.
+> Contador durável do limite de reenvio do e-mail de confirmação (migration `0005`, `src/libs/resendRateLimit.ts`), compartilhado entre as instâncias serverless.
 
 | Coluna | Tipo | Obrigatório | Descrição | Impacto no Projeto |
 |---|---|---|---|---|
@@ -200,7 +200,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `kind` | text | Sim | `PRODUCT` \| `SERVICE` \| `DEPARTMENT` | **Crítico** — determina em qual aba/seção o item aparece no frontend; filtrado pelos flags `uses_company_*` de `collecting_data_enterprise` |
 | `name` | text | Sim | Nome exibido no formulário e dashboard | **Alto** — exibido no formulário público, na tela de catálogo e nos relatórios de insights |
 | `description` | text | Não | Descrição opcional | **Baixo** — informativo; não impacta fluxos funcionais |
-| `status` | text | Sim | `ACTIVE` (default) \| `INACTIVE` | **Médio** — estado do item no catálogo; o formulário público confere o status do ponto de coleta do item, não o do item |
+| `status` | text | Sim | `ACTIVE` (default) \| `INACTIVE` | **Alto** — estado do item no catálogo; o formulário público só aceita resposta se o item e o ponto de coleta dele estão `ACTIVE` |
 | `sort_order` | integer | Sim | Ordenação exibição (default 0) | **Médio** — controla a ordem de listagem no frontend; sem ele os itens aparecem em ordem indefinida |
 
 **Índices:** `(enterprise_id, kind)`, `(status)`
@@ -219,9 +219,9 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `name` | text | Sim | Nome do ponto de coleta | **Médio** — exibido nas telas de configuração da coleta do painel |
 | `type` | text | Sim | `QR_CODE` (único tipo gravado; sem CHECK no banco) | **Crítico** — o Gateway só aceita envio por ponto `QR_CODE` |
 | `identifier` | text | Não | Identificador opcional | **Baixo** — lido na listagem de feedbacks e no contexto enviado à IA |
-| `status` | text | Sim | `ACTIVE` (default) \| `INACTIVE` (sem CHECK no banco) | **Crítico** — sem ponto `ACTIVE` para o escopo, o envio responde `collection_point_not_found` |
+| `status` | text | Sim | `ACTIVE` (default) \| `INACTIVE` (sem CHECK no banco) | **Crítico** — sem ponto `ACTIVE` para o escopo, ou com o item do ponto `INACTIVE`, o envio responde `collection_point_not_found` |
 
-**Regra de negócio:** o formulário público só aceita resposta se existe um ponto `QR_CODE` `ACTIVE` para o escopo (verificado no Gateway, em `resolveQrCollectionPoint`).
+**Regra de negócio:** o formulário público só aceita resposta se existe um ponto `QR_CODE` `ACTIVE` para o escopo e, no ponto de um item, se o item também está `ACTIVE` (verificado no Gateway, em `resolveQrCollectionPoint`).
 
 ---
 
@@ -310,7 +310,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `blocked_at` | timestamptz | Não | Data do bloqueio | **Baixo** — auditoria do bloqueio |
 | `blocked_by` | uuid | Não | ID do gestor que bloqueou (sem FK) | **Baixo** — rastreabilidade de quem aplicou o bloqueio |
 | `feedback_count` | integer | Não | Contador total de feedbacks (default 0) | **Alto** — o Gateway cria o registro com `0` e soma 1 a cada envio; usado para métricas de volume e como sinal de comportamento suspeito |
-| `last_feedback_at` | timestamptz | Não | Data/hora do último envio | **Médio** — atualizado a cada envio; o limite diário é conferido em `feedback` (mesmo dispositivo, mesmo ponto, desde o início do dia) |
+| `last_feedback_at` | timestamptz | Não | Data/hora do último envio | **Médio** — atualizado a cada envio; o limite diário é conferido em `feedback` (mesmo dispositivo, mesmo ponto, desde a meia-noite no horário de Brasília) |
 
 ---
 
@@ -325,13 +325,15 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `collection_point_id` | uuid | Sim | Ponto de coleta de origem (**sem FK** nas migrations) | **Crítico** — identifica de onde veio o feedback; base para filtros por escopo no dashboard |
 | `tracked_device_id` | uuid | Não | Dispositivo emissor (**sem FK** nas migrations) | **Alto** — vincula o feedback ao dispositivo; usado no limite diário e no bloqueio |
 | `message` | text | Sim | Texto livre do cliente (texto vazio quando não há comentário) | **Crítico** — principal entrada do motor de IA; sem comentário, o feedback não vai para a IA nem conta como "aguardando análise" |
-| `comment_prompt` | text | Não | Pergunta própria que o cliente viu no campo de comentário (nulo = convite padrão) | **Alto** — vai à IA junto com o comentário, que é lido como resposta a ela |
-| `channel` | text | Não | `QR` \| `LINK` \| `NFC` \| `TEST` (CHECK); nulo = sem a marca de canal | **Alto** — métricas por canal; `TEST` ("Testar o formulário") fica fora das métricas e da IA |
+| `comment_prompt` | text | Não | Pergunta própria que o cliente viu no campo de comentário (nulo = convite padrão; migration `0011`) | **Alto** — vai à IA junto com o comentário, que é lido como resposta a ela |
+| `channel` | text | Não | `QR` \| `LINK` \| `NFC` \| `TEST` (CHECK, migration `0012`); nulo = sem a marca de canal | **Alto** — métricas por canal; `TEST` ("Testar o formulário") fica fora das métricas e da IA |
 | `rating` | integer | Não | Nota global da experiência (1–5) | **Crítico** — exibido nos cards de métricas do dashboard (média, positivos, críticos) e na listagem de feedbacks |
+| `created_at` | timestamptz | Auto | Quando o feedback chegou | **Crítico** — base das métricas por período e do limite diário; índice `idx_feedback_enterprise_created_at` |
+| `updated_at` | timestamptz | Auto | Atualizado por trigger | **Baixo** — auditoria interna |
 
-**Índice:** `idx_feedback_enterprise_created_at` `(enterprise_id, created_at DESC)` — toda leitura de métricas filtra por empresa e recorta por período.
+**Índice:** `idx_feedback_enterprise_created_at` `(enterprise_id, created_at DESC)` (migration `0007`) — toda leitura de métricas filtra por empresa e recorta por período.
 
-**Validação do envio** (no Gateway, `qrcode.controller.ts`): empresa existente, ponto `QR_CODE` ativo para o escopo, dispositivo não bloqueado e no máximo um envio por dia por ponto de coleta.
+**Validação do envio** (no Gateway, `qrcode.controller.ts`): empresa existente, ponto `QR_CODE` ativo para o escopo (com o item ativo, se houver), respostas iguais às perguntas ativas, dispositivo não bloqueado e no máximo um envio por dia por ponto de coleta.
 
 ---
 
@@ -394,11 +396,12 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 |---|---|---|---|---|
 | `id` | uuid PK | Sim | — | **Baixo** — identificação interna do registro |
 | `enterprise_id` | uuid FK | Sim | → `enterprise.id` ON DELETE CASCADE | **Crítico** — multi-tenant |
-| `scope_type` | text | Sim | `COMPANY` \| `PRODUCT` \| `SERVICE` \| `DEPARTMENT` | **Crítico** — determina o escopo do relatório; usado no seletor de escopo da tela de insights |
+| `scope_type` | text | Sim | `COMPANY` (default) \| `PRODUCT` \| `SERVICE` \| `DEPARTMENT` | **Crítico** — determina o escopo do relatório; usado no seletor de escopo da tela de insights |
 | `catalog_item_id` | uuid FK | Condicional | → `catalog_items.id` ON DELETE CASCADE — obrigatório quando `scope_type ≠ COMPANY` | **Crítico** — junto com `scope_type` e `enterprise_id`, forma a chave do relatório; distingue insights de diferentes itens do catálogo |
 | `catalog_item_name` | text | Não | Nome do item no momento do relatório | **Médio** — snapshot do nome para exibição; garante que relatórios antigos mostrem o nome correto mesmo se o item for renomeado |
 | `summary` | text | Não | Resumo situacional gerado pela IA | **Crítico** — conteúdo principal exibido no painel de insights da tela de Relatório IA |
 | `recommendations` | text[] | Não | Lista de recomendações acionáveis | **Crítico** — lista de ações sugeridas pela IA exibida no painel de insights |
+| `created_at` / `updated_at` | timestamptz | Não | `updated_at` mantido por trigger | **Alto** — a leitura pega o relatório de `updated_at` mais recente; índice `idx_feedback_insights_report_enterprise_updated` |
 
 **Unicidade:** constraint `uq_feedback_insights_context` `UNIQUE NULLS NOT DISTINCT (enterprise_id, scope_type, catalog_item_id)` (migration `0014`): o escopo `COMPANY`, com `catalog_item_id` nulo, também tem uma linha só. A `0014` apagou as duplicadas que a versão sem `NULLS NOT DISTINCT` deixava, mantendo a mais recente.
 
@@ -450,7 +453,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 |---|---|---|---|---|
 | `id` | uuid PK | Sim | — | **Crítico** — o `jobId` que a Web acompanha por polling |
 | `enterprise_id` | uuid FK | Sim | → `enterprise.id` ON DELETE CASCADE | **Crítico** — multi-tenant; também é o escopo do orçamento de IA |
-| `job_type` | text | Sim | `analyze_raw` \| `regenerate_insights` \| `generate_company_questions` \| `generate_scope_diagnosis` | **Crítico** — define o que o worker faz |
+| `job_type` | text | Sim | `analyze_raw` \| `regenerate_insights` \| `generate_company_questions` \| `generate_scope_diagnosis` (os dois últimos entraram nas migrations `0006` e `0008`) | **Crítico** — define o que o worker faz |
 | `scope_type` | text | Sim | `COMPANY` (default) \| `PRODUCT` \| `SERVICE` \| `DEPARTMENT` | **Alto** — escopo do trabalho |
 | `catalog_item_id` | uuid FK | Não | → `catalog_items.id` ON DELETE CASCADE | **Alto** — item do escopo |
 | `status` | text | Sim | `queued` (default) \| `running` \| `waiting_budget` \| `completed` \| `failed` | **Crítico** — estado exibido na barra de progresso |
@@ -490,7 +493,7 @@ Criadas na migration custom `0001_functions_triggers_rls.sql` (as três funçõe
 | Função | Schema | Tipo | Descrição |
 |---|---|---|---|
 | `generate_device_fingerprint(user_agent, ip)` | public | Utilitária | Retorna `md5(user_agent \| ip \| dia_epoch)` — fingerprint diário rotativo |
-| `can_device_send_feedback(enterprise_id, fingerprint, collection_point_id?)` | public | Query | Retorna `boolean` — verifica se o dispositivo já enviou feedback no dia para o ponto informado |
+| `can_device_send_feedback(enterprise_id, fingerprint, collection_point_id?)` | public | Query | Retorna `true` se o dispositivo ainda pode enviar no dia: no ponto informado ou, sem ponto, em qualquer ponto da empresa. Dispositivo bloqueado não é achado e também recebe `true` |
 | `register_device_feedback(enterprise_id, fingerprint, user_agent, ip, customer_id?, collection_point_id?)` | public | Mutação | Upsert em `tracked_devices` com `pg_advisory_xact_lock` para serializar acessos concorrentes; incrementa `feedback_count` |
 | `update_updated_at_column()` | public | Trigger genérico | Atualiza `updated_at = now()` automaticamente em operações de UPDATE |
 | `validate_questions_of_feedbacks_context()` | public | Trigger | Valida coerência entre `scope_type` e `catalog_item_id` em `questions_of_feedbacks` |
@@ -527,7 +530,7 @@ O sistema usa **duas camadas**:
 |---|---|---|
 | `feedback_app` | O Gateway em runtime (a `DATABASE_URL` da Vercel; em produção, o app já entra com ele) | `SELECT`, `INSERT`, `UPDATE` e `DELETE` em todas as tabelas e `USAGE, SELECT` nas sequências do schema `public`, inclusive nas tabelas criadas depois (`ALTER DEFAULT PRIVILEGES`). Não cria, altera nem apaga estrutura, não desliga a RLS nem cria papéis |
 | `postgres` | As migrations (secret `DATABASE_URL` do GitHub, no workflow de deploy do gateway) | Dono das tabelas; a RLS não vale para o dono |
-| `anon` / `authenticated` (Supabase) | Ninguém do sistema — não usamos a Data API | Nada: sem policy para eles, a RLS devolve zero linhas |
+| `anon` / `authenticated` (Supabase) | Ninguém do sistema — não usamos a Data API | Nada: sem policy para eles, a RLS devolve zero linhas. A view `enterprise_public` roda como dona e as três funções antigas de anti-spam são `SECURITY DEFINER`, e por isso passariam por cima da RLS: a Data API do Supabase precisa ficar desligada |
 
 Cada tabela tem a policy `feedback_app_all` (`FOR ALL TO feedback_app USING (true) WITH CHECK (true)`). Tabela nova precisa, na mesma migration, de `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` e dessa policy; sem ela, o app recebe zero linhas. Detalhes e passo a passo em [Banco com o mínimo de privilégio](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/banco-menor-privilegio.md).
 
@@ -592,6 +595,7 @@ Cada tabela tem a policy `feedback_app_all` (`FOR ALL TO feedback_app USING (tru
 | `feedback_subquestion_answers` | `feedback_subquestion_answers_feedback_subquestion_unique` | `(feedback_id, subquestion_id)` único |
 | `feedback_analysis` | `feedback_analysis_feedback_id_unique` | Uma análise por feedback |
 | `feedback_insights_report` | `feedback_insights_report_scope_type_check` | `scope_type` ∈ `{COMPANY, PRODUCT, SERVICE, DEPARTMENT}` |
+| `feedback_insights_report` | `uq_feedback_insights_context` | `(enterprise_id, scope_type, catalog_item_id)` único, com `NULLS NOT DISTINCT` |
 | `scope_diagnosis` | `scope_diagnosis_scope_type_check` | `scope_type` ∈ `{COMPANY, PRODUCT, SERVICE, DEPARTMENT}` |
 | `user_onboarding` | `user_onboarding_status_check` / `user_onboarding_version_check` | `status` ∈ `{completed, skipped}`; `version > 0` |
 | `enterprise_ia_config` | `enterprise_ia_config_enterprise_unique` / `enterprise_ia_config_provider_check` | Uma configuração por empresa; `provider` ∈ `{gemini, openrouter}` |
@@ -599,6 +603,7 @@ Cada tabela tem a policy `feedback_app_all` (`FOR ALL TO feedback_app USING (tru
 | `ia_analysis_job` | `ia_analysis_job_scope_type_check` | `scope_type` ∈ `{COMPANY, PRODUCT, SERVICE, DEPARTMENT}` |
 | `ia_analysis_job` | `ia_analysis_job_status_check` | `status` ∈ `{queued, running, waiting_budget, completed, failed}` |
 | `ia_rate_budget` | `ia_rate_budget_window_kind_check` | `window_kind` ∈ `{minute, day}` |
+| `ia_rate_budget` | `uq_ia_rate_budget_window` | `(scope, window_kind, window_start)` único |
 
 > **Unicidade do relatório de insights — constraint legada removida:** a unique antiga `feedback_insights_report_enterprise_id_key` (`UNIQUE (enterprise_id)`, **1 linha por empresa**) foi dropada antes das migrations Drizzle. Ela era incompatível com os relatórios segmentados por escopo — ao salvar um segundo relatório (ex.: de um item) quando já existia o da empresa, o INSERT batia nessa unique. A unicidade passou a ser `uq_feedback_insights_context (enterprise_id, scope_type, catalog_item_id)`, hoje uma constraint `NULLS NOT DISTINCT` (migration `0014`).
 
@@ -614,7 +619,7 @@ Cada tabela tem a policy `feedback_app_all` (`FOR ALL TO feedback_app USING (tru
 | `questions_of_feedbacks` | `feedback_question_answers`, `feedback_question_subquestions` | `CASCADE` |
 | `feedback_question_subquestions` | `feedback_subquestion_answers` | `CASCADE` |
 
-> **Sem FK em cascata:** `customer`, `collecting_data_enterprise` e `ia_rate_budget` não têm FK para `enterprise`, e `verification` não tem FK para `user`. Ao excluir a conta, o Gateway (`src/auth/enterpriseOnDelete.ts`) apaga essas linhas antes de apagar a empresa; o Better Auth apaga o usuário em seguida.
+> **Sem FK em cascata:** `customer`, `collecting_data_enterprise` e `ia_rate_budget` não têm FK para `enterprise`, e `verification` não tem FK para `user`. Ao excluir a conta, o Gateway (`src/auth/enterpriseOnDelete.ts`) apaga essas linhas antes de apagar a empresa (em `verification`, os links de nova senha do usuário); o Better Auth apaga o usuário em seguida.
 
 ---
 

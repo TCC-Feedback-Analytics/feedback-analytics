@@ -16,7 +16,7 @@
 
 | Entidade A | Card. | Entidade B | Descrição |
 | --- | --- | --- | --- |
-| `user` | 1 - 1 | `enterprise` | Cada usuário autenticado (Better Auth) possui exatamente uma empresa vinculada (`auth_user_id`), criada no cadastro ou na primeira entrada com o Google. |
+| `user` | 1 - 1 | `enterprise` | Cada usuário autenticado (Better Auth) possui exatamente uma empresa vinculada (`auth_user_id`), criada no cadastro ou na primeira entrada com o Google. É regra da aplicação: o banco aceitaria um usuário sem empresa. |
 | `user` | 1 - N | `session` | Um usuário pode ter várias sessões ativas (Better Auth). |
 | `user` | 1 - N | `account` | Um usuário entra por um ou mais provedores (senha, Google). |
 | `user` | 1 - N | `user_onboarding` | Um usuário conclui ou pula cada versão do guia do sistema. |
@@ -48,6 +48,7 @@
 | `questions_of_feedbacks` | 1 - N | `feedback_question_answers` | Cada pergunta pode receber múltiplas respostas (uma por feedback). |
 | `feedback_question_subquestions` | 1 - N | `feedback_subquestion_answers` | Cada subpergunta pode receber múltiplas respostas (uma por feedback). |
 | `user` (via `blocked_by`) | 0..1 - N | `tracked_devices` | Um dispositivo pode ser marcado como bloqueado por um usuário (opcional). Hoje não há tela nem rota que faça isso: o bloqueio só é gravado direto no banco. |
+| `user` (via `requested_by`) | 0..1 - N | `ia_analysis_job` | Um job pode guardar o usuário que o pediu (sem FK). |
 
 > A entidade raiz de autorização é `enterprise`: os dados de negócio carregam `enterprise_id`, e o gateway filtra cada query por ele (o isolamento multi-tenant fica na aplicação; a RLS barra os papéis que não são o do app). As tabelas filhas (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`) chegam à empresa pela entidade-pai. Algumas relações desta tabela são só lógicas, sem FK no banco (como `feedback` → `collection_points` e `tracked_devices` → `customer`); a [Modelagem de Dados (DER)](modelagem-de-dados.md) marca quais.
 >

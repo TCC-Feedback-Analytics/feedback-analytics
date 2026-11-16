@@ -8,7 +8,7 @@
 
 ## Mapa de Relacionamentos
 
-> **Legenda de cardinalidade:** `||` = exatamente 1 · `o|` = 0 ou 1 (opcional) · `|{` = 1 ou muitos · `o{` = 0 ou muitos. Os rótulos marcados com **(lógica)** são relações que a aplicação mantém, mas que não têm FK nas migrations.
+> **Legenda de cardinalidade:** `||` = exatamente 1 · `|o` ou `o|` = 0 ou 1 (opcional) · `|{` = 1 ou muitos · `o{` = 0 ou muitos. Os rótulos marcados com **(lógica)** são relações que a aplicação mantém, mas que não têm FK nas migrations.
 
 **Visualizar o código no site: https://mermaid.ai/** 
 ```mermaid
@@ -29,16 +29,16 @@ erDiagram
     ENTERPRISE ||--o{ FEEDBACK : "recebe"
     ENTERPRISE ||--o{ FEEDBACK_INSIGHTS_REPORT : "possui"
     ENTERPRISE ||--o{ SCOPE_DIAGNOSIS : "possui"
-    CATALOG_ITEMS ||--o{ COLLECTION_POINTS : "catalog_item_id (opcional, set null)"
-    CATALOG_ITEMS ||--o{ QUESTIONS_OF_FEEDBACKS : "catalog_item_id (condicional)"
-    CATALOG_ITEMS ||--o| FEEDBACK_COMMENT_FIELD : "catalog_item_id (condicional)"
-    CATALOG_ITEMS ||--o{ FEEDBACK_INSIGHTS_REPORT : "catalog_item_id (condicional)"
-    CATALOG_ITEMS ||--o{ SCOPE_DIAGNOSIS : "catalog_item_id (condicional)"
-    CATALOG_ITEMS ||--o{ IA_ANALYSIS_JOB : "catalog_item_id (opcional)"
+    CATALOG_ITEMS |o--o{ COLLECTION_POINTS : "catalog_item_id (opcional, set null)"
+    CATALOG_ITEMS |o--o{ QUESTIONS_OF_FEEDBACKS : "catalog_item_id (condicional)"
+    CATALOG_ITEMS |o--o| FEEDBACK_COMMENT_FIELD : "catalog_item_id (condicional)"
+    CATALOG_ITEMS |o--o{ FEEDBACK_INSIGHTS_REPORT : "catalog_item_id (condicional)"
+    CATALOG_ITEMS |o--o{ SCOPE_DIAGNOSIS : "catalog_item_id (condicional)"
+    CATALOG_ITEMS |o--o{ IA_ANALYSIS_JOB : "catalog_item_id (opcional)"
     QUESTIONS_OF_FEEDBACKS ||--o{ FEEDBACK_QUESTION_SUBQUESTIONS : "possui"
-    CUSTOMER ||--o{ TRACKED_DEVICES : "customer_id (lógica, opcional)"
+    CUSTOMER |o--o{ TRACKED_DEVICES : "customer_id (lógica, opcional)"
     COLLECTION_POINTS ||--o{ FEEDBACK : "collection_point_id (lógica)"
-    TRACKED_DEVICES ||--o{ FEEDBACK : "tracked_device_id (lógica, opcional)"
+    TRACKED_DEVICES |o--o{ FEEDBACK : "tracked_device_id (lógica, opcional)"
     FEEDBACK ||--o{ FEEDBACK_QUESTION_ANSWERS : "possui"
     FEEDBACK ||--o{ FEEDBACK_SUBQUESTION_ANSWERS : "possui"
     FEEDBACK ||--o| FEEDBACK_ANALYSIS : "possui (feedback_id único)"
@@ -48,7 +48,7 @@ erDiagram
 
 > **Fora do diagrama, por não terem FK:** `verification` (tokens do Better Auth), `auth_rate_limit` (limite de reenvio de e-mail, por chave) e `ia_rate_budget` (orçamento de chamadas à IA, cujo `scope` guarda o id da empresa em texto).
 
-> **Isolamento:** os dados de negócio carregam `enterprise_id`, e é por ele que a aplicação filtra cada query (o isolamento entre empresas fica no gateway). As exceções são as tabelas filhas (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`), que chegam à empresa pela tabela pai, e as tabelas por usuário ou por chave (`user`, `session`, `account`, `verification`, `user_onboarding`, `auth_rate_limit`, `ia_rate_budget`). Ao excluir a conta, o gateway apaga também o que não tem FK em cascata (`customer`, `collecting_data_enterprise`, `ia_rate_budget`) antes de apagar a empresa.
+> **Isolamento:** os dados de negócio carregam `enterprise_id`, e é por ele que a aplicação filtra cada query (o isolamento entre empresas fica no gateway). As exceções são as tabelas filhas (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`), que chegam à empresa pela tabela pai, e as tabelas por usuário ou por chave (`user`, `session`, `account`, `verification`, `user_onboarding`, `auth_rate_limit`, `ia_rate_budget`). Ao excluir a conta, o gateway apaga também o que não tem FK em cascata (`customer`, `collecting_data_enterprise`, `ia_rate_budget` e os links de nova senha em `verification`) antes de apagar a empresa.
 
 > **View `enterprise_public` (não é entidade física, por isso fora do `erDiagram`):** expõe apenas `id` e `name`, onde `name` deriva de `public.user.name` (a tabela `enterprise` não tem coluna `name`). O gateway a lê no formulário público, para mostrar o nome da empresa, e ao montar o contexto da empresa enviado à IA.
 
@@ -70,9 +70,9 @@ Gerenciado pelo Better Auth no schema `public`. Registra a conta do empresário/
 | `phone` | text | Telefone de contato (único) |
 | `image` | text | Imagem/Avatar do perfil (opcional) |
 
-> A empresa nasce nos ganchos do Better Auth (`src/auth/enterpriseOnSignup.ts`): no cadastro com senha ou na primeira entrada com o Google, o gateway cria a `enterprise` vinculada com trial de 4 meses (`subscription_status = 'TRIAL'`) e semeia as 3 perguntas padrão (`COMPANY`).
+> A empresa nasce em `provisionEnterpriseForUser` (`src/auth/enterpriseOnSignup.ts`). No cadastro com senha, o controller de cadastro a chama logo depois de criar o usuário. Na primeira entrada com o Google, quem chama é o gancho `account.create` do Better Auth. Ela cria a `enterprise` vinculada com trial de 4 meses (`subscription_status = 'TRIAL'`) e semeia as 3 perguntas padrão (`COMPANY`). O banco não obriga todo usuário a ter empresa (a FK e o UNIQUE ficam só em `enterprise`); a regra de "uma empresa por usuário" é da aplicação.
 > 
-> As sessões e credenciais são distribuídas nas tabelas auxiliares do Better Auth: `public.session` (sessões ativas), `public.account` (provedores, como senha e Google, e o hash da senha) e `public.verification` (tokens temporários).
+> As sessões e credenciais são distribuídas nas tabelas auxiliares do Better Auth: `public.session` (sessões ativas), `public.account` (provedores, como senha e Google, e o hash da senha) e `public.verification` (tokens temporários). Na conta do Google, `access_token`, `refresh_token` e `id_token` ficam vazios: o gancho `discardOAuthTokens` os descarta ao criar e ao atualizar a conta.
 
 ---
 
@@ -147,7 +147,7 @@ Produtos, serviços ou departamentos que a empresa quer avaliar individualmente.
 | `kind` | text | `PRODUCT`, `SERVICE` ou `DEPARTMENT` |
 | `name` | text | Nome do item |
 | `description` | text | Descrição opcional |
-| `status` | text | `ACTIVE` ou `INACTIVE` |
+| `status` | text | `ACTIVE` ou `INACTIVE` (o item que sai do cadastro vira `INACTIVE`; não é apagado) |
 | `sort_order` | int | Ordem de exibição |
 
 ---
@@ -162,7 +162,7 @@ Pontos de coleta de feedback — no banco, sempre do tipo `QR_CODE`. O mesmo pon
 | `catalog_item_id` | uuid | FK → `catalog_items.id` (opcional — nulo = escopo COMPANY; `ON DELETE SET NULL`) |
 | `name` | text | Nome do ponto de coleta |
 | `type` | text | `QR_CODE` (único tipo gravado pelo gateway) |
-| `identifier` | text | Identificador opcional |
+| `identifier` | text | Identificador opcional (o gateway só lê; não grava) |
 | `status` | text | `ACTIVE` ou `INACTIVE` |
 
 ---
@@ -182,11 +182,11 @@ Rastreia cada dispositivo que acessa o formulário público via fingerprint (MD5
 | `ip_address` | inet | IP de origem |
 | `feedback_count` | int | Total de feedbacks enviados por este dispositivo |
 | `last_feedback_at` | timestamptz | Data do último envio |
-| `is_blocked` | bool | `true` = dispositivo bloqueado |
+| `is_blocked` | bool | `true` = dispositivo bloqueado (o envio volta 403). O gateway só lê: grava `false` ao criar e nenhuma rota bloqueia |
 | `blocked_reason` | text | Motivo do bloqueio |
 | `blocked_at` / `blocked_by` | timestamptz / uuid | Quando e por quem foi bloqueado (sem FK) |
 
-> O dia fica fora do hash: o dispositivo que volta noutro dia, no mesmo navegador e na mesma rede, reaproveita o mesmo `tracked_device`. O limite diário é conferido pela data dos feedbacks (meia-noite de Brasília).
+> O dia fica fora do hash: o dispositivo que volta noutro dia, no mesmo navegador e na mesma rede, reaproveita o mesmo `tracked_device`. O limite diário é de um feedback por dispositivo em cada ponto de coleta, conferido pela data dos feedbacks (desde a meia-noite de Brasília).
 
 ---
 
@@ -216,7 +216,9 @@ Perguntas dinâmicas exibidas no formulário. Podem ter escopo da empresa inteir
 | `catalog_item_id` | uuid | FK → `catalog_items.id` (nulo quando `scope_type = COMPANY`) |
 | `question_order` | int | Posição da pergunta (1, 2 ou 3) |
 | `question_text` | text | Texto da pergunta (20–150 chars) |
-| `is_active` | bool | Controla se a pergunta aparece no formulário |
+| `is_active` | bool | Controla se a pergunta aparece no formulário. Remover é desativar (`false`); a linha fica |
+
+> A pergunta geral da empresa (`COMPANY`) sempre tem os 3 slots gravados; pela Web, de 1 a 3 ficam ativos. O item do catálogo tem de 0 a 3 perguntas ativas. Sub-pergunta removida também vira `is_active = false`.
 
 ---
 
@@ -261,7 +263,7 @@ Registro central da avaliação enviada pelo cliente. Agrega todos os dados de u
 | `collection_point_id` | uuid | Ponto de coleta de origem (obrigatório; sem FK nas migrations) |
 | `tracked_device_id` | uuid | Dispositivo emissor (opcional; sem FK nas migrations) |
 | `message` | text | Comentário livre do cliente (texto vazio quando ele só deu as notas ou o campo está oculto) |
-| `comment_prompt` | text | A pergunta própria que o cliente viu no campo de comentário (nulo = convite padrão) |
+| `comment_prompt` | text | A pergunta própria que o cliente viu no campo de comentário. Só é gravada no modo `CUSTOM` com comentário preenchido; nos outros casos fica nula |
 | `channel` | text | Canal de coleta: `QR`, `LINK`, `NFC` ou `TEST` (o "Testar o formulário", fora das métricas e da IA); nulo = sem a marca de canal |
 | `rating` | int | Nota geral (1–5 estrelas) |
 
@@ -298,7 +300,7 @@ Resposta do cliente para cada sub-pergunta. Mesmo mecanismo de snapshot de `feed
 ### 6. Processamento por Inteligência Artificial
 
 #### `feedback_analysis`
-Análise individual gerada pela IA para um feedback específico. Relação 1:1 com `feedback`.
+Análise individual gerada pela IA para um feedback específico. Relação 1:1 com `feedback`. A gravação usa `ON CONFLICT (feedback_id) DO NOTHING`: se o feedback já tem análise, a nova é ignorada e a antiga fica.
 
 | Campo | Tipo | Descrição |
 |---|---|---|
@@ -314,7 +316,7 @@ Análise individual gerada pela IA para um feedback específico. Relação 1:1 c
 ---
 
 #### `feedback_insights_report`
-Relatório consolidado gerado pela IA sobre um conjunto de feedbacks. Pode cobrir a empresa inteira (`COMPANY`) ou um item específico do catálogo. É regenerável - um novo relatório sobrescreve o anterior para o mesmo escopo.
+Relatório consolidado gerado pela IA sobre um conjunto de feedbacks. Pode cobrir a empresa inteira (`COMPANY`) ou um item específico do catálogo. É regenerável: um novo relatório sobrescreve o anterior do mesmo escopo. A constraint `uq_feedback_insights_context` (`NULLS NOT DISTINCT`, migration `0014`) garante uma linha por empresa, escopo e item, também no escopo `COMPANY`.
 
 | Campo | Tipo | Descrição |
 |---|---|---|
@@ -424,6 +426,7 @@ Token bucket persistente para controle de ritmo das chamadas à IA (back-pressur
 | `user_onboarding.status` | `completed`, `skipped` |
 | `enterprise_ia_config.provider` | `gemini`, `openrouter` |
 | `ia_analysis_job.job_type` | `analyze_raw`, `regenerate_insights`, `generate_company_questions`, `generate_scope_diagnosis` |
+| `ia_analysis_job.scope_type` | `COMPANY`, `PRODUCT`, `SERVICE`, `DEPARTMENT` |
 | `ia_analysis_job.status` | `queued`, `running`, `waiting_budget`, `completed`, `failed` |
 | `ia_rate_budget.window_kind` | `minute`, `day` |
 
