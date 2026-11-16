@@ -6,7 +6,7 @@ Repositório **central de documentação** do Feedback Analytics (Projeto Integr
 
 O projeto adota metodologias ágeis, engenharia de software rigorosa e uma arquitetura moderna orientada a serviços independentes.
 
-**O que o produto faz hoje:** coleta de feedback por QR Code, link ou etiqueta NFC, com campo de comentário configurável por escopo (empresa ou item do catálogo); métricas por escopo, período e canal de coleta; análise dos comentários e diagnóstico do escopo por IA; geração automática das perguntas do formulário; login por e-mail e senha ou Google; e exclusão da conta com todos os dados da empresa.
+**O que o produto faz hoje:** coleta de feedback por QR Code, link ou etiqueta NFC, com campo de comentário configurável por escopo (empresa ou item do catálogo); métricas por escopo, período e canal de coleta, com a nota e o movimento dela, os canais, os horários de pico e os clientes que voltam; análise dos comentários e diagnóstico do escopo por IA; geração automática das perguntas do formulário; login por e-mail e senha ou Google; exclusão da conta com todos os dados da empresa; e um site público com as páginas do produto, os termos de uso e a política de privacidade.
 
 ### Diferenciais Técnicos
 * **Arquitetura distribuída (multi-repo serverless):** cada serviço (frontend, API Gateway, IA) é um repositório e um deploy independente, com tipos compartilhados por um pacote versionado. Evoluiu de um monorepo — veja [a decisão](https://tcc-feedback-analytics.github.io/feedback-analytics/arquitetura/historico-de-decisoes/decisao-monorepo-vs-monolito/).
@@ -34,7 +34,7 @@ mantém só a documentação do sistema.
 
 ### Stack Tecnológica Geral
 
-* **Frontend:** React 19 (TypeScript) + Vite + Tailwind CSS 4.x
+* **Frontend:** React 19 (TypeScript) + Vite 8 + Tailwind CSS 4
 * **Backend:** Node.js (TypeScript) + Express 5 + Drizzle ORM
 * **Autenticação:** Better Auth — e-mail e senha ou Google, com sessão em cookie httpOnly
 * **Banco de Dados:** PostgreSQL hospedado no Supabase (só hospedagem: sem Supabase Auth nem Data API)

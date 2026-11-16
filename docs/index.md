@@ -37,7 +37,7 @@ O **Feedback Analytics** transforma a opinião dos seus clientes em decisões es
 
     ---
 
-    O dashboard mostra as métricas por escopo e período, compara itens do catálogo e traz a análise dos comentários, com o tom, os assuntos que mais impactam e recomendações acionáveis para transformar a voz do cliente em ação.
+    O dashboard resume as métricas por escopo e período; as páginas ao lado mostram a nota e o movimento dela, por quais canais e em que horários os clientes respondem e quantos voltam, comparam itens do catálogo e trazem a análise dos comentários, com o tom, os assuntos que mais impactam e recomendações acionáveis para transformar a voz do cliente em ação.
 
 </div>
 
@@ -99,6 +99,14 @@ A plataforma é **serverless** (Vercel Functions + CDN) e distribuída em **repo
     Como os serviços se conectam: frontend, API Gateway e análise de IA.
 
     [:octicons-arrow-right-24: Ver arquitetura](arquitetura/visao-geral.md)
+
+- :material-shield-lock: __Segurança e LGPD__
+
+    ---
+
+    Quais dados pessoais o sistema guarda, os riscos mapeados, o roteiro de incidente e a política de privacidade.
+
+    [:octicons-arrow-right-24: Ver segurança](seguranca/inventario-de-dados.md)
 
 - :material-download: __Instalação__
 

@@ -1,8 +1,8 @@
 # Changelog da Documentação
 
 Categoria: Gestão de Projeto
-v4.0: Não tem
-Última edição: 10 de novembro de 2026
+Versão global atual: v4.22
+Última edição: 16 de novembro de 2026
 
 ---
 
@@ -10,7 +10,7 @@ v4.0: Não tem
 
 Registra todas as alterações significativas feitas nas páginas de documentação do projeto. Atualizar sempre que uma página técnica for criada, revisada ou reestruturada.
 
-1. Toda vez que uma página técnica for criada ou atualizada, adicione uma linha na tabela acima.
+1. Toda vez que uma página técnica for criada ou atualizada, adicione uma linha na tabela de Versionamento Técnico Global, abaixo.
 2. Siga o esquema de versões descrito.
 3. Seja objetivo na descrição do que mudou.
 4. Não versionar páginas estáticas como: Informações dos Integrantes, Informações de Contas.
@@ -20,6 +20,7 @@ Registra todas as alterações significativas feitas nas páginas de documentaç
 **Estratégia de Versionamento (Git Tag)**
 
 - Padrão de Nomenclatura
+    - Tags `vMAJOR.MINOR.PATCH` criadas neste repositório de documentação.
 
 - Regra do MAJOR.MINOR.PATCH
     - Major (v1.0.0)
@@ -33,10 +34,10 @@ Registra todas as alterações significativas feitas nas páginas de documentaç
 
 | Versão | Data | Descrição |
 | --- | --- | --- |
-| v5.0.0 | 10/11/2026 | Política de Privacidade redigida e implementada |
+| v5.1.0 | 10/11/2026 | Política de Privacidade redigida e implementada |
 | v5.0.0 | 18/06/2026 | Novo design das rotas protegidas, robustez nas análises |
-| v4.0.0 | 16/05/2026 | Versão estável da nova arquitetura macro e micro |
-| v3.0.0 | 16/05/2026 | Versão anterior do sistema (Legado). |
+| v4.0.0 | 27/05/2026 | Versão estável da nova arquitetura macro e micro |
+| v3.0.0 | 11/04/2026 | Versão anterior do sistema (Legado). |
 | v2.0.0 | 10/04/2026 | Nova estrutura do negócio suportando perguntas dinâmicas e sub perguntas dinâmicas no formulário de feedback |
 | v1.1.1 | 11/03/2026 | Tema de cores padronizada em todo o projeto |
 | v1.1.0 | 04/03/2026 | Nova funcionalidade implementada, agora temos feedbacks para departamentos, serviços e produtos de uma empresa através do canal de QRCode |
@@ -53,6 +54,11 @@ Registra todas as alterações significativas feitas nas páginas de documentaç
 
 | Versão Global | Data | O que Mudou | Páginas afetadas |
 | --- | --- | --- | --- |
+| v4.22 | 16/11/2026 | Revisão do portal para a apresentação do TCC. **README e página inicial:** o que o produto faz hoje passa a citar a nota e o movimento dela, os canais, os horários de pico, os clientes que voltam e o site público com as páginas do produto, os termos de uso e a política de privacidade; a página inicial ganha o cartão de Segurança e LGPD; stack com Vite 8. **Changelog:** entram as versões v4.18 a v4.21, que faltavam; a versão da Política de Privacidade passa de v5.0.0 repetida para v5.1.0; as datas de v3.0.0 e v4.0.0 seguem as tags do repositório. | README, página inicial, este changelog |
+| v4.21 | 10/11/2026 | Nova página **Política de Privacidade** na seção Segurança e LGPD, com a entrada no menu. | Segurança (Política de Privacidade), `mkdocs.yml` |
+| v4.20 | 05/11/2026 | Documentação sincronizada com o lote do inbox (Gateway, Web, IA Analyze e contratos v1.9.0). **Coleta e anti-spam:** fingerprint MD5(navegador \| IP), sem o dia; limite diário que vira à meia-noite de Brasília; bloqueio e "Clientes que voltam" valem entre dias; item tirado do catálogo ou tipo desativado para de aceitar respostas; QR Code gerado no navegador (sai o `api.qrserver.com`). **Lista de feedbacks:** sem IP, navegador e fingerprint, com a pergunta própria. **Banco:** migration `0014` (relatório de insights único e trigger do campo de comentário). **Textos de tela:** "Coleta ativada", "Ativar a coleta da empresa", "Coleta ativa/inativa". **IA:** `409 ia_config_required` e `truncated_ai_response` nos dois provedores. **Ambiente:** `VITE_API_BASE_URL` vazia no local, fixture com telefone e `API_GATEWAY_URL` no `ia-worker.yml`. O `deploy-docs.yml` passa a rodar o build estrito em pull request. | Produto (6), Concepção (12), Guias e testes (7), Arquitetura (2), Referência (2), Segurança (2), `deploy-docs.yml` |
+| v4.19 | 05/11/2026 | Segurança do IA Analyze: sem o `IA_ANALYZE_INTERNAL_TOKEN`, todas as rotas respondem 503 em produção, não só o diagnóstico e as perguntas; o log do provedor guarda só o status, o nome e o código do erro. | Produto (Regras de negócio), Segurança (Inventário de dados) |
+| v4.18 | 04/11/2026 | Perfil corrigido: troca de e-mail com link de confirmação, telefone num passo só, exceções novas e cenários CT-UC12-09 a CT-UC12-14 no UC-12; sai o bloco de limitações conhecidas. RF-002 e o item do Perfil revistos nos requisitos. Roteiros de teste da Web e do Gateway, plano estratégico e lacunas E2E com a troca de e-mail. O inventário de dados registra que o Brevo também envia o link de troca de e-mail. | Casos de uso (UC-12, visão geral), Requisitos, Guias de testes (4), Segurança (Inventário de dados) |
 | v4.17 | 03/11/2026 | Revisão do texto do produto: a coleta passa a ser apresentada pelos três canais (QR Code, link e etiqueta NFC) em todo o site, sem tratar o QR Code como canal único; a dor do cliente fala em "várias plataformas" em vez de citar plataformas específicas. **Produto:** página de coleta com os três canais, o canal de teste e o "Por onde chegaram"; coleta por escopo, onboarding, métricas e regras de negócio generalizados. **Concepção:** requisitos, regras de negócio, modelo de negócio, personas, stakeholders e casos de uso UC-04 a UC-09 alinhados; protótipos com nota de que hoje há link e NFC. **Guias e testes:** roteiros manuais e plano estratégico com a rota, os textos de tela e o comportamento atuais (novo CT-UC09-13, "Testar o formulário"); usabilidade com a auditoria real da IA e do anti-spam. **Arquitetura, banco e segurança:** OpenRouter como provedor, Gemini como reserva legada; canal `TEST` fora das métricas e da IA; geração de perguntas nos registros de dados. Menu com os novos títulos das páginas de coleta e do UC-04 e UC-05. | README, página inicial, `mkdocs.yml`, Produto (7), Concepção (16), Guias e testes (9), Arquitetura (5), Referência (1), Segurança (2) |
 | v4.16 | 03/11/2026 | Auditoria completa de alinhamento código × documentação, conferida contra a `developer` dos repositórios de código (que tiveram a própria documentação revisada na mesma data). **Arquitetura e banco:** modelagem, MER e referência do banco cobrem as 24 tabelas atuais (`user_onboarding`, `auth_rate_limit`, `feedback_comment_field`, `scope_diagnosis`, colunas `channel` e `comment_prompt`), a RLS e o papel `feedback_app` da migration `0013`; ORM × RLS reescrito; fluxo da IA com os 4 tipos de job e os estados reais; `database/sql/` marcado como dump legado. **Produto:** coleta por QR Code, link e etiqueta NFC; campo de comentário por escopo; efeito real do fingerprint diário e do bloqueio de aparelho; página de JWT e LGPD reescrita para Better Auth com cookie httpOnly, sem CPF/CNPJ; geração automática das perguntas e diagnóstico do escopo. **Casos de uso e testes:** UC-01 a UC-12 alinhados às telas atuais (cenários de documento marcados como obsoletos); roteiros manuais da API e da Web com os casos novos e as limitações conhecidas (troca de e-mail); guias de teste sem e2e e com as contagens atuais; guia de instalação e workflows. **Concepção e segurança:** requisitos com status de implementação e RF-022 a RF-028; regras de negócio substituídas marcadas; aviso de material de concepção nos protótipos; mapa de ameaças, inventário de dados, controlador e operador e roteiro de incidente com o estado atual das mitigações. **Entrada:** README e página inicial com o que o produto faz hoje. | README, página inicial, Arquitetura (6), Referência (2), `database/sql` (2), Produto (10), Casos de uso (13), Guias e testes (12), Concepção (10), Segurança (4) |
 | v4.15 | 17/10/2026 | A configuração da coleta passa a separar **escopo**, **perguntas** e **canais de coleta**. A aba "Feedback geral", que parecia a lista de feedbacks recebidos, vira **"Avaliação da empresa"**, com as seções Perguntas e Canais de coleta (QR Code e link hoje, NFC depois); o item do Catálogo segue o mesmo desenho. A etiqueta de escopo troca "QR geral da empresa" por **"Avaliação geral da empresa"**, porque o escopo vai juntar mais de um canal. O guia passa a ter **11 passos**, com o card de Análise dos comentários no próprio Dashboard antes das páginas da análise. | Produto (Métricas e estatísticas, Análise dos comentários); Concepção (UC-09, UC-11, UC-12); Guias de testes (manuais Web); este changelog |
@@ -113,6 +119,8 @@ Definição do Design System, paleta de cores e tipografia para modos públicos 
 - Documentação inicia em `v0.1.0` (pré-entrega) e avança para `v1.0.0` na primeira entrega formal
 
 ## Histórico de alterações das versões das páginas
+
+As linhas desta tabela vão até 21/06/2026 e apontam para as páginas do Notion, onde a documentação ficava antes de vir para este site. Desde então, as mudanças ficam registradas na tabela de Versionamento Técnico Global, acima.
 
 | Versão | Data | O que mudou | Página afetada |
 | --- | --- | --- | --- |
