@@ -39,7 +39,7 @@ mantém só a documentação do sistema.
 * **Autenticação:** Better Auth — e-mail e senha ou Google, com sessão em cookie httpOnly
 * **Banco de Dados:** PostgreSQL hospedado no Supabase (só hospedagem: sem Supabase Auth nem Data API)
 * **IA/Analytics:** provedor LLM externo — OpenRouter, com chave e modelo configurados por empresa (BYO-key)
-* **E-mail:** SMTP Brevo (confirmação de cadastro e recuperação de senha)
+* **E-mail:** SMTP Brevo (confirmação de cadastro, recuperação de senha e troca de e-mail)
 * **CI/CD & Infra:** GitHub Actions (CI a cada push e pull request em `main` e `developer`; deploy manual na Vercel) e Vercel Serverless Functions
 
 ---
