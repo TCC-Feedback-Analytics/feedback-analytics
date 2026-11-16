@@ -2,7 +2,7 @@
 
 > Documentação técnica do schema PostgreSQL hospedado no Supabase. Cobre todas as tabelas, relacionamentos, políticas de segurança (RLS), funções, triggers e índices do sistema.
 >
-> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration ([`drizzle/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle), hoje de `0000` a `0014`). Esta página foi conferida contra essas migrations em 16/11/2026; na dúvida, vale o código. Os dumps SQL de `database/sql/` deste repositório são **legado**.
+> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration ([`drizzle/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle), hoje de `0000` a `0015`). Esta página foi conferida contra essas migrations em 16/11/2026; na dúvida, vale o código. Os dumps SQL de `database/sql/` deste repositório são **legado**.
 
 ---
 
@@ -61,7 +61,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 
 | Domínio | Tabelas | Responsabilidade |
 |---|---|---|
-| **Identidade** | `user`, `session`, `account`, `verification`, `enterprise`, `user_onboarding`, `auth_rate_limit` | Autenticação (Better Auth), sessões, raiz de autorização multi-tenant, guia do sistema e limite de reenvio de e-mail |
+| **Identidade** | `user`, `session`, `account`, `verification`, `enterprise`, `user_onboarding`, `auth_rate_limit` | Autenticação (Better Auth), sessões, raiz de autorização multi-tenant, guia do sistema e limites de tentativa (login, cadastro, nova senha e reenvio) |
 | **Contexto Analítico** | `collecting_data_enterprise` | Dados estratégicos injetados nos prompts de IA |
 | **Catálogo** | `catalog_items`, `collection_points` | Produtos/Serviços/Departamentos e pontos de coleta (QR Code, link e NFC) |
 | **Formulário** | `questions_of_feedbacks`, `feedback_question_subquestions`, `feedback_comment_field` | Perguntas dinâmicas e campo de comentário do formulário público |
@@ -93,7 +93,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 
 > **Tabelas auxiliares do Better Auth:**
 > - `public.session`: Gerencia sessões ativas (`user_id`, `token` único, `expires_at`, `ip_address`, `user_agent`).
-> - `public.account`: Guarda os provedores de entrada (senha, Google) e o hash da senha (`user_id`, `account_id`, `provider_id`, `password`). As colunas `access_token`, `refresh_token` e `id_token` existem, mas o Gateway grava a conta do Google sem elas (`discardOAuthTokens`, na criação e em toda atualização).
+> - `public.account`: Guarda os provedores de entrada (senha, Google) e o hash da senha (`user_id`, `account_id`, `provider_id`, `password`). As colunas `access_token`, `refresh_token` e `id_token` existem, mas o Gateway grava a conta do Google sem elas (`discardOAuthTokens`, na criação e em toda atualização). A migration `0015` zerou os tokens das contas Google gravadas antes dessa regra.
 > - `public.verification`: Armazena tokens temporários de verificação e recuperação de senha (`identifier`, `value`, `expires_at`).
 >
 > `session` e `account` têm FK para `user` com `ON DELETE CASCADE`; `verification` não tem FK.
@@ -116,12 +116,12 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 
 ### `public.auth_rate_limit`
 
-> Contador durável do limite de reenvio do e-mail de confirmação (migration `0005`, `src/libs/resendRateLimit.ts`), compartilhado entre as instâncias serverless.
+> Contador durável dos limites de tentativa do login, do cadastro, da nova senha e do reenvio do e-mail de confirmação (migration `0005`, `src/libs/authRateLimit.ts` e `src/libs/resendRateLimit.ts`), compartilhado entre as instâncias serverless.
 
 | Coluna | Tipo | Obrigatório | Descrição | Impacto no Projeto |
 |---|---|---|---|---|
-| `key` | text PK | Sim | `ip:`, `email:` ou `cooldown:` seguido do HMAC do IP ou do e-mail | **Alto** — nunca guarda o IP ou o e-mail em claro |
-| `used` | integer | Sim | Tentativas na janela | **Alto** — passou do limite, o reenvio é recusado |
+| `key` | text PK | Sim | No reenvio, `ip:`, `email:` ou `cooldown:` seguido do HMAC. No login, no cadastro e na nova senha, `login:`, `register:` ou `forgot-password:` mais `ip:` ou `email:` e o HMAC | **Alto** — nunca guarda o IP ou o e-mail em claro |
+| `used` | integer | Sim | Tentativas na janela | **Alto** — passou do limite, o pedido é recusado com 429 |
 | `expires_at` | timestamptz | Sim | Fim da janela | **Médio** — janela vencida recomeça a contagem; índice `auth_rate_limit_expiry_idx` |
 
 ---

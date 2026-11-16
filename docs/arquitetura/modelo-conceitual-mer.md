@@ -52,7 +52,7 @@
 
 > A entidade raiz de autorização é `enterprise`: os dados de negócio carregam `enterprise_id`, e o gateway filtra cada query por ele (o isolamento multi-tenant fica na aplicação; a RLS barra os papéis que não são o do app). As tabelas filhas (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`) chegam à empresa pela entidade-pai. Algumas relações desta tabela são só lógicas, sem FK no banco (como `feedback` → `collection_points` e `tracked_devices` → `customer`); a [Modelagem de Dados (DER)](modelagem-de-dados.md) marca quais.
 >
-> Ficam fora da tabela, por não se relacionarem com outras entidades: `verification` (tokens do Better Auth), `auth_rate_limit` (limite de reenvio de e-mail) e `ia_rate_budget` (orçamento de chamadas à IA por empresa, guardado por chave de texto).
+> Ficam fora da tabela, por não se relacionarem com outras entidades: `verification` (tokens do Better Auth), `auth_rate_limit` (limites de tentativa de login e de e-mail) e `ia_rate_budget` (orçamento de chamadas à IA por empresa, guardado por chave de texto).
 
 ---
 

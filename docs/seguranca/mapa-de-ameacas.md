@@ -48,18 +48,20 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **S** | Roubar a conta adivinhando a senha | Better Auth, biblioteca especializada: senha guardada só como hash e força mínima da senha (`passwordStrength.ts`). Login com Google como alternativa | ❌ Sem limite de tentativas. A Web entra por `/api/public/auth/login`, que chama o Better Auth de dentro do servidor, e o limite do Better Auth só vale nas rotas `/api/auth/*`. Mesmo lá, a contagem fica na memória de cada instância |
+| **S** | Roubar a conta adivinhando a senha | Senha guardada só como hash e força mínima da senha (`passwordStrength.ts`). O login conta as tentativas erradas no banco, por e-mail e por IP, guardando só o HMAC dos valores (`authRateLimit.ts`): 10 erros por e-mail e 100 por IP a cada 15 minutos. O login certo devolve a vaga. Bloqueado, responde `429 rate_limited`. Login com Google como alternativa | ⚠️ Feito na `developer` (PR #110), ainda não na `main`. As rotas nativas do Better Auth (`/api/auth/sign-in/email` e afins) seguem abertas pelo handler, só com o limite padrão dele, contado na memória de cada instância. Em produção, o IP chega pelo repasse da Vercel e pode ser o mesmo para vários usuários |
+| **S** | Continuar dentro da conta com a senha antiga depois da troca | A nova senha encerra todas as sessões da pessoa (`revokeSessionsOnPasswordReset`, `auth.ts`) | ✅ Na `developer` (PR #110), ainda não na `main` |
 | **S** | Descobrir se um e-mail tem conta (enumeração) | Cadastro sem login automático e com confirmação obrigatória de e-mail, respondendo igual nos dois casos (`register.controller.ts`). O login responde "E-mail ou senha inválidos." também para conta não confirmada (`errorMap.ts`) | ⚠️ O cadastro avisa "Telefone já cadastrado.", o que revela se um telefone tem conta |
 | **S** | Roubar a sessão pelo navegador | Cookie `httpOnly` (o JavaScript da página não lê), `secure` em produção e `sameSite` | ✅ |
 | **D** | Usar o "reenviar confirmação" para mandar spam | Limite por IP e por e-mail, com contagem no banco e só o HMAC dos valores (`resendRateLimit.ts`) | ✅ |
-| **I** | Vazar os tokens do Google guardados | Não são mais gravados: o hook `discardOAuthTokens` apaga os tokens antes de gravar a conta (`auth.ts`). Quem entrou antes da regra só perde os tokens quando entrar de novo | ⚠️ Feito na `developer` (PR #109), ainda não publicado na `main` |
+| **D** | Usar o cadastro ou a nova senha para mandar e-mails em massa | 5 pedidos por e-mail por hora e 20 por IP a cada 15 minutos, contados no banco (`authRateLimit.ts`). Na nova senha, o 429 vale para qualquer e-mail e não revela quem tem conta | ✅ Na `developer` (PR #110), ainda não na `main` |
+| **I** | Vazar os tokens do Google guardados | Não são mais gravados: o hook `discardOAuthTokens` apaga os tokens antes de gravar a conta (`auth.ts`). A migration `0015_apagar_tokens_google.sql` apaga os tokens das contas Google antigas no deploy | ⚠️ Feito na `developer` (PR #109 e PR #110), ainda não publicado na `main` |
 
 ## 3. API do painel (gateway)
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
 | **E** | Um gestor ler ou alterar dados de **outra empresa** | A empresa vem da sessão, nunca do pedido (`middlewares/auth.ts`). Toda leitura de feedback passa por um filtro único que exige a empresa e falha se ela faltar (`db/tenantScope.ts`), com testes | ✅ |
-| **S** | Outro site chamar a API usando o cookie do gestor | Cookie `sameSite=lax` e CORS só para as origens da Web (`index.ts`) | ✅ |
+| **S** | Outro site chamar a API usando o cookie do gestor | Cookie `sameSite=lax` e CORS só para as origens da Web (`index.ts`). Em produção, `localhost` não entra no CORS nem nas origens confiáveis do Better Auth (`localWebOrigins.ts`, na `developer`) | ✅ |
 | **R** | Um gestor negar que pediu uma análise ou mudou algo | A fila de análises guarda quem pediu (`ia_analysis_job.requested_by`) e o aceite dos termos tem data e versão | ⚠️ Não há registro de quem alterou o quê nas configurações |
 | **I** | Um erro devolver detalhes internos | As rotas devolvem códigos de erro tipados (`sendTypedError`), sem pilha de execução | ✅ |
 
@@ -104,10 +106,10 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | 1 | Gateway entra no banco como superusuário | Uma senha vazada vira acesso total | Etapa 07, código, item 3. **Feito:** o app entra como `feedback_app` em produção (migration `0013`) |
 | 2 | Sem "Excluir minha conta" | Direito do titular (LGPD, art. 18) | Etapa 07, código, item 2. **Feito:** botão no Perfil, publicado em 02/11/2026 |
 | 3 | Nove tabelas sem RLS | Coerência com a decisão de RLS em todas | Etapa 07, código, item 3. **Feito:** RLS nas 24 tabelas (migration `0013`) |
-| 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | Novo, pequeno |
-| 5 | Sem limite de tentativas de login | Ataque de senha, até de um só IP | Novo: limitar `/api/public/auth/login` (e os e-mails de cadastro e de nova senha) com contagem no banco, como no reenvio |
+| 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | Novo, pequeno. Na `developer`, o gateway não anuncia mais o Express (`x-powered-by` desligado, PR #110). Faltam `X-Frame-Options` e `Content-Security-Policy` |
+| 5 | Sem limite de tentativas de login | Ataque de senha, até de um só IP | **Feito na `developer` (PR #110):** o login, o cadastro e a nova senha contam as tentativas no banco, como o reenvio. Falta publicar na `main`. As rotas nativas `/api/auth/*` seguem só com o limite do Better Auth, na memória |
 | 6 | Sem limite por IP no envio público | Encher o banco com respostas | Novo, pequeno |
 | 7 | IP do cliente sem prazo | Guardar além do necessário | Etapa 07, código, item 4 (opcional) |
-| 8 | Tokens do Google guardados sem uso | Dado sensível sem finalidade | Novo, pequeno. **Feito na `developer`:** não são mais gravados (PR #109). Falta publicar na `main` e limpar os tokens antigos |
+| 8 | Tokens do Google guardados sem uso | Dado sensível sem finalidade | Novo, pequeno. **Feito na `developer`:** não são mais gravados (PR #109), e a migration `0015` apaga os antigos (PR #110). Falta publicar na `main` |
 | 9 | Comentário com dado pessoal ou instrução para a IA | Dado saindo do sistema; resumo enviesado | Decisão em aberto |
 | 10 | Backups não confirmados | Recuperação depois de um incidente | [Roteiro de incidente](roteiro-de-incidente.md) |

@@ -37,7 +37,7 @@ O link fixo "Problemas para entrar?" abre um dialog com "Redefinir senha" (UC-03
 | Situação | O que o sistema faz |
 |---|---|
 | Credenciais inválidas (e-mail ou senha errados) | Exibe o toast "E-mail ou senha incorretos." sem revelar qual campo está incorreto e abre o dialog "Problemas para entrar?" |
-| Muitas tentativas seguidas (rate limit) | Exibe "Muitas tentativas de login." — "Aguarde alguns instantes antes de tentar novamente." |
+| Muitas tentativas seguidas (rate limit) | Depois de 10 senhas erradas para o mesmo e-mail em 15 minutos (ou 100 erros vindos do mesmo IP), o gateway responde `429 rate_limited`. A Web exibe "Muitas tentativas de login." com "Aguarde alguns instantes antes de tentar novamente." |
 | Servidor de autenticação indisponível | Exibe "Serviço de login temporariamente indisponível." |
 | Sem conexão com a internet | Exibe "Falha de conexão." pedindo para verificar a internet |
 | Conta não ativada (e-mail não confirmado) | Por segurança (RNE-014 — proteção contra enumeração de usuários), exibe a **mesma** mensagem genérica de credenciais inválidas, sem revelar que a conta existe mas ainda não foi confirmada. O reenvio de confirmação continua disponível no dialog "Problemas para entrar?", na tela pós-cadastro e na de link de ativação expirado |
@@ -54,6 +54,6 @@ O link fixo "Problemas para entrar?" abre um dialog com "Redefinir senha" (UC-03
 
 - **[CT-UC02-01]** ✅ *Coberto manual (runbook)* - Caminho feliz: gestor insere credenciais válidas, clica em "Entrar" e é redirecionado para `/user/dashboard`, com o aviso "Login realizado com sucesso.".
 - **[CT-UC02-02]** ✅ *Coberto manual (runbook)* - Exceção — credenciais inválidas: inserir senha errada deve exibir "E-mail ou senha incorretos.", abrir sozinho o dialog "Problemas para entrar?" e manter a URL em `/login`.
-- **[CT-UC02-03]** ❌ *Cenário não coberto* - Exceção — rate limit: após múltiplas tentativas incorretas, deve exibir mensagem de bloqueio temporário. Hoje o login ainda não tem limite de tentativas.
+- **[CT-UC02-03]** 🔵 *Unidade já atende* - Exceção — rate limit: na 11ª senha errada para o mesmo e-mail em 15 minutos, o login responde 429 e a Web exibe "Muitas tentativas de login.". Coberto por `src/tests/authRateLimit.test.ts` (Gateway). A mensagem da Web não tem teste.
 - **[CT-UC02-04]** 📝 *Planejado / não implementado* - Exceção — campos vazios: tentar enviar o formulário sem preencher os campos deve destacá-los como obrigatórios. Nenhum teste de unidade confere esse bloqueio hoje.
 - **[CT-UC02-05]** ✅ *Coberto manual (runbook, condicional)* - Fluxo alternativo — entrar com o Google: uma conta Google nova clica em "Continuar com Google", cai em "Complete seu cadastro" (`/auth/complete-signup`), informa o celular, aceita os termos, clica em "Concluir cadastro" e vai para o dashboard. Só se aplica com o Google ligado na Web e no gateway.

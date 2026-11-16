@@ -81,13 +81,13 @@ IA_CONFIG_ENCRYPTION_KEY=chave_mestra_aleatoria   # gere com: openssl rand -base
 # Usuário de teste criado pelo db:reset (Passo 4)
 E2E_TEST_EMAIL=<e-mail do usuário de teste>
 E2E_TEST_PASSWORD=<senha do usuário de teste>
-E2E_TEST_ENTERPRISE_ID=aaaaaaaa-0000-0000-0000-000000000001
+E2E_TEST_ENTERPRISE_ID=aaaaaaaa-0000-4000-8000-000000000001
 ```
 
-O SMTP já vem apontado para o Mailpit (`SMTP_HOST=127.0.0.1`, `SMTP_PORT=1025`, `SMTP_SECURE=false`, sem usuário e senha), e o CORS já aceita `http://localhost:5173` sem configuração. As demais variáveis (worker da fila, limites da IA, Google, reenvio de e-mail) podem ficar como estão no `.env.example`. Detalhes do banco local no [`db/local/README.md`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/db/local/README.md) do Gateway.
+O SMTP já vem apontado para o Mailpit (`SMTP_HOST=127.0.0.1`, `SMTP_PORT=1025`, `SMTP_SECURE=false`, sem usuário e senha), e o CORS já aceita `http://localhost:5173` sem configuração, fora de produção. As demais variáveis (worker da fila, limites da IA, Google, limites do login, do cadastro, da nova senha e do reenvio) podem ficar como estão no `.env.example`. Detalhes do banco local no [`db/local/README.md`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/db/local/README.md) do Gateway.
 
 !!! warning "`BETTER_AUTH_SECRET` é obrigatório"
-    Sem `BETTER_AUTH_SECRET` o api-gateway **não sobe** em produção. No local, o Better Auth usa um segredo padrão inseguro e o `db:seed:e2e` falha. Gere um valor aleatório com `openssl rand -base64 32` e mantenha-o secreto.
+    Sem `BETTER_AUTH_SECRET` o api-gateway **não sobe** em produção. No local, o Better Auth usa um segredo padrão inseguro, o `db:seed:e2e` falha e o login, o cadastro e o esqueci a senha respondem `500`, porque o limite de tentativas usa esse segredo. Gere um valor aleatório com `openssl rand -base64 32` e mantenha-o secreto.
 
 !!! warning "Deixe `IA_ANALYZE_REMOTE_PREVIEW_ALIAS_URL` vazia no local"
     O `.env.example` traz `IA_ANALYZE_REMOTE_URL` e `IA_ANALYZE_REMOTE_PREVIEW_ALIAS_URL` vazias. Com as duas vazias, o Gateway local chama o IA Analyze em `http://localhost:4100`. Se só a de preview estiver preenchida, o Gateway chama esse endereço em vez do localhost.
@@ -127,7 +127,7 @@ npm run db:reset        # recria o schema pelas migrations + seed determinístic
 
 O `db:reset` roda, nesta ordem:
 
-1. `node scripts/db-local.mjs` — apaga e recria os schemas, aplica as migrations (`drizzle-kit migrate`) e o seed `db/local/seed.sql`: duas empresas (A `aaaaaaaa-0000-0000-0000-000000000001` e B `bbbbbbbb-0000-0000-0000-000000000001`), com pontos de coleta, feedbacks e um relatório de insights cada. Só a empresa A tem perguntas e análises.
+1. `node scripts/db-local.mjs` — apaga e recria os schemas, aplica as migrations (`drizzle-kit migrate`) e o seed `db/local/seed.sql`: duas empresas (A `aaaaaaaa-0000-4000-8000-000000000001` e B `bbbbbbbb-0000-4000-8000-000000000001`), com pontos de coleta, feedbacks e um relatório de insights cada. Só a empresa A tem perguntas e análises.
 2. `npm run db:seed:e2e` — cria o usuário de teste do Better Auth (e-mail verificado e senha) com `E2E_TEST_EMAIL` e `E2E_TEST_PASSWORD`, com telefone (`E2E_TEST_PHONE`; vazio, gerado a partir do e-mail) para o login não cair em "Complete seu cadastro", e o vincula à empresa de `E2E_TEST_ENTERPRISE_ID` (a empresa A serve). Exige também `DATABASE_URL` e `BETTER_AUTH_SECRET`; sem essas variáveis o `db:reset` falha neste passo, com o schema e o seed SQL já aplicados. Pode ser rodado sozinho e é idempotente.
 
 Depois, entre no app com o e-mail e a senha do usuário de teste.

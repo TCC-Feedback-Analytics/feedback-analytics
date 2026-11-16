@@ -2,7 +2,7 @@
 
 > Guia conceitual das entidades do banco de dados, seus campos principais e como se relacionam. Para a referência técnica completa (RLS, índices, triggers, funções), consulte [Visão Geral do Banco de Dados](../referencia/banco-de-dados/visao-geral.md).
 >
-> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration (`drizzle/0000` a `0014` hoje). Este guia resume esse schema; na dúvida, vale o código.
+> **Fonte da verdade:** o schema vive no repositório do gateway, em [`drizzle/schema/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle/schema), e muda só por migration (`drizzle/0000` a `0015` hoje). Este guia resume esse schema; na dúvida, vale o código.
 
 ---
 
@@ -46,7 +46,7 @@ erDiagram
     FEEDBACK_QUESTION_SUBQUESTIONS ||--o{ FEEDBACK_SUBQUESTION_ANSWERS : "subquestion_id"
 ```
 
-> **Fora do diagrama, por não terem FK:** `verification` (tokens do Better Auth), `auth_rate_limit` (limite de reenvio de e-mail, por chave) e `ia_rate_budget` (orçamento de chamadas à IA, cujo `scope` guarda o id da empresa em texto).
+> **Fora do diagrama, por não terem FK:** `verification` (tokens do Better Auth), `auth_rate_limit` (limites de tentativa do login, do cadastro, da nova senha e do reenvio, por chave) e `ia_rate_budget` (orçamento de chamadas à IA, cujo `scope` guarda o id da empresa em texto).
 
 > **Isolamento:** os dados de negócio carregam `enterprise_id`, e é por ele que a aplicação filtra cada query (o isolamento entre empresas fica no gateway). As exceções são as tabelas filhas (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`), que chegam à empresa pela tabela pai, e as tabelas por usuário ou por chave (`user`, `session`, `account`, `verification`, `user_onboarding`, `auth_rate_limit`, `ia_rate_budget`). Ao excluir a conta, o gateway apaga também o que não tem FK em cascata (`customer`, `collecting_data_enterprise`, `ia_rate_budget` e os links de nova senha em `verification`) antes de apagar a empresa.
 
@@ -72,7 +72,7 @@ Gerenciado pelo Better Auth no schema `public`. Registra a conta do empresário/
 
 > A empresa nasce em `provisionEnterpriseForUser` (`src/auth/enterpriseOnSignup.ts`). No cadastro com senha, o controller de cadastro a chama logo depois de criar o usuário. Na primeira entrada com o Google, quem chama é o gancho `account.create` do Better Auth. Ela cria a `enterprise` vinculada com trial de 4 meses (`subscription_status = 'TRIAL'`) e semeia as 3 perguntas padrão (`COMPANY`). O banco não obriga todo usuário a ter empresa (a FK e o UNIQUE ficam só em `enterprise`); a regra de "uma empresa por usuário" é da aplicação.
 > 
-> As sessões e credenciais são distribuídas nas tabelas auxiliares do Better Auth: `public.session` (sessões ativas), `public.account` (provedores, como senha e Google, e o hash da senha) e `public.verification` (tokens temporários). Na conta do Google, `access_token`, `refresh_token` e `id_token` ficam vazios: o gancho `discardOAuthTokens` os descarta ao criar e ao atualizar a conta.
+> As sessões e credenciais são distribuídas nas tabelas auxiliares do Better Auth: `public.session` (sessões ativas), `public.account` (provedores, como senha e Google, e o hash da senha) e `public.verification` (tokens temporários). Na conta do Google, `access_token`, `refresh_token` e `id_token` ficam vazios: o gancho `discardOAuthTokens` os descarta ao criar e ao atualizar a conta. A migration `0015` zerou os tokens das contas Google gravadas antes dessa regra.
 
 ---
 
@@ -125,11 +125,11 @@ Guia do sistema (tour da Web): registra, por usuário, os tours concluídos ou p
 ---
 
 #### `auth_rate_limit`
-Contador durável do limite de reenvio do e-mail de confirmação, compartilhado entre as instâncias serverless.
+Contador durável dos limites de tentativa do login, do cadastro, da nova senha e do reenvio, compartilhado entre as instâncias serverless.
 
 | Campo | Tipo | Descrição |
 |---|---|---|
-| `key` | text | Chave primária: tipo do limite (`ip`, `email` ou `cooldown`) mais o HMAC do IP ou do e-mail — nunca o valor em claro |
+| `key` | text | Chave primária. No reenvio, `ip`, `email` ou `cooldown` mais o HMAC. No login, no cadastro e na nova senha, `login`, `register` ou `forgot-password` mais `ip` ou `email` e o HMAC. Nunca o valor em claro |
 | `used` | int | Tentativas usadas na janela |
 | `expires_at` | timestamptz | Fim da janela |
 

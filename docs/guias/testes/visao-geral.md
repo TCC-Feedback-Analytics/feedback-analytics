@@ -1,7 +1,7 @@
 # Testes — Visão Geral
 
 !!! info "Conferido em 16/11/2026"
-    Inventário refeito contra a branch `developer` dos três repositórios de código. As contagens são de **arquivos** de teste. O número de testes muda a cada PR: em 16/11/2026, o CI contou 713 na Web, 456 no API Gateway (2 pulados) e 148 no IA Analyze.
+    Inventário refeito contra a branch `developer` dos três repositórios de código. As contagens são de **arquivos** de teste. O número de testes muda a cada PR: em 16/11/2026, o CI contou 713 na Web, 477 no API Gateway (2 pulados) e 148 no IA Analyze.
 
 ## Cobertura por Domínio
 
@@ -9,7 +9,7 @@
 |---|---|---|---|
 | **Frontend** | `feedback-analytics-web` | 117 | Coberto (utilitários, hooks, componentes, páginas, layouts, actions e loaders) |
 | **IA Analyze** | `feedback-analytics-ia-analyze` | 13 | Coberto (unitários, provedores com rede mockada e rotas) |
-| **Backend (API Gateway)** | `feedback-analytics-api-gateway` | 50 | Coberto (regras puras, SQL gerado, serviços, fila/worker e rotas com banco mockado); 1 suíte opt-in contra Postgres real |
+| **Backend (API Gateway)** | `feedback-analytics-api-gateway` | 52 | Coberto (regras puras, SQL gerado, serviços, fila/worker e rotas com banco mockado); 1 suíte opt-in contra Postgres real |
 | **E2E / integração com ambiente** | — | manual | Removido do CI — reproduzido à mão nos runbooks [Web](./manuais-web.md) e [API Gateway](./manuais-api-gateway.md) |
 
 
@@ -24,10 +24,10 @@ O projeto adota uma estratégia de testes distribuída em múltiplas camadas que
         ║   E2E — manual (runbooks)   ║  ← Jornada real integrada (front + back + banco reais), reproduzida à mão; suíte Playwright removida em 08/08/2026
         ╚═════════════════════════════╝
         ╔═══════════════════════════╗
-        ║  Integração (mockada)     ║  ← Rotas Express via Supertest (14 arquivos no api-gateway, 3 no ia-analyze) e Actions/Loaders (5 no frontend) — sem banco/rede reais
+        ║  Integração (mockada)     ║  ← Rotas Express via Supertest (15 arquivos no api-gateway, 3 no ia-analyze) e Actions/Loaders (5 no frontend) — sem banco/rede reais
         ╚═══════════════════════════╝
      ╔═════════════════════════════════╗
-     ║          Unidade                ║  ← Regras puras, SQL gerado, serviços, componentes e páginas isolados — a maior parte dos 180 arquivos
+     ║          Unidade                ║  ← Regras puras, SQL gerado, serviços, componentes e páginas isolados — a maior parte dos 182 arquivos
      ╚═════════════════════════════════╝
 ```
 

@@ -32,11 +32,11 @@ Estes cenários substituem a suíte automatizada que rodava contra o Postgres lo
 
 ### Identidades de teste
 
-- **Gestor A** — `user_id 11111111-1111-1111-1111-111111111111`, empresa A `aaaaaaaa-0000-0000-0000-000000000001` (`TRIAL`). E-mail no seed: `gestor.a@teste.local`.
-- **Gestor B** — `user_id 22222222-2222-2222-2222-222222222222`, empresa B `bbbbbbbb-0000-0000-0000-000000000001` (`TRIAL`). E-mail no seed: `gestor.b@teste.local`.
+- **Gestor A** — `user_id 11111111-1111-4111-8111-111111111111`, empresa A `aaaaaaaa-0000-4000-8000-000000000001` (`TRIAL`). E-mail no seed: `gestor.a@teste.local`.
+- **Gestor B** — `user_id 22222222-2222-4222-8222-222222222222`, empresa B `bbbbbbbb-0000-4000-8000-000000000001` (`TRIAL`). E-mail no seed: `gestor.b@teste.local`.
 - O CPF/CNPJ não existe mais (migration `0009`): o seed e a API não têm documento da empresa.
 - Os gestores A/B do `seed.sql` **não têm senha** (o seed não cria conta de credencial no Better Auth). Para exercitar os endpoints **protegidos** com os dados do seed, use a **fixture E2E** do `.env` apontando `E2E_TEST_ENTERPRISE_ID` para a empresa A — assim o login expõe exatamente o dataset de A. Alternativamente, para os fluxos de escrita/QR/auth, **registre um gestor novo** (começa com a empresa e as 3 perguntas padrão, sem feedbacks).
-- Para entrar como **B** com o dataset do seed, provisione um segundo usuário de teste vinculado a B, sem mudar o `.env` (o `dotenv` não sobrescreve variável já definida no shell): `E2E_TEST_EMAIL=<outro e-mail> E2E_TEST_ENTERPRISE_ID=bbbbbbbb-0000-0000-0000-000000000001 npm run db:seed:e2e`. Ele usa a mesma `E2E_TEST_PASSWORD`; salve o cookie dele em `cookies-b.txt`.
+- Para entrar como **B** com o dataset do seed, provisione um segundo usuário de teste vinculado a B, sem mudar o `.env` (o `dotenv` não sobrescreve variável já definida no shell): `E2E_TEST_EMAIL=<outro e-mail> E2E_TEST_ENTERPRISE_ID=bbbbbbbb-0000-4000-8000-000000000001 npm run db:seed:e2e`. Ele usa a mesma `E2E_TEST_PASSWORD`; salve o cookie dele em `cookies-b.txt`.
 - Com a fixture vinculada, o nome público da empresa (view `enterprise_public`, que lê o nome do dono) passa a ser `Gestor E2E`, e não mais `Gestor A`/`Gestor B`.
 - As seções **públicas** (`/api/public/...`) não exigem login e usam os IDs de A/B diretamente — reproduzem os testes sem nenhuma ponte.
 
@@ -46,12 +46,12 @@ Defina no shell (Git Bash) para encurtar os exemplos:
 
 ```bash
 BASE=http://localhost:3000/api
-ENT_A=aaaaaaaa-0000-0000-0000-000000000001
-ENT_B=bbbbbbbb-0000-0000-0000-000000000001
-QR_A=cccccccc-0000-0000-0000-0000000000aa      # ponto QR "QR Geral A"
-QR_B=cccccccc-0000-0000-0000-0000000000bb      # ponto QR "QR Geral B"
-Q_A1=dddddddd-0000-0000-0000-0000000000a1      # pergunta COMPANY A, ordem 1
-Q_A2=dddddddd-0000-0000-0000-0000000000a2      # pergunta COMPANY A, ordem 2
+ENT_A=aaaaaaaa-0000-4000-8000-000000000001
+ENT_B=bbbbbbbb-0000-4000-8000-000000000001
+QR_A=cccccccc-0000-4000-8000-0000000000aa      # ponto QR "QR Geral A"
+QR_B=cccccccc-0000-4000-8000-0000000000bb      # ponto QR "QR Geral B"
+Q_A1=dddddddd-0000-4000-8000-0000000000a1      # pergunta COMPANY A, ordem 1
+Q_A2=dddddddd-0000-4000-8000-0000000000a2      # pergunta COMPANY A, ordem 2
 ```
 
 Autenticação (gera o cookie de sessão httpOnly do Better Auth e o salva em `cookies-a.txt`):
@@ -156,14 +156,17 @@ Todos sob `$BASE/public/auth`. Valores de erro são os que o teste verifica.
 | Register com telefone já usado | `POST /register` com `phone` já existente e uma senha forte | **409**, `error` = `phone_taken`, `message` = "Telefone já cadastrado.". A força da senha é conferida primeiro, depois o telefone e só então o e-mail |
 | Register com senha fraca | `POST /register` com senha de 10+ caracteres e nota abaixo de 4 no zxcvbn (ex.: uma palavra comum repetida) | **400**, `error` = `password_too_weak` |
 | Register payload inválido | `POST /register` `{"email":"x"}` | **400**, `error` = `invalid_payload` |
-| Forgot-password (sempre 200) | `POST /forgot-password` `{email}` | **200**, `{"ok":true,"message":"Se este e-mail estiver cadastrado, você receberá as instruções em breve."}` |
+| Forgot-password (200 com ou sem conta) | `POST /forgot-password` `{email}` | **200**, `{"ok":true,"message":"Se este e-mail estiver cadastrado, você receberá as instruções em breve."}` |
 | Forgot-password e-mail inválido | `POST /forgot-password` `{"email":"nao-eh-email"}` | **400**, `error` = `invalid_payload` |
 | Resend-confirmation (sempre 200) | `POST /resend-confirmation` `{email}` com um e-mail que ainda não pediu reenvio | **200**, `{"ok":true,"message":"Se existir uma conta pendente para este e-mail, enviaremos uma nova confirmação.","retryAfterSeconds":60}`, com ou sem conta pendente |
 | Resend-confirmation repetido | repita a mesma chamada logo em seguida | **429**, `error` = `rate_limited`, `retryAfterSeconds` no corpo e header `Retry-After` com o mesmo valor (use `curl -i`) |
 | Resend-confirmation e-mail inválido | `POST /resend-confirmation` `{"email":"nao-eh-email"}` | **400**, `error` = `invalid_payload` |
+| Login bloqueado por tentativas | `POST /login` com a mesma conta e senha errada 11 vezes seguidas | Da 1ª à 10ª, **401** `invalid_credentials`. Na 11ª, **429**, `error` = `rate_limited`, `retryAfterSeconds` no corpo e header `Retry-After` (use `curl -i`). A senha certa também volta 429 até a janela de 15 min acabar |
+| Forgot-password acima do limite | `POST /forgot-password` com o mesmo e-mail 6 vezes em menos de 1 hora | Do 1º ao 5º, **200** genérico. O 6º, **429** `rate_limited`, com ou sem conta |
+| Register acima do limite | `POST /register` com o mesmo e-mail 6 vezes em menos de 1 hora | O 6º, **429** `rate_limited`. A conta não é criada e nenhum e-mail sai |
 | Logout | `POST /logout` com cookie de sessão | **204** (sem corpo) |
 
-> O intervalo de 60 s do reenvio vem de `RESEND_EMAIL_COOLDOWN_SECONDS`; há também limite por e-mail (5 por hora) e por IP (20 a cada 15 min). Os contadores ficam no banco (`auth_rate_limit`): um `db:reset` zera tudo.
+> Os limites contam por e-mail e por IP, no banco (`auth_rate_limit`), com o HMAC no lugar do valor. Login: 10 erros por e-mail e 100 por IP a cada 15 min, e o login certo devolve a vaga. Nova senha e cadastro: 5 pedidos por e-mail por hora e 20 por IP a cada 15 min, contando todo pedido. Reenvio: 60 s entre envios (`RESEND_EMAIL_COOLDOWN_SECONDS`), 5 por e-mail por hora e 20 por IP a cada 15 min. Os valores mudam por variável (`LOGIN_EMAIL_MAX` e afins, no `.env.example`). No local, o IP é o do socket. Um `db:reset` zera as contagens.
 
 ### Troca de e-mail
 
@@ -242,7 +245,7 @@ Cobre `resolveEnterpriseIdByUser` — resolução tenant-safe do gestor para a s
 SELECT e.id FROM public.enterprise e
   JOIN public."user" u ON u.id = e.auth_user_id
  WHERE u.email = '<E2E_TEST_EMAIL>';
--- deve retornar aaaaaaaa-0000-0000-0000-000000000001 e nunca a de B
+-- deve retornar aaaaaaaa-0000-4000-8000-000000000001 e nunca a de B
 ```
 
 ---
@@ -373,7 +376,7 @@ Endpoint **público** (sem login): `GET $BASE/public/enterprise/:id` com query o
 
 ### Empresa inexistente → 404
 
-**Passos:** `curl -i "$BASE/public/enterprise/dddddddd-0000-0000-0000-0000000000ff"`.
+**Passos:** `curl -i "$BASE/public/enterprise/dddddddd-0000-4000-8000-0000000000ff"`.
 **Resultado esperado:** **404** (`enterprise_not_found`).
 
 ### Resolver por id do próprio ponto
@@ -422,8 +425,6 @@ Endpoint **público**: `POST $BASE/public/qrcode/feedback`. Escrita atômica (di
 > `channel` é o canal de coleta: `QR`, `LINK`, `NFC` ou `TEST` (o "Testar o formulário" do Dashboard). Valor ausente, desconhecido ou o antigo `QRCODE` não recusa o envio: o feedback é gravado com `channel` nulo ("sem a marca de canal").
 
 > O "dispositivo" é um fingerprint `md5(user-agent | ip)`, sem o dia. Via `curl` do mesmo host, o fingerprint se repete em qualquer dia (o limite de um envio por ponto vira à meia-noite de Brasília); troque o header `User-Agent` para simular outro dispositivo.
-
-> **Atenção (16/11/2026):** o corpo é validado com `z.uuidv4()` (`@feedback/lib-shared`, `schemas/public/feedbackSchema.ts`). Os IDs fixos do seed (`$ENT_A`, `$QR_A`, `$Q_A1`, `$Q_A2`, `$ENT_B`, `$QR_B`) não são UUID v4 (o 3º grupo começa com `0`), e o envio com eles volta **400** `invalid_payload` antes de qualquer gravação. A troca dos IDs do seed por UUID v4 está em andamento no Gateway. Até lá, faça os envios desta seção com um gestor recém-registrado: ative o QR geral dele e use o `id`, o `collection_point_id` e os `questions[].id` de `GET $BASE/public/enterprise/<id da empresa nova>`. A empresa nova começa sem feedbacks e com 3 perguntas, então as contagens esperadas mudam.
 
 ### Feedback anônimo com respostas (empresa A)
 
@@ -612,7 +613,7 @@ Cobre `fetchQuestionDefsScoped` / `fetchSubquestionDefsScoped` (config de pergun
 **Verificação opcional (SQL):**
 ```sql
 SELECT id, is_active FROM public.questions_of_feedbacks
- WHERE enterprise_id = 'bbbbbbbb-0000-0000-0000-000000000001'; -- vazio
+ WHERE enterprise_id = 'bbbbbbbb-0000-4000-8000-000000000001'; -- vazio
 ```
 
 ---
@@ -667,13 +668,13 @@ O teste também verifica o **contexto** para a IA (`fetchEnterpriseContextForAna
 SELECT c.company_objective, ep.name
   FROM public.collecting_data_enterprise c
   JOIN public.enterprise_public ep ON ep.id = c.enterprise_id
- WHERE c.enterprise_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+ WHERE c.enterprise_id = 'aaaaaaaa-0000-4000-8000-000000000001';
 
 -- a1/a2 têm análise; a4 não:
 SELECT feedback_id FROM public.feedback_analysis
- WHERE feedback_id IN ('f0000000-0000-0000-0000-0000000000a1',
-                       'f0000000-0000-0000-0000-0000000000a2',
-                       'f0000000-0000-0000-0000-0000000000a4');
+ WHERE feedback_id IN ('f0000000-0000-4000-8000-0000000000a1',
+                       'f0000000-0000-4000-8000-0000000000a2',
+                       'f0000000-0000-4000-8000-0000000000a4');
 -- retorna a1 e a2, nunca a4
 ```
 

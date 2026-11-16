@@ -33,7 +33,9 @@ Consequência prática: num incidente com feedbacks, **avisamos o negócio**, e 
 | **Vercel** | Hospeda a Web, o gateway e o `ia-analyze` | Todas as requisições, com IP e navegador nos registros de acesso | Fora do Brasil | DPA aceito; por quanto tempo guarda os registros |
 | **OpenRouter** e o **provedor do modelo** escolhido pelo negócio | Roda a análise dos comentários, o diagnóstico e a geração das perguntas | Comentários, notas, respostas, pergunta própria, nomes do ponto e do item, o nome e o contexto do negócio. Nunca nome, e-mail, gênero ou IP do cliente | Fora do Brasil | Política de retenção do OpenRouter e do provedor escolhido. A chamada usa a **chave do próprio negócio**, então o negócio também tem um contrato direto com o OpenRouter |
 | **Brevo** | Envia os e-mails da conta | E-mail do gestor e os links de confirmação, de troca de e-mail e de nova senha | Fora do Brasil (União Europeia) | DPA aceito |
-| **Google** | Login com Google e as fontes da Web (Google Fonts) | O pedido de login, que devolve nome, e-mail e foto do perfil. Pelo Google Fonts, o IP e o navegador de quem abre qualquer página da Web, inclusive o formulário público | Fora do Brasil | Configuração do OAuth publicada; servir as fontes pela própria Web |
+| **Google** | Login com Google | O pedido de login, que devolve nome, e-mail e foto do perfil | Fora do Brasil | Configuração do OAuth publicada |
+
+Na `developer` da Web (PR #152), as fontes saem da própria Web. Até a `main` receber a mudança, o Google Fonts ainda recebe o IP e o navegador de quem abre as páginas em produção.
 
 **Transferência internacional:** Vercel, OpenRouter, Brevo e Google ficam fora do Brasil. A Política de Privacidade já avisa e cita o art. 33 da LGPD. Os acordos de tratamento de dados (DPA) dos fornecedores são o instrumento que cobre essa transferência.
 
@@ -54,8 +56,8 @@ A ANPD dispensa os agentes de pequeno porte, como startups, de indicar um encarr
 
 ## Divergências encontradas entre a Política e o sistema
 
-Pontos encontrados em 02/11/2026 e em 16/11/2026. O 1 e o 3 já foram corrigidos na Web; os outros seguem abertos:
+Pontos encontrados em 02/11/2026 e em 16/11/2026. Os três já foram corrigidos na Web. O 2 está na `developer` e ainda não na `main`:
 
 1. **E-mail: corrigido.** A Política dizia que os e-mails saíam pelo **SendGrid**; hoje ela cita o **Brevo**, que é quem envia em produção (gateway, configuração SMTP).
-2. **Limpeza de registros:** a Política diz que os registros de sessão e de controle de envios "são apagados quando deixam de ser necessários". Os aparelhos (`tracked_devices`, com IP e navegador) não têm prazo, e a sessão só some ao sair da conta ou quando o cookie vencido volta ([inventário](inventario-de-dados.md#por-quanto-tempo-fica)).
+2. **Limpeza de registros: corrigido na `developer` da Web (PR #152).** A Política dizia que os registros de sessão e de controle de envios "são apagados quando deixam de ser necessários". O texto novo diz que a sessão é apagada quando a pessoa sai da conta e que o IP, o navegador e o identificador do aparelho ficam enquanto a conta do negócio existir ([inventário](inventario-de-dados.md#por-quanto-tempo-fica)).
 3. **Exclusão da conta: corrigido.** A exclusão dependia de um pedido por e-mail. Desde 02/11/2026, o botão "Excluir minha conta", no Perfil, apaga a conta, a empresa e todos os feedbacks, e os Termos citam o botão.
