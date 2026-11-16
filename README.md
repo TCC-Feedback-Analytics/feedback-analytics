@@ -1,6 +1,6 @@
 # Feedback Analytics — Documentação
 
-Repositório **central de documentação** do Feedback Analytics (Projeto Integrador). Aqui vive a **descoberta e a decisão** do produto — concepção, requisitos, arquitetura, decisões e a referência do banco. O **código** de cada serviço mora em repositórios próprios (veja abaixo).
+Repositório **central de documentação** do Feedback Analytics, projeto que é ao mesmo tempo o nosso Projeto Integrador e o nosso TCC, desenvolvido na disciplina PFC (Projeto Final de Curso). Aqui vive a **descoberta e a decisão** do produto — concepção, requisitos, arquitetura, decisões e a referência do banco. O **código** de cada serviço mora em repositórios próprios (veja abaixo).
 
 📖 **Site da documentação:** <https://tcc-feedback-analytics.github.io/feedback-analytics/>
 
