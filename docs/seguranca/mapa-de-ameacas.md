@@ -2,7 +2,7 @@
 
 > **Em uma frase:** para cada parte do Feedback Analytics, o que um atacante (ou um erro nosso) poderia fazer, o que já protege no código e o que ainda está aberto.
 
-Parte do [inventário de dados pessoais](inventario-de-dados.md): ele diz **o que** proteger; este documento diz **contra o quê**. Levantado no código do gateway, da Web e do ia-analyze em 02/11/2026; a situação das mitigações foi revista em 03/11/2026.
+Parte do [inventário de dados pessoais](inventario-de-dados.md): ele diz **o que** proteger; este documento diz **contra o quê**. Levantado no código do gateway, da Web e do ia-analyze em 02/11/2026; a situação das mitigações foi revista em 03/11/2026 e em 16/11/2026.
 
 ## Como ler
 
@@ -38,7 +38,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **S** | Uma pessoa envia várias respostas fingindo ser clientes diferentes | Uma resposta por aparelho, ponto de coleta e dia. O aparelho é identificado por um hash de navegador e IP (`qrcode.controller.ts`), e o dia vira à meia-noite de Brasília. Um aparelho pode ser bloqueado (`is_blocked`), mas só direto no banco: o painel não tem esse botão | ⚠️ Trocar de rede ou de navegador burla o limite. Aceitável para métrica de satisfação, não para votação |
+| **S** | Uma pessoa envia várias respostas fingindo ser clientes diferentes | Uma resposta por aparelho, ponto de coleta e dia. O aparelho é identificado por um hash de navegador e IP (`qrcode.controller.ts`), e o dia vira à meia-noite de Brasília. Um aparelho pode ser bloqueado (`is_blocked`), mas só direto no banco: o painel não tem esse botão | ⚠️ Trocar de rede ou de navegador burla o limite, e um script burla só trocando o cabeçalho User-Agent. Aceitável para métrica de satisfação, não para votação |
 | **T** | Alterar a marca de canal ou o ponto de coleta na URL | O ponto de coleta precisa estar **ativo** e ser **da empresa** do pedido. A marca de canal serve só a métricas | ✅ |
 | **T** | Enviar dado malformado ou gigante | O schema do contrato (`publicFeedbackSchema`) valida tudo: nota de 1 a 5, comentário até 5.000 caracteres, nome até 120 | ✅ |
 | **I** | Ver respostas de outros clientes pelo formulário | O formulário só lê o nome da empresa e as perguntas; nenhuma rota pública devolve feedbacks | ✅ |
@@ -48,18 +48,18 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **S** | Roubar a conta adivinhando a senha | Better Auth, biblioteca especializada: senha guardada só como hash e força mínima da senha (`passwordStrength.ts`). Login com Google como alternativa | ⚠️ O limite de tentativas é o padrão do Better Auth, contado na memória de cada instância. Na Vercel as instâncias não compartilham essa conta |
-| **S** | Descobrir se um e-mail tem conta (enumeração) | Cadastro sem login automático e com confirmação obrigatória de e-mail, respondendo igual nos dois casos (`auth.ts`) | ✅ |
+| **S** | Roubar a conta adivinhando a senha | Better Auth, biblioteca especializada: senha guardada só como hash e força mínima da senha (`passwordStrength.ts`). Login com Google como alternativa | ❌ Sem limite de tentativas. A Web entra por `/api/public/auth/login`, que chama o Better Auth de dentro do servidor, e o limite do Better Auth só vale nas rotas `/api/auth/*`. Mesmo lá, a contagem fica na memória de cada instância |
+| **S** | Descobrir se um e-mail tem conta (enumeração) | Cadastro sem login automático e com confirmação obrigatória de e-mail, respondendo igual nos dois casos (`register.controller.ts`). O login responde "E-mail ou senha inválidos." também para conta não confirmada (`errorMap.ts`) | ⚠️ O cadastro avisa "Telefone já cadastrado.", o que revela se um telefone tem conta |
 | **S** | Roubar a sessão pelo navegador | Cookie `httpOnly` (o JavaScript da página não lê), `secure` em produção e `sameSite` | ✅ |
 | **D** | Usar o "reenviar confirmação" para mandar spam | Limite por IP e por e-mail, com contagem no banco e só o HMAC dos valores (`resendRateLimit.ts`) | ✅ |
-| **I** | Vazar os tokens do Google guardados | Ficam na tabela `account`, que só o gateway lê. O sistema não usa esses tokens depois do login | ⚠️ Guardados sem cifra e sem necessidade |
+| **I** | Vazar os tokens do Google guardados | Não são mais gravados: o hook `discardOAuthTokens` apaga os tokens antes de gravar a conta (`auth.ts`). Quem entrou antes da regra só perde os tokens quando entrar de novo | ⚠️ Feito na `developer` (PR #109), ainda não publicado na `main` |
 
 ## 3. API do painel (gateway)
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
 | **E** | Um gestor ler ou alterar dados de **outra empresa** | A empresa vem da sessão, nunca do pedido (`middlewares/auth.ts`). Toda leitura de feedback passa por um filtro único que exige a empresa e falha se ela faltar (`db/tenantScope.ts`), com testes | ✅ |
-| **S** | Outro site chamar a API usando o cookie do gestor | CORS só para as origens da Web (`index.ts`) | ✅ |
+| **S** | Outro site chamar a API usando o cookie do gestor | Cookie `sameSite=lax` e CORS só para as origens da Web (`index.ts`) | ✅ |
 | **R** | Um gestor negar que pediu uma análise ou mudou algo | A fila de análises guarda quem pediu (`ia_analysis_job.requested_by`) e o aceite dos termos tem data e versão | ⚠️ Não há registro de quem alterou o quê nas configurações |
 | **I** | Um erro devolver detalhes internos | As rotas devolvem códigos de erro tipados (`sendTypedError`), sem pilha de execução | ✅ |
 
@@ -67,8 +67,8 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **I** | Acessar o banco por fora do app | Data API do Supabase desligada desde 22/10/2026. RLS ligada nas 24 tabelas (migration `0013`), com uma policy que só deixa passar o papel do app, `feedback_app`; os papéis `anon` e `authenticated` do Supabase não veem nenhuma linha | ✅ |
-| **E** | Uma credencial do app vazar e dar acesso total | Em produção, o gateway entra no banco como `feedback_app`, que só lê e escreve dados ([banco com o mínimo de privilégio](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/banco-menor-privilegio.md)). As migrations rodam como `postgres`, com a senha só no secret do GitHub | ⚠️ Com a senha do app vazada, ainda dá para ler e alterar os dados de todas as empresas, mas não apagar tabelas, desligar a RLS nem criar papéis |
+| **I** | Acessar o banco por fora do app | Data API do Supabase desligada desde 22/10/2026. RLS ligada nas 24 tabelas (migration `0013`), com uma policy que só deixa passar o papel do app, `feedback_app`; os papéis `anon` e `authenticated` do Supabase não veem nenhuma linha das tabelas. Exceções: a view `enterprise_public` (id e nome de cada empresa) roda como dona, e restam 3 funções antigas `SECURITY DEFINER`; por isso a Data API precisa continuar desligada | ✅ |
+| **E** | Uma credencial do app vazar e dar acesso total | Em produção, o gateway entra no banco como `feedback_app`, que só lê e escreve dados ([banco com o mínimo de privilégio](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/banco-menor-privilegio.md)). As migrations rodam como `postgres`, com a senha só no secret do GitHub | ⚠️ Com a senha do app vazada, ainda dá para ler, alterar e apagar os dados de todas as empresas, mas não apagar tabelas, desligar a RLS nem criar papéis |
 | **I** | Ler a chave de IA de uma empresa no banco | Chave cifrada com AES-256-GCM (`utils/crypto.ts`), com a chave mestra fora do banco, nas variáveis da Vercel | ✅ |
 | **T** | Perder dados por erro ou ataque | Backups do Supabase | ⚠️ A confirmar no plano contratado; a restauração está no [roteiro de incidente](roteiro-de-incidente.md) |
 | **I** | Guardar dado além do necessário | Sem CPF/CNPJ (migration `0009`) | ⚠️ IP do cliente sem prazo de guarda |
@@ -79,14 +79,14 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 |---|---|---|---|
 | **I** | Dado pessoal do cliente sair para o provedor de IA | Só vão comentário, nota, respostas e contexto do negócio; nome, e-mail, gênero e IP do cliente nunca vão | ⚠️ O texto do comentário vai como foi escrito e pode conter um telefone ou e-mail |
 | **T** | Um cliente escrever no comentário uma instrução para a IA ("ignore as regras e…") | A resposta da IA é validada no formato antes de ser gravada (`ia-analyze/src/validations`) | ⚠️ Não há defesa específica: um comentário pode tentar enviesar o resumo |
-| **D** | Esgotar a cota de IA da empresa ou do sistema | Fila assíncrona com orçamento por janela (`ia_rate_budget`) e tentativas limitadas | ✅ |
+| **D** | Esgotar a cota de IA da empresa ou do sistema | Fila assíncrona com até 3 tentativas e um só pedido ativo por tipo e escopo. O orçamento por janela (`ia_rate_budget`) existe, mas só limita com `IA_RPM_LIMIT` e `IA_RPD_LIMIT` preenchidos | ⚠️ Cada empresa gasta a própria chave, e só o gestor dela pede análises |
 | **S** | Usar a chave de IA de outra empresa | A chave é escolhida pela empresa da sessão e decifrada só no gateway | ✅ |
 
 ## 6. E-mail
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **S** | Usar um link de confirmação ou de nova senha velho ou de outra pessoa | Links com token único e prazo, validados pelo Better Auth (`verification`) | ✅ |
+| **S** | Usar um link de confirmação ou de nova senha velho ou de outra pessoa | Links com prazo de 1 hora, validados pelo Better Auth. O de nova senha usa um token guardado na tabela `verification` e apagado no uso. O de confirmação e o de troca de e-mail são um token assinado com o `BETTER_AUTH_SECRET`, sem registro no banco | ✅ |
 | **I** | A credencial do Brevo vazar | Fica só nas variáveis da Vercel, fora do repositório | ✅ |
 
 ## 7. Web (navegador)
@@ -103,11 +103,11 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 |---|---|---|---|
 | 1 | Gateway entra no banco como superusuário | Uma senha vazada vira acesso total | Etapa 07, código, item 3. **Feito:** o app entra como `feedback_app` em produção (migration `0013`) |
 | 2 | Sem "Excluir minha conta" | Direito do titular (LGPD, art. 18) | Etapa 07, código, item 2. **Feito:** botão no Perfil, publicado em 02/11/2026 |
-| 3 | Oito tabelas sem RLS | Coerência com a decisão de RLS em todas | Etapa 07, código, item 3. **Feito:** RLS nas 24 tabelas (migration `0013`) |
+| 3 | Nove tabelas sem RLS | Coerência com a decisão de RLS em todas | Etapa 07, código, item 3. **Feito:** RLS nas 24 tabelas (migration `0013`) |
 | 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | Novo, pequeno |
-| 5 | Limite de tentativas de login por instância | Ataque de senha distribuído | Novo: guardar a contagem no banco |
+| 5 | Sem limite de tentativas de login | Ataque de senha, até de um só IP | Novo: limitar `/api/public/auth/login` (e os e-mails de cadastro e de nova senha) com contagem no banco, como no reenvio |
 | 6 | Sem limite por IP no envio público | Encher o banco com respostas | Novo, pequeno |
 | 7 | IP do cliente sem prazo | Guardar além do necessário | Etapa 07, código, item 4 (opcional) |
-| 8 | Tokens do Google guardados sem uso | Dado sensível sem finalidade | Novo, pequeno |
+| 8 | Tokens do Google guardados sem uso | Dado sensível sem finalidade | Novo, pequeno. **Feito na `developer`:** não são mais gravados (PR #109). Falta publicar na `main` e limpar os tokens antigos |
 | 9 | Comentário com dado pessoal ou instrução para a IA | Dado saindo do sistema; resumo enviesado | Decisão em aberto |
 | 10 | Backups não confirmados | Recuperação depois de um incidente | [Roteiro de incidente](roteiro-de-incidente.md) |

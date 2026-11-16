@@ -1,128 +1,105 @@
 # Política de Privacidade
 
-> **Última atualização:** 10 de Novembro de 2026
+> **Última atualização:** 2 de novembro de 2026
 
-Esta política explica de forma clara quais dados o Feedback Analytics trata, para quais finalidades, com quais fornecedores compartilha e como você pode exercer seus direitos, em estrita conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 — LGPD).
+Esta página reproduz o texto publicado na Web, em `/privacidade` (`pages/public/privacy.tsx` e a data em `src/lib/constants/legal.ts`, no repositório da Web). Quem se cadastra aceita esse texto, na versão `v1` dos termos. Quando ele mudar na Web, esta página muda junto.
 
----
+!!! warning "Pontos que o código não cumpre (conferido em 16/11/2026)"
+    O texto abaixo é o publicado. Estes trechos não batem com o que o sistema faz e estão sendo corrigidos num PR da Web:
 
-## 1. Quem trata os dados (Papéis perante a LGPD)
+    - **Seção 2:** "dados da sessão: endereço IP e navegador usados para entrar". No login com e-mail e senha, o Gateway não grava o IP nem o navegador da sessão.
+    - **Seções 1 e 2:** os feedbacks chegam pelo QR Code, pelo link ou pela etiqueta NFC, não só pelo QR Code. O identificador do aparelho também conta os clientes que voltam a avaliar.
+    - **Seção 5:** todas as páginas da Web carregam as fontes do Google Fonts, que recebe o IP e o navegador de quem as abre, inclusive o cliente no formulário.
+    - **Seção 6:** o navegador não guarda o tema; guarda alguns ajustes do painel, como o aviso de IA lenta, o convite do guia e uma análise em andamento. O progresso do guia fica no servidor.
+    - **Seção 7:** nada apaga os registros de controle de envios. O IP, o navegador e o identificador do aparelho de quem envia feedback ficam enquanto a conta do negócio existir.
+    - **Seção 9:** num incidente com feedbacks, quem avisa os clientes e a ANPD é o negócio, que é o controlador desses dados (ver o [Roteiro de incidente](roteiro-de-incidente.md)).
 
-O papel do Feedback Analytics varia de acordo com a origem do dado:
+    Os detalhes estão no [Inventário de dados pessoais](inventario-de-dados.md) e em [Controlador e operador](controlador-e-operador.md).
 
-* **Dados da conta do negócio (quem se cadastra na plataforma):** o **Feedback Analytics é o Controlador**. Nós definimos os dados cadastrais mínimos necessários para criar e manter a conta, permitir o acesso e garantir a segurança do serviço.
-* **Feedbacks dos clientes finais:** o **negócio (empresa cliente) é o Controlador**. O negócio é quem decide coletar a opinião dos seus clientes, define os pontos de atendimento e personaliza perguntas. O **Feedback Analytics atua como Operador**, tratando esses dados em nome do negócio exclusivamente para registrá-los, consolidar métricas e processar diagnósticos solicitados pela própria empresa.
+Esta política explica quais dados o Feedback Analytics trata, para quê, com quem compartilha e como você exerce seus direitos, nos termos da Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD).
 
----
+## 1. Quem trata os dados
+
+O Feedback Analytics é o controlador dos dados da conta do negócio (quem se cadastra na plataforma).
+
+Os feedbacks que os clientes do negócio deixam pelo QR Code pertencem ao negócio, que é o controlador desses dados. O Feedback Analytics os trata em nome do negócio, como operador, só para guardá-los e gerar as análises que o próprio negócio pede.
 
 ## 2. Quais dados coletamos
 
-### Da conta do negócio (gestor)
-* **Cadastro básico:** nome do gestor ou do negócio, endereço de e-mail e telefone de contato;
-* **Credenciais de acesso:** senha de login, armazenada exclusivamente sob a forma de **hash criptográfico com salt** (bcrypt), nunca em texto plano;
-* **Login social (ao entrar com o Google):** nome, endereço de e-mail e foto de perfil informados pelo Google, mediante autorização do usuário;
-* **Contexto e catálogo do negócio:** descrição das atividades da empresa, objetivos e catálogo de produtos/serviços cadastrados para parametrizar o formulário;
-* **Configuração de Inteligência Artificial:** chave de API da empresa (BYO-Key do OpenRouter), mantida **criptografada em repouso** (AES-256-GCM), e o modelo de IA selecionado;
-* **Dados técnicos de sessão:** endereço IP e identificador do navegador utilizados para autenticação e auditoria de segurança.
+Da conta do negócio:
 
-### Dos clientes que enviam feedback (formulário público)
-* **Avaliação do atendimento:** nota de 1 a 5 estrelas, respostas às perguntas do questionário e comentário em texto livre (opcional);
-* **Identificação facultativa:** nome, e-mail e gênero, **estritamente se a pessoa optar por se identificar** (todos os campos de identificação são opcionais);
-* **Metadados de integridade e anti-spam:** endereço IP, identificação do navegador (*user agent*) e um identificador técnico do aparelho (*fingerprint*), utilizados unicamente para prevenir envios repetidos ou automações maliciosas (limitando a uma avaliação por aparelho e ponto de coleta a cada ciclo).
+- nome do negócio, e-mail e telefone;
+- senha, guardada só de forma cifrada (hash), nunca em texto;
+- ao entrar com o Google: nome, e-mail e foto do perfil que o Google informa;
+- o contexto do negócio digitado na configuração (o que faz e quais são os objetivos);
+- a chave de API do OpenRouter, guardada criptografada, e o modelo de IA escolhido;
+- dados da sessão: endereço IP e navegador usados para entrar.
 
-> **Minimização de dados por design:** a plataforma **não solicita nem armazena CPF, CNPJ ou documentos de identificação**. Também não coletamos nem armazenamos gravações de áudio, voz ou arquivos de mídia, mantendo a entrada de dados estritamente estruturada em texto.
+Dos clientes que deixam feedback pelo QR Code:
 
----
+- a nota, o comentário (opcional) e as respostas às perguntas do formulário;
+- nome, e-mail e gênero, só se a pessoa quiser informar;
+- endereço IP, navegador e um identificador do aparelho, para evitar envios repetidos e spam.
 
-## 3. Para que usamos os dados
+Não pedimos CPF, CNPJ nem dados sensíveis (como saúde, religião ou opinião política).
 
-Os dados tratados destinam-se exclusivamente às seguintes finalidades:
+## 3. Para que usamos
 
-1. **Gestão da conta e acesso:** criar e autenticar a conta, gerenciar a sessão do gestor e enviar e-mails transacionais indispensáveis (confirmação de cadastro, troca de e-mail e redefinição de senha);
-2. **Prestação do serviço:** receber as avaliações dos clientes, calcular métricas de satisfação (médias, distribuição por canal e produto) e gerar resumos e diagnósticos com IA no painel do gestor;
-3. **Segurança e proteção contra abuso:** barrar acessos não autorizados, mitigar ataques de força bruta, frear spam e assegurar o isolamento estrito entre empresas (*multi-tenant*).
+- criar e manter a conta, permitir o login e enviar os e-mails de confirmação e de recuperação de senha;
+- receber os feedbacks e gerar as métricas e as análises por IA que o negócio vê no painel;
+- proteger a plataforma contra abuso, spam e acesso indevido.
 
-Não comercializamos dados pessoais sob qualquer hipótese e não os utilizamos para direcionamento de anúncios publicitários ou perfilamento comercial com terceiros.
+Não vendemos dados e não os usamos para publicidade.
 
----
+## 4. Bases legais
 
-## 4. Bases legais (LGPD)
+- execução do contrato com o negócio (art. 7º, V, da LGPD), para oferecer o serviço;
+- legítimo interesse (art. 7º, IX), para segurança e prevenção de spam;
+- consentimento (art. 7º, I), para os dados opcionais que o cliente escolhe informar no feedback.
 
-Todo o tratamento realizado fundamenta-se nas seguintes bases legais do art. 7º da LGPD:
+## 5. Com quem compartilhamos
 
-| Finalidade do tratamento | Base legal |
-|---|---|
-| Criação da conta, autenticação, suporte e e-mails do sistema | **Execução de contrato** (art. 7º, V) |
-| Coleta e processamento de feedbacks para o painel da empresa | **Execução de contrato** a pedido do controlador (art. 7º, V) |
-| Prevenção a spam, rate limit e segurança da infraestrutura | **Legítimo interesse** (art. 7º, IX) |
-| Nome, e-mail e gênero informados voluntariamente no feedback | **Consentimento** do titular (art. 7º, I) |
+Só com os serviços necessários para a plataforma funcionar:
 
----
+- Vercel, que hospeda o site e a API;
+- Supabase, que hospeda o banco de dados;
+- Brevo, que envia os e-mails da conta;
+- Google, quando a pessoa escolhe entrar com o Google;
+- OpenRouter e o provedor do modelo de IA escolhido pelo negócio, que recebem os comentários, as respostas e o contexto do negócio para gerar as análises, usando a chave de API do próprio negócio.
 
-## 5. Com quem compartilhamos os dados
-
-O compartilhamento ocorre exclusivamente com fornecedores de infraestrutura indispensáveis para a operação segura da plataforma:
-
-* **Vercel:** hospedagem da interface web, do gateway de API e do serviço de processamento;
-* **Supabase:** hospedagem do banco de dados relacional PostgreSQL;
-* **Brevo:** serviço de SMTP para envio dos e-mails transacionais da conta;
-* **Google:** provedor de autenticação federada (quando o gestor opta por "Entrar com Google");
-* **OpenRouter e Provedor do Modelo de IA:** processamento das análises dos comentários, diagnóstico de escopo e sugestões de perguntas. O envio inclui apenas o texto do comentário, a nota e o contexto do negócio, utilizando a chave de API cadastrada pela própria empresa. **Nome, e-mail e endereço IP do cliente final nunca são repassados ao provedor de IA**.
-
-**Transferência internacional de dados:** os servidores dos provedores acima estão localizados fora do Brasil (notadamente Estados Unidos e União Europeia). A transferência internacional observa o art. 33 da LGPD, respaldada por cláusulas contratuais de proteção e acordos de tratamento de dados (DPAs) firmados com cada serviço.
-
----
+Alguns desses serviços ficam fora do Brasil. A transferência internacional segue o art. 33 da LGPD. Também compartilhamos dados quando uma lei ou uma ordem de autoridade exigir.
 
 ## 6. Cookies e armazenamento no navegador
 
-* **Cookie essencial de autenticação:** emitido pelo Better Auth com os parâmetros `httpOnly`, `Secure` (em produção) e política `SameSite`. Não pode ser lido por scripts do navegador (proteção contra XSS) e contém apenas um identificador opaco de sessão;
-* **Armazenamento local (localStorage):** utilizado unicamente para salvar preferências visuais da interface (modo claro/escuro) e o progresso do guia inicial (*onboarding*);
-* **Ausência de rastreadores:** a plataforma não utiliza cookies de publicidade, ferramentas de telemetria comportamental invasiva ou pixels de redes sociais.
+Usamos um cookie essencial para manter a sessão de quem entra na conta. O navegador também guarda preferências, como o tema e o andamento do guia.
 
----
+Não usamos cookies de publicidade nem de rastreamento.
 
-## 7. Retenção e exclusão dos dados
+## 7. Por quanto tempo guardamos
 
-* **Dados cadastrais e feedbacks:** permanecem armazenados enquanto a conta do negócio estiver ativa na plataforma;
-* **Direito de exclusão autônomo:** o gestor pode apagar sua conta e todos os dados associados a qualquer momento, sem necessidade de intermediários, diretamente no painel em **Perfil > Excluir minha conta**. A solicitação dispara uma exclusão transacional em cascata que elimina permanentemente a empresa, todos os feedbacks, respostas, cadastros de clientes e configurações de IA;
-* **Registros de sessão:** sessões expiradas tornam-se inoperantes de forma imediata na aplicação e são eliminadas definitivamente no descarte da conta.
+Os dados ficam guardados enquanto a conta do negócio existir. Quando a conta é excluída, os dados da conta e os feedbacks dela são apagados, salvo o que a lei obrigar a manter.
 
----
+Os registros de sessão e de controle de envios são apagados quando deixam de ser necessários.
 
-## 8. Seus direitos (Art. 18 da LGPD)
+## 8. Seus direitos
 
-Na condição de titular de dados pessoais, você pode solicitar a qualquer momento:
+Pela LGPD (art. 18), você pode pedir:
 
-1. A confirmação da existência de tratamento e o acesso aos seus dados;
-2. A correção de dados incompletos, inexatos ou desatualizados;
-3. A anonimização, o bloqueio ou a eliminação de dados desnecessários, excessivos ou tratados em desacordo com a lei;
-4. A portabilidade dos dados para outro fornecedor de serviço;
-5. A eliminação dos dados tratados com base no seu consentimento;
-6. Informações sobre as entidades públicas e privadas com as quais compartilhamos dados;
-7. A revogação do consentimento concedido.
+- a confirmação de que tratamos seus dados e o acesso a eles;
+- a correção de dados incompletos, inexatos ou desatualizados;
+- a anonimização, o bloqueio ou a exclusão de dados desnecessários;
+- a portabilidade dos dados e a exclusão da conta;
+- informações sobre com quem compartilhamos;
+- a revogação do consentimento, quando for essa a base legal.
 
-### Canal de atendimento
-Para exercer quaisquer desses direitos sobre dados cadastrais da sua conta, entre em contato pelo nosso canal formal:
+Os pedidos são feitos pelo e-mail [feedbackanalytics2026@gmail.com](mailto:feedbackanalytics2026@gmail.com). Se você deixou um feedback para um negócio, também pode falar com ele diretamente. Você ainda pode reclamar na Autoridade Nacional de Proteção de Dados (ANPD).
 
-**E-mail de contato:** `feedbackanalytics2026@gmail.com`
+## 9. Segurança
 
-*Nota aos clientes finais que responderam a um formulário:* como os feedbacks pertencem à empresa avaliada (controladora), você pode direcionar seu pedido de acesso ou exclusão diretamente ao estabelecimento comercial correspondente ou entrar em contato conosco pelo e-mail acima para auxiliarmos no encaminhamento.
+Os dados trafegam com criptografia (HTTPS). A senha é guardada só em hash e a chave de API, criptografada. Cada negócio só acessa os próprios dados.
 
-Você também tem o direito de peticionar perante a **Autoridade Nacional de Proteção de Dados (ANPD)** caso entenda que seus dados foram tratados de forma irregular.
+Se houver um incidente que traga risco a você, avisaremos você e a ANPD.
 
----
+## 10. Mudanças nesta política
 
-## 9. Segurança da informação
-
-Adotamos salvaguardas técnicas e organizacionais compatíveis com as melhores práticas de mercado:
-* Criptografia em trânsito via HTTPS (TLS) em todas as comunicações;
-* Senhas armazenadas exclusivamente sob funções de hash seguras e com salt;
-* Chaves de API de terceiros cifradas em repouso com algoritmo AES-256-GCM;
-* Banco de dados operando com perfil de menor privilégio (`feedback_app`) e políticas de isolamento multi-tenant aplicadas pelo gateway;
-* Plano de resposta e contenção rápida a incidentes de segurança, garantindo comunicação à ANPD e aos titulares no prazo legal de **3 dias úteis** em caso de risco ou dano relevante.
-
----
-
-## 10. Atualizações desta política
-
-Esta Política de Privacidade pode ser revisada periodicamente para refletir melhorias do sistema, novas funcionalidades ou adequações regulatórias. Quando houver alterações, a data da última revisão no topo deste documento será atualizada. Alterações materiais serão informadas previamente através do painel ou por e-mail aos gestores cadastrados.
+Quando esta política mudar, a data no topo muda. Se a mudança for relevante, avisaremos pela plataforma ou por e-mail.

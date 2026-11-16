@@ -65,7 +65,7 @@ Todas as consultas filtram pelo enterprise_id resolvido no servidor
 | Dado | Cookie de sessão | Banco |
 |---|---|---|
 | Token da sessão | ✅ Só ele, assinado | ✅ `session.token` |
-| IP e navegador de onde a sessão foi aberta | ❌ | ✅ `session.ip_address`, `session.user_agent` |
+| IP e navegador de onde a sessão foi aberta | ❌ | ✅ `session.ip_address`, `session.user_agent` (vazios no login com e-mail e senha, que chama o Better Auth sem os headers) |
 | ID do usuário | ❌ | ✅ `user.id` (`enterprise.auth_user_id` liga a empresa) |
 | Nome | ❌ | ✅ `user.name` |
 | E-mail | ❌ | ✅ `user.email` |

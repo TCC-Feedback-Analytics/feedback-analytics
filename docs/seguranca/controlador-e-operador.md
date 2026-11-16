@@ -29,13 +29,13 @@ Consequência prática: num incidente com feedbacks, **avisamos o negócio**, e 
 
 | Fornecedor | O que faz | Que dado recebe | Onde fica | A conferir |
 |---|---|---|---|---|
-| **Supabase** | Hospeda o PostgreSQL | Todos os dados do banco | Fora do Brasil (região do projeto a confirmar no painel) | Acordo de tratamento de dados (DPA) aceito; plano de backup |
+| **Supabase** | Hospeda o PostgreSQL | Todos os dados do banco | No Brasil (São Paulo, `sa-east-1`), pelo endereço do banco de produção; confirmar no painel | Acordo de tratamento de dados (DPA) aceito; plano de backup |
 | **Vercel** | Hospeda a Web, o gateway e o `ia-analyze` | Todas as requisições, com IP e navegador nos registros de acesso | Fora do Brasil | DPA aceito; por quanto tempo guarda os registros |
-| **OpenRouter** e o **provedor do modelo** escolhido pelo negócio | Roda a análise dos comentários, o diagnóstico e a geração das perguntas | Comentários, notas, respostas, pergunta própria, nomes dos itens e contexto do negócio. Nunca nome, e-mail, gênero ou IP do cliente | Fora do Brasil | Política de retenção do OpenRouter e do provedor escolhido. A chamada usa a **chave do próprio negócio**, então o negócio também tem um contrato direto com o OpenRouter |
-| **Brevo** | Envia os e-mails da conta | E-mail do gestor e os links de confirmação e de nova senha | Fora do Brasil (União Europeia) | DPA aceito |
-| **Google** | Login com Google | O pedido de login; devolve nome, e-mail e foto do perfil | Fora do Brasil | Configuração do OAuth publicada |
+| **OpenRouter** e o **provedor do modelo** escolhido pelo negócio | Roda a análise dos comentários, o diagnóstico e a geração das perguntas | Comentários, notas, respostas, pergunta própria, nomes do ponto e do item, o nome e o contexto do negócio. Nunca nome, e-mail, gênero ou IP do cliente | Fora do Brasil | Política de retenção do OpenRouter e do provedor escolhido. A chamada usa a **chave do próprio negócio**, então o negócio também tem um contrato direto com o OpenRouter |
+| **Brevo** | Envia os e-mails da conta | E-mail do gestor e os links de confirmação, de troca de e-mail e de nova senha | Fora do Brasil (União Europeia) | DPA aceito |
+| **Google** | Login com Google e as fontes da Web (Google Fonts) | O pedido de login, que devolve nome, e-mail e foto do perfil. Pelo Google Fonts, o IP e o navegador de quem abre qualquer página da Web, inclusive o formulário público | Fora do Brasil | Configuração do OAuth publicada; servir as fontes pela própria Web |
 
-**Transferência internacional:** todos os fornecedores ficam fora do Brasil. A Política de Privacidade já avisa e cita o art. 33 da LGPD. Os acordos de tratamento de dados (DPA) dos fornecedores são o instrumento que cobre essa transferência.
+**Transferência internacional:** Vercel, OpenRouter, Brevo e Google ficam fora do Brasil. A Política de Privacidade já avisa e cita o art. 33 da LGPD. Os acordos de tratamento de dados (DPA) dos fornecedores são o instrumento que cobre essa transferência.
 
 ## Base legal de cada tratamento
 
@@ -45,17 +45,17 @@ As mesmas da Política de Privacidade:
 |---|---|
 | Criar e manter a conta, login e e-mails da conta | Execução de contrato (V) |
 | Receber os feedbacks e gerar as métricas e as análises | Execução de contrato com o negócio (V) |
-| Anti-spam: IP, navegador e identificador do aparelho | Legítimo interesse (IX) |
+| Anti-spam e a métrica "Clientes que voltam": IP, navegador e identificador do aparelho | Legítimo interesse (IX) |
 | Nome, e-mail e gênero que o cliente escolhe informar | Consentimento (I) |
 
 ## Encarregado e canal do titular
 
-A ANPD dispensa os agentes de pequeno porte, como startups, de indicar um encarregado (Resolução CD/ANPD nº 2/2022), desde que mantenham um **canal de comunicação** com o titular. O canal do Feedback Analytics é o e-mail **Feedbackanalytics2026@gmail.com**, publicado na Política de Privacidade e nos Termos.
+A ANPD dispensa os agentes de pequeno porte, como startups, de indicar um encarregado (Resolução CD/ANPD nº 2/2022), desde que mantenham um **canal de comunicação** com o titular. O canal do Feedback Analytics é o e-mail **feedbackanalytics2026@gmail.com**, publicado na Política de Privacidade e nos Termos.
 
 ## Divergências encontradas entre a Política e o sistema
 
-Pontos encontrados em 02/11/2026. O 1 e o 3 já foram corrigidos na Web; o 2 segue aberto:
+Pontos encontrados em 02/11/2026 e em 16/11/2026. O 1 e o 3 já foram corrigidos na Web; os outros seguem abertos:
 
 1. **E-mail: corrigido.** A Política dizia que os e-mails saíam pelo **SendGrid**; hoje ela cita o **Brevo**, que é quem envia em produção (gateway, configuração SMTP).
-2. **Limpeza de registros:** a Política diz que os registros de sessão e de controle de envios "são apagados quando deixam de ser necessários", mas nada os apaga hoje ([inventário](inventario-de-dados.md#por-quanto-tempo-fica)).
+2. **Limpeza de registros:** a Política diz que os registros de sessão e de controle de envios "são apagados quando deixam de ser necessários". Os aparelhos (`tracked_devices`, com IP e navegador) não têm prazo, e a sessão só some ao sair da conta ou quando o cookie vencido volta ([inventário](inventario-de-dados.md#por-quanto-tempo-fica)).
 3. **Exclusão da conta: corrigido.** A exclusão dependia de um pedido por e-mail. Desde 02/11/2026, o botão "Excluir minha conta", no Perfil, apaga a conta, a empresa e todos os feedbacks, e os Termos citam o botão.
