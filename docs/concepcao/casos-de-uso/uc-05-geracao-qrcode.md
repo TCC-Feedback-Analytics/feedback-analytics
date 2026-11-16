@@ -32,7 +32,7 @@
 | Erro ao ativar ou pausar a coleta | Exibe o toast "Erro na operação" — o estado não é alterado |
 | Erro no download da imagem do QR Code | Exibe o toast "Erro no download" com "Não foi possível baixar o QR Code" |
 | API de compartilhamento não suportada pelo navegador | O sistema copia o link automaticamente para a área de transferência, e o botão "Copiar link" mostra "Link copiado!" por 2 segundos |
-| Coleta pausada | Os três canais param juntos: o formulário público mostra a tela de erro "QR Code indisponível" (UC-04). O card da etiqueta avisa que ela usa a mesma coleta do QR Code |
+| Coleta pausada | Os três canais param juntos: o formulário público mostra a tela de erro "Este formulário está desativado…" (UC-04). O card da etiqueta avisa que ela usa a mesma coleta do QR Code |
 | Falha ao gravar a etiqueta NFC | Mostra o motivo: permissão negada, celular sem gravação pelo navegador, NFC desligado ou etiqueta afastada antes do fim / sem espaço (recomenda NTAG215) |
 
 ---

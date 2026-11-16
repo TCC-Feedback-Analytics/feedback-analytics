@@ -32,7 +32,7 @@ o campo de comentário e ativa a coleta → nasce o ponto de coleta do item
         ↓
 O item ganha QR Code, link e etiqueta NFC próprios, todos para o mesmo ponto de coleta
         ↓
-Se não houver perguntas no item, o formulário exibe só nota + comentário (sem fallback para outro escopo)
+Se não houver perguntas no item, o formulário exibe só a nota e, se o campo não estiver oculto, o comentário (sem fallback para outro escopo)
         ↓
 Cliente chega por um dos canais → formulário carrega com as perguntas daquele escopo
         ↓
@@ -52,6 +52,8 @@ Análise de IA é segmentada por escopo → relatório separado por item
 | **Serviço** | Avaliação de serviço prestado | "Como foi o serviço de Entrega?" |
 | **Departamento** | Avaliação de área interna | "Como foi o atendimento da Recepção?" |
 
+No painel, o escopo Empresa aparece como **"Geral"** no seletor de escopo e como **"Avaliação da empresa"** no menu Configuração da coleta.
+
 ---
 
 ## Perguntas Dinâmicas
@@ -63,7 +65,7 @@ Cada item pode ter **perguntas customizadas com subperguntas**:
 - Perguntas e subperguntas usam a mesma escala estruturada: `PESSIMO → RUIM → MEDIANA → BOA → OTIMA` (notas 1 a 5)
 - Todas as subperguntas ativas aparecem logo abaixo da pergunta e precisam ser respondidas para o envio passar
 
-O sistema usa uma **contagem variável de 0 a 3 perguntas ativas** por ponto de coleta. Se o item não tiver perguntas configuradas, o formulário exibe apenas nota + comentário — nunca faz fallback para as perguntas de outro escopo. O campo de comentário também é configurado por escopo (padrão, pergunta própria ou oculto).
+O sistema usa uma **contagem variável de 0 a 3 perguntas ativas** por ponto de coleta. Se o item não tiver perguntas configuradas, o formulário exibe apenas a nota e, se o campo não estiver oculto, o comentário — nunca faz fallback para as perguntas de outro escopo. O campo de comentário também é configurado por escopo (padrão, pergunta própria ou oculto).
 
 ---
 
@@ -82,8 +84,8 @@ O sistema usa uma **contagem variável de 0 a 3 perguntas ativas** por ponto de 
 ## Detalhes Técnicos
 
 - A ativação de escopos (Produtos, Serviços, Departamentos) é feita via flags no banco: `uses_company_products`, `uses_company_services`, `uses_company_departments`
-- O formulário só abre e só aceita envio com o ponto de coleta do tipo `QR_CODE` (o mesmo para os três canais) em `ACTIVE`. Ativar a coleta de um item exige o item do catálogo ativo (RNE-009)
-- O ponto de coleta do item é criado (ou reativado) quando o gestor ativa a coleta, e desativado quando ele a pausa. Itens que saem do catálogo viram `INACTIVE`, sem ser excluídos
+- O formulário só abre e só aceita envio com o ponto de coleta do tipo `QR_CODE` (o mesmo para os três canais) em `ACTIVE` e, no caso de um item, com o item do catálogo também `ACTIVE`. Ativar a coleta de um item exige o item do catálogo ativo (RNE-009)
+- O ponto de coleta do item é criado (ou reativado) quando o gestor ativa a coleta, e desativado quando ele a pausa. Itens que saem do catálogo (ou de um tipo desativado) viram `INACTIVE`, sem ser excluídos. O ponto de coleta deles continua `ACTIVE`, mas o formulário do item para de abrir e de aceitar respostas (`404 collection_point_not_found`), por QR Code, link ou NFC
 - O sistema aceita uma contagem variável de 0 a 3 perguntas por ponto de coleta; sem fallback — as respostas precisam bater exatamente com as perguntas ativas do escopo (ou nenhuma)
 - Esvaziar uma pergunta faz soft-delete (`is_active = false`): ela some do formulário, mas o histórico de respostas fica
 - Cada feedback armazenado carrega o `collection_point_id`, permitindo filtrar e agrupar por escopo; o canal de chegada fica em `feedback.channel`

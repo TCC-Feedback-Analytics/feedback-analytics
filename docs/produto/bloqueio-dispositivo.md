@@ -55,7 +55,7 @@ O bloqueio é verificado **antes** da checagem de duplicidade diária, mas **dep
 
 ## Limites do Bloqueio
 
-- **Navegador e rede.** O fingerprint é navegador + IP. O mesmo aparelho em outra rede (ou outro navegador) chega com outro fingerprint, e a consulta cria um registro novo, com `is_blocked = false`.
+- **Navegador e rede.** O fingerprint é navegador + IP. O mesmo aparelho em outra rede (ou outro navegador) chega com outro fingerprint, a consulta não encontra o registro bloqueado, e o envio cria um registro novo, com `is_blocked = false`.
 - **Sem ferramenta de moderação.** Nenhuma tela nem endpoint grava `is_blocked = true`, nem as colunas `blocked_reason`, `blocked_at` e `blocked_by`. O código só **lê** a marca. Na Web, o detalhe de um feedback em Feedbacks recebidos mostra se o registro do aparelho está bloqueado ("Bloqueado: Sim/Não"), sem botão para mudar.
 
 ---
@@ -75,7 +75,7 @@ O bloqueio é verificado **antes** da checagem de duplicidade diária, mas **dep
 
 - O campo `is_blocked` fica na tabela `tracked_devices`, associado ao fingerprint e à empresa (`enterprise_id`); a consulta é sempre por empresa + fingerprint
 - A verificação ocorre em `src/controllers/public/qrcode.controller.ts` do API Gateway, depois das validações do formulário e antes da checagem do limite diário
-- O erro retornado é `DEVICE_BLOCKED` (`API_ERROR_DEVICE_BLOCKED`) com status HTTP `403 Forbidden`
+- O erro retornado é `DEVICE_BLOCKED` (`API_ERROR_DEVICE_BLOCKED`) com status HTTP `403 Forbidden`. Na tela, o cliente vê "Este dispositivo está bloqueado para novos envios neste estabelecimento." A frase não promete prazo, porque o bloqueio não vence sozinho
 - Não há expiração automática para `is_blocked = true`: o registro é encontrado enquanto o aparelho usar o mesmo navegador e a mesma rede
 - O bloqueio é por empresa: o mesmo aparelho em outra empresa tem outro registro
 - Todo registro novo nasce com `is_blocked = false`

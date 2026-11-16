@@ -55,7 +55,7 @@ A tela dedicada do item espelha a Avaliação da empresa e tem **quatro blocos i
 | Erro ao salvar o campo de comentário | Exibe o toast "Não deu para salvar" |
 | Erro ao ativar ou pausar a coleta de um item | Exibe o toast "Erro na operação" — o estado não é alterado |
 | Gestor remove um item da lista | O item não é apagado do banco: fica inativo e some da lista, preservando o histórico. O formulário daquele item para de aceitar respostas, pelo QR Code, pelo link ou pela etiqueta NFC: o envio público confere o status do item e responde `404 collection_point_not_found` |
-| Gestor pausa a coleta de um item | O formulário público daquele item mostra a tela de erro "QR Code indisponível" e bloqueia novos envios (UC-04) |
+| Gestor pausa a coleta de um item | O formulário público daquele item mostra a tela de erro "Este formulário está desativado…" e bloqueia novos envios (UC-04) |
 
 ---
 

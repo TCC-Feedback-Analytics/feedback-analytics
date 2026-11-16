@@ -90,7 +90,7 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 
 ### Cada escopo tem até 3 perguntas configuráveis
 
-**Decisão:** a empresa configura **até 3 perguntas** (de 1 a 3 efetivas) para cada contexto de coleta (empresa geral, produto, serviço ou departamento). Cada pergunta pode ter até 3 subperguntas. Se um campo de pergunta for deixado em branco, ele é apenas **desativado** (não é apagado): o histórico de respostas já recebidas é preservado e a pergunta volta a valer se for reativada.
+**Decisão:** a empresa configura **até 3 perguntas** (no geral da empresa, o gateway guarda sempre os 3 slots e pela Web são de 1 a 3 efetivas; num item do catálogo, de 0 a 3) para cada contexto de coleta (empresa geral, produto, serviço ou departamento). Cada pergunta pode ter até 3 subperguntas. Se um campo de pergunta for deixado em branco, ele é apenas **desativado** (não é apagado): o histórico de respostas já recebidas é preservado e a pergunta volta a valer se for reativada.
 
 **Por quê:** pedir demais cansa o cliente e reduz a taxa de resposta. Até três perguntas é o ponto de equilíbrio entre coletar informação útil e não tornar o formulário cansativo — mas a empresa não é obrigada a preencher as três. O limite de 3 subperguntas segue o mesmo raciocínio.
 

@@ -92,7 +92,7 @@ nav:
       - Onboarding do catálogo: produto/onboarding-catalogo.md
       - Anti-spam por fingerprint: produto/anti-spam-fingerprint.md
       - Bloqueio de dispositivo: produto/bloqueio-dispositivo.md
-      - Privacidade e LGPD: produto/higienizacao-jwt-lgpd.md
+      - Minimização de dados pessoais: produto/minimizacao-dados-pessoais.md
       - Análise por IA: produto/filtro-semantico-ia.md
       - Métricas e estatísticas: produto/metricas-e-estatisticas.md
       - Análise dos comentários: produto/painel-insights-ia.md

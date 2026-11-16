@@ -4,16 +4,16 @@
 
 É onde o ciclo do produto se fecha. A seção **Análise dos comentários ✨IA** (antigo "Painel de Insights") permite que o gestor dispare a análise de inteligência artificial sobre o que os clientes **escreveram** e veja o resultado em duas páginas:
 
-- **Visão geral** (`/user/insights/overview`):
+- **Resumo** (`/user/insights/overview`, título "Análise dos comentários"):
     - **Quem escreve comentário** — quantos clientes do escopo comentaram (o comentário é opcional) e se a nota deles difere da de quem só deu estrelas; diz o quanto o tom e o resumo representam o escopo e, quando a participação é baixa ou os comentários são curtos, sugere mudar o campo de comentário;
     - **Tom dos comentários** — barra positivo/neutro/negativo, o **Saldo de sentimento** (Net Sentiment Score) em número e em palavras ("+45 · Positivo") e o indicador de Precisão;
     - **Assuntos que mais impactam** — aspectos (ABSA) ordenados pelo peso na percepção do cliente; enquanto não há assuntos com 3 ou mais menções, as **categorias** aparecem como reserva;
-    - **Resumo e recomendações da IA** — o que os clientes estão dizendo, de forma consolidada, e o que fazer com base nos padrões identificados.
-- **Comentários** (`/user/insights/comments`) — a lista dos comentários analisados, com filtros **Todos · Positivos · Neutros · Negativos · Nota e texto não combinam**.
+    - **Resumo dos comentários e recomendações** — o que os clientes estão dizendo, de forma consolidada, e o que fazer com base nos padrões identificados. A IA lê os comentários analisados, com a nota e as respostas de cada um.
+- **Comentários** (`/user/insights/comments`) — a lista dos comentários analisados, com filtros **Todos · Positivos · Neutros · Negativos · Nota e texto não combinam**. Nas duas páginas, tudo segue o período escolhido, menos o resumo da IA, que considera todos os comentários analisados.
 
-No Dashboard, o bloco "Análise dos comentários" mostra o tom, uma linha sobre quem escreveu comentário e o resumo da IA, com um link para a Visão geral. O que o cliente **marcou** (estrelas e perguntas do formulário) não depende da IA e fica no Dashboard e nas páginas de detalhe, descritas em [Métricas e estatísticas](metricas-e-estatisticas.md#organização-decidida).
+No Dashboard ("Visão geral", no menu), o bloco "Análise dos comentários" mostra uma linha sobre quem escreveu comentário, o tom e o "Resumo dos comentários e recomendações". O link "Ver a análise completa dos comentários" leva ao Resumo. O que o cliente **marcou** (estrelas e perguntas do formulário) não depende da IA e fica no Dashboard e nas páginas de detalhe, descritas em [Métricas e estatísticas](metricas-e-estatisticas.md#organização-decidida).
 
-> **Reorganização de 16/10/2026:** as antigas páginas Relatórios, Emocional, Estatísticas e Feedbacks › Analisados viraram as duas páginas acima, e os endereços antigos redirecionam para elas. Palavras-chave, termômetro, clima emocional e momentos emocionais saíram das telas. Detalhes em [Métricas e estatísticas](metricas-e-estatisticas.md#catálogo-de-métricas).
+> **Reorganização de 16/10/2026:** as antigas páginas Relatórios, Emocional, Estatísticas e Feedbacks › Analisados viraram as duas páginas acima, e os endereços antigos redirecionam para elas. Em 12/11/2026, a Visão geral passou a se chamar Resumo, e `/user/insights` também leva a ela. Palavras-chave, termômetro, clima emocional e momentos emocionais saíram das telas. Detalhes em [Métricas e estatísticas](metricas-e-estatisticas.md#catálogo-de-métricas).
 
 ---
 
@@ -33,7 +33,7 @@ A análise dos comentários resolve isso: em segundos, converte centenas de text
 
 O botão **"Analisar comentários com IA"**, na barra abaixo do cabeçalho, abre uma janela com as duas etapas do processamento. O botão principal, **"Processar e analisar comentários com IA"**, roda as duas em sequência num único job. As opções **"Apenas Analisar"** e **"Apenas gerar o resumo"** rodam uma etapa só. A janela também abre pelo sino do cabeçalho, que mostra os feedbacks do escopo aguardando análise.
 
-Todo o trabalho roda **em segundo plano**: o pedido entra numa fila e responde na hora, um worker no gateway faz o processamento e a Web acompanha o andamento do job. O job sobrevive a recarregar a página ou trocar de aparelho, e um pedido repetido enquanto outro está ativo devolve o mesmo job.
+Todo o trabalho roda **em segundo plano**: o pedido entra numa fila e responde na hora, um worker no gateway faz o processamento e a Web acompanha o andamento do job. O job sobrevive a recarregar a página ou trocar de aparelho, e um pedido repetido do mesmo tipo, no mesmo escopo, enquanto outro está ativo devolve o mesmo job.
 
 ### 1. Analisar novos feedbacks
 Processa os feedbacks com comentário que **ainda não passaram pela IA**. Ideal para rodar periodicamente, à medida que novos feedbacks chegam.
@@ -54,8 +54,8 @@ IA retorna sentimento, intensidade, confiança, aspectos, categorias e keywords 
 Resultados salvos em feedback_analysis
 ```
 
-### 2. Escrever o resumo e as recomendações
-Recalcula o **resumo e as recomendações** com base nos feedbacks já analisados — sem reprocessar a análise de cada feedback. Útil quando novos feedbacks foram analisados e o gestor quer um resumo atualizado.
+### 2. Escrever o resumo dos comentários e as recomendações
+Recalcula o **resumo e as recomendações** com base nos feedbacks já analisados — sem reprocessar a análise de cada feedback. Exige pelo menos 10 feedbacks já analisados no escopo. Útil quando novos feedbacks foram analisados e o gestor quer um resumo atualizado.
 
 ```
 Gestor clica em "Apenas gerar o resumo" (ou no botão principal)
@@ -65,18 +65,18 @@ Worker junta todos os feedback_analysis do escopo, em lotes retomáveis
 IA escreve um resumo parcial por lote e, no fim, uma síntese única
 com o resumo situacional e as recomendações consolidadas
         ↓
-Resultados salvos em feedback_insights_report (só depois de todos os lotes)
+Resultado salvo em feedback_insights_report, uma linha por escopo (só depois de todos os lotes)
         ↓
-Visão geral e Dashboard exibem o "Resumo e recomendações da IA" atualizado
+Resumo e Dashboard exibem o "Resumo dos comentários e recomendações" atualizado
 ```
 
-Se nenhum feedback foi analisado desde o último resumo, o gateway reaproveita o resumo salvo em vez de chamar a IA de novo.
+Sem pedido de forçar, o gateway reaproveita o resumo salvo quando nenhum feedback foi analisado depois dele. Quando o resumo já está atualizado, a Web pede para forçar: o clique escreve um resumo novo.
 
 ---
 
 ## Seletor de Escopo
 
-O escopo é escolhido no **seletor do cabeçalho**, o mesmo do Dashboard. Cada seção mostra uma **etiqueta de escopo** clicável (ex.: "Avaliação geral da empresa", "Produto · Pizza") que abre esse seletor.
+O escopo é escolhido na **barra de escopo**, abaixo do cabeçalho, junto com o período. É a mesma barra do Dashboard. Cada seção mostra uma **etiqueta de escopo** clicável (ex.: "Avaliação geral da empresa", "Produto · Pizza") que abre esse seletor.
 
 | Escopo | Disponível quando |
 |---|---|
@@ -85,18 +85,18 @@ O escopo é escolhido no **seletor do cabeçalho**, o mesmo do Dashboard. Cada s
 | Serviço | `uses_company_services = true` **e** ≥ 1 item cadastrado |
 | Departamento | `uses_company_departments = true` **e** ≥ 1 item cadastrado |
 
-Cada escopo tem seu próprio resumo independente. "Geral" não é a empresa inteira: veja [Escopos](metricas-e-estatisticas.md#escopos).
+Cada escopo tem um resumo só, e cada nova geração substitui o anterior. "Geral" não é a empresa inteira: veja [Escopos](metricas-e-estatisticas.md#escopos).
 
 ---
 
 ## Diagnóstico do Escopo ✨IA
 
-O resumo da Análise dos comentários lê só o texto e não segue o período. O **Diagnóstico do escopo**, no topo do Dashboard, é outra leitura da IA: ela recebe **os números do escopo no período escolhido**, os mesmos das telas, e os compara com o período anterior de mesmo tamanho.
+O resumo da Análise dos comentários lê só os comentários analisados, com a nota e as respostas de cada um, e não segue o período. O **Diagnóstico do escopo**, no Dashboard, é outra leitura da IA. Ele fica no topo quando o período tem 10 avaliações ou mais; com menos, vai para o fim. Ela recebe **os números do escopo no período escolhido**, os mesmos das telas, e os compara com o período anterior de mesmo tamanho.
 
 - **O que a IA recebe:** estrelas, perguntas atuais (com o peso na nota), tom dos comentários e assuntos, movimento das avaliações, dias e horários de pico, clientes que voltam, canais, participação nos comentários e uma amostra de até 20 comentários.
-- **O que devolve:** um resumo, o que vai bem, o que preocupa, o que mudou em relação ao período anterior (vazio quando não há período) e de 3 a 5 recomendações, sempre com a evidência de cada ponto.
-- **Quando roda:** pelo botão no Dashboard, como job da fila. Se os dados do escopo e do período não mudaram desde o último diagnóstico, o gateway devolve o mesmo resultado sem chamar a IA de novo.
-- **Requisitos:** chave de IA da empresa, os três campos de contexto e pelo menos 10 avaliações no período.
+- **O que devolve:** um resumo, o que vai bem, o que preocupa, o que mudou em relação ao período anterior (vazio quando não há período) de 3 a 5 recomendações e os limites dos dados, sempre com a evidência de cada ponto.
+- **Quando roda:** pelo botão no Dashboard, como job da fila. Se os dados do escopo e do período não mudaram desde o último diagnóstico, o gateway devolve o mesmo resultado sem chamar a IA de novo. O botão "Gerar de novo" força uma leitura nova.
+- **Requisitos:** chave e modelo de IA da empresa, os três campos de contexto e pelo menos 10 avaliações no período.
 - **Diagnóstico velho:** o Dashboard avisa quantas avaliações chegaram no período depois que o diagnóstico foi gerado. Os anteriores ficam em **Diagnósticos** (`/user/diagnosis`).
 
 ---
@@ -106,7 +106,7 @@ O resumo da Análise dos comentários lê só o texto e não segue o período. O
 | Aspecto | Impacto |
 |---|---|
 | **Escala** | Processa dezenas ou centenas de feedbacks em segundos |
-| **Contexto de negócio** | O resumo é personalizado com os dados da empresa (objetivo, segmento, produtos) |
+| **Contexto de negócio** | O resumo é personalizado com os dados da empresa (nome, objetivo, meta da análise, resumo do negócio e principais produtos ou serviços) |
 | **Segmentação** | Resumos separados por escopo permitem comparar áreas da empresa |
 | **Decisão gerencial** | Recomendações que servem de ponto de partida para a ação do gestor |
 | **Assincronismo** | O processamento não bloqueia a experiência do cliente durante a coleta |
@@ -115,7 +115,7 @@ O resumo da Análise dos comentários lê só o texto e não segue o período. O
 
 ## O Que a Análise Retorna
 
-Além do resumo situacional e das recomendações geradas pela IA, a Visão geral mostra o **Net Sentiment Score** (Saldo de sentimento) no bloco "Tom dos comentários" e os **"Assuntos que mais impactam"** (aspectos ABSA), trazendo a leitura quantitativa do que pesa na percepção do cliente. O exemplo abaixo reflete os campos reais retornados pelo endpoint de análise (`GET /feedbacks/analysis`). A API ainda devolve `topKeywords` e `confidenceTier`, mas as telas não os usam mais:
+Além do resumo situacional e das recomendações geradas pela IA, o Resumo mostra o **Net Sentiment Score** (Saldo de sentimento) no bloco "Tom dos comentários" e os **"Assuntos que mais impactam"** (aspectos ABSA), trazendo a leitura quantitativa do que pesa na percepção do cliente. O exemplo abaixo reflete os campos reais retornados pelo endpoint de análise (`GET /feedbacks/analysis`). A API ainda devolve `topKeywords` e `confidenceTier`, mas as telas não os usam mais:
 
 ```json
 {
@@ -182,7 +182,7 @@ As métricas são alimentadas pelo módulo `feedback-analytics-api-gateway/src/l
 
 ### Lente SATISFAÇÃO (as estrelas — não dependem da IA)
 
-Mede a nota objetiva de 1 a 5 que o cliente deu. Aparece no Dashboard, na seção **"Avaliação por estrelas"**, e na página **"Todas as métricas de estrelas"** (`/user/ratings`):
+Mede a nota objetiva de 1 a 5 que o cliente deu. Aparece no Dashboard, na seção **"Avaliação por estrelas"**, e na página **"Nota"** (`/user/ratings`):
 
 | Métrica | Na tela | Como é calculada |
 |---|---|---|
@@ -218,7 +218,7 @@ Quando a estrela e o texto contam histórias opostas, o item é marcado em `disc
 
 Na lista de **Comentários**, esses itens levam o selo "Nota e texto não combinam" e têm um filtro próprio.
 
-> **Referências de mercado:** Net Sentiment Score (Thematic), Net Satisfaction / CSAT Top-2-Box (Qualtrics/ACSI), intervalo de Wilson (Brown, Cai & DasGupta, 2001), intervalo t para média e média Bayesiana / encolhimento estilo IMDb.
+> **Referências de mercado:** Net Sentiment Score (Thematic), Net Satisfaction / CSAT Top-2-Box (Qualtrics/ACSI), intervalo de Wilson (Brown, Cai & DasGupta, 2001), intervalo t para média e média Bayesiana / encolhimento estilo IMDb (a média Bayesiana está no código, mas nenhuma tela a usa).
 
 ---
 
@@ -230,7 +230,7 @@ As perguntas respondem a uma pergunta diferente: **"como cada pergunta do meu fo
 - **Página de uma pergunta** (`/user/questions/:questionId`): a pergunta e cada subpergunta, com a distribuição de péssimo a ótimo e o histórico recolhido.
 - **Perguntas que saíram do formulário** (`/user/questions/removed`).
 
-Campos retornados por `GET /feedbacks/questions` para cada pergunta (e suas subperguntas aninhadas), no escopo selecionado:
+Campos retornados por `GET /feedbacks/questions` para cada pergunta (e suas subperguntas aninhadas), no escopo e no período selecionados:
 
 | Campo | Significado |
 |---|---|
@@ -269,11 +269,15 @@ Para não passar uma falsa sensação de precisão, a interface comunica **quão
 ## Detalhes Técnicos
 
 - Os pedidos (`POST /ia-analyze/analyze-raw` e `/regenerate-insights`) respondem `202` com o id do job; a Web acompanha por `GET /ia-analyze/jobs/:id` até `completed` ou `failed`
-- Mínimo de **10 feedbacks com comentário** no escopo; abaixo disso, o job termina como falho com `insufficient_feedbacks_for_analysis`. Os do "Testar o formulário" não contam
+- Para analisar, o mínimo é de **10 feedbacks com comentário** no escopo. Para gerar o resumo, é de **10 já analisados**. Abaixo disso, o job termina como falho com `insufficient_feedbacks_for_analysis`. Os do "Testar o formulário" (canal `TEST`) não contam e não vão para a IA
 - Os três campos de contexto da empresa (`company_objective`, `analytics_goal` e `business_summary`) precisam estar preenchidos; sem eles, o job falha com `collecting_data_required_for_analysis`
-- A chave de IA é a da empresa (Configuração de IA); sem ela, o job falha com `ia_config_required`
+- Cada empresa usa a própria conta OpenRouter (Configuração de IA), com a chave guardada cifrada no banco. Sem ela, o job falha com `ia_config_required`
 - Os botões ficam desabilitados enquanto uma operação está em andamento (sem duplo disparo)
 - A Web não manda limite: cada execução analisa todos os comentários pendentes do escopo (a API aceita `limit` opcional, de no máximo 100), em lotes de até 20 feedbacks por chamada à IA (configurável via `IA_MAX_FEEDBACKS_PER_BATCH`)
+- Falhas passageiras do provedor ou da conexão têm até 3 tentativas, com espera de `min(60, 5·2^falhas)` segundos. Sem cota no momento, o job fica em `waiting_budget` e retoma sozinho
+- Resposta cortada pelo limite de saída do modelo encerra o job com `truncated_ai_response`. Lote sem todas as análises encerra com `incomplete_ai_response`. Resumo vazio da IA encerra com `insights_not_generated`
+- A síntese final usa a rota `/internal/ia-analyze/synthesize-insights` do IA Analyze
+- A análise grava com `INSERT … ON CONFLICT (feedback_id) DO NOTHING`: uma retomada não duplica nem sobrescreve a análise de um feedback
 
 ---
 

@@ -66,7 +66,7 @@ O fingerprint é só navegador e IP, sem o dia. O mesmo aparelho, no mesmo naveg
 - **O limite diário é conferido pela data do envio.** O aparelho que já respondeu naquele ponto hoje recebe `409`; amanhã responde de novo.
 - **O dia vira à meia-noite de Brasília**, onde está o público do produto, mesmo com o servidor da Vercel em UTC.
 - **O bloqueio (`is_blocked`) vale até ser desfeito** (ver [Bloqueio de Dispositivo](./bloqueio-dispositivo.md)).
-- **Métricas que contam aparelhos enxergam vários dias.** O `feedback_count` do registro soma todos os envios do aparelho, e "Clientes que voltam" reconhece quem avaliou de novo em outro dia (ver [Métricas e estatísticas](./metricas-e-estatisticas.md)).
+- **Métricas que contam aparelhos enxergam vários dias.** O `feedback_count` do registro soma todos os envios do aparelho, inclusive os do "Testar o formulário", e "Clientes que voltam" (que deixa o canal `TEST` de fora) reconhece quem avaliou de novo em outro dia (ver [Métricas e estatísticas](./metricas-e-estatisticas.md)).
 - **O fingerprint não é único por pessoa.** Dois aparelhos que mandem o mesmo user agent pelo mesmo IP (por exemplo, na mesma rede Wi-Fi) geram o mesmo fingerprint e dividem o limite; a mesma pessoa em outra rede ou outro navegador gera outro.
 
 ---
@@ -100,7 +100,8 @@ Além do limite diário (HTTP 409), existe uma segunda verificação: registros 
 - A tabela `tracked_devices` guarda, por empresa (`enterprise_id`), o fingerprint, o user agent, o IP, o vínculo opcional com o cliente (`customer_id`), `is_blocked`/`blocked_*`, `feedback_count` e datas (`last_feedback_at`, `created_at`) — **não** possui `collection_point_id`. O vínculo por ponto de coleta/dia é consultado na tabela `feedback` (filtrando por `tracked_device_id` + `collection_point_id` + `created_at` desde a meia-noite de Brasília)
 - O bloqueio diário (409) é por `collection_point_id` — o mesmo aparelho em pontos diferentes passa normalmente
 - O bloqueio por `is_blocked` (403) vale para todos os pontos de coleta da empresa, em qualquer dia
-- Aparelho, feedback e respostas são gravados numa única transação; a atualização de `feedback_count`, `last_feedback_at`, user agent e IP do registro roda depois e não invalida o feedback se falhar
+- O cadastro do cliente (quando ele informa nome ou e-mail) é criado antes e fora da transação, e uma falha nele não derruba o envio
+- Aparelho, feedback e respostas são gravados numa única transação; o vínculo do cliente a um aparelho que já existia e a atualização de `feedback_count`, `last_feedback_at`, user agent e IP do registro rodam depois e não invalidam o feedback se falharem
 
 ---
 

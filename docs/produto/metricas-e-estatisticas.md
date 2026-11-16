@@ -26,7 +26,7 @@ Consequências que importam para a leitura:
 
 ### Decisão: etiqueta de escopo em cada seção (16/10/2026)
 
-Cada seção do Dashboard ("Avaliação por estrelas", "Perguntas do formulário", "Análise dos comentários") e cada página de detalhe passa a ter, no topo, uma **etiqueta de escopo** clicável (abre o seletor). Ela não se repete em cada card e o texto descreve exatamente o que entra na conta:
+Cada seção do Dashboard ("Avaliação por estrelas", "Perguntas do formulário", "Por onde chegaram", "Análise dos comentários") e cada página de detalhe passa a ter, no topo, uma **etiqueta de escopo** clicável (abre o seletor). Ela não se repete em cada card e o texto descreve exatamente o que entra na conta:
 
 | Escolha no cabeçalho | Etiqueta |
 |---|---|
@@ -45,7 +45,7 @@ Cada seção do Dashboard ("Avaliação por estrelas", "Perguntas do formulário
 
 ## Catálogo de métricas
 
-> **Situação (16/10/2026):** inventário conferido no código das branches `developer` da Web e do API Gateway. A coluna **Decisão** registra o que o dono do produto decidiu na revisão de 16/10/2026, métrica por métrica. A coluna **Onde aparece hoje** descreve as telas **antes** da reorganização. As decisões foram **implementadas na Web** (só front-end, sem mudar API nem contratos) e as telas resultantes estão em **Organização decidida**, logo após o catálogo.
+> **Situação (16/10/2026):** inventário conferido no código das branches `developer` da Web e do API Gateway. A coluna **Decisão** registra o que o dono do produto decidiu na revisão de 16/10/2026, métrica por métrica. A coluna **Onde aparece hoje** descreve as telas **antes** da reorganização. As decisões foram **implementadas na Web** (só front-end, sem mudar API nem contratos) e as telas resultantes estão em **Organização decidida**, logo após o catálogo. A reorganização de 12/11/2026 mudou parte delas (o Dashboard virou um resumo por grupo e surgiram as páginas "Nota" e "Clientes e canais"); a seção Organização decidida já mostra as telas de hoje.
 
 Legenda: **Mantém** · **Funde** (mesma informação de outra métrica) · **Renomeia** · **Muda de lugar** · **Sai**.
 
@@ -59,7 +59,7 @@ Fonte: `GET /feedbacks/stats` (contrato `FeedbackStats`) e `GET /feedbacks/quest
 | **Feedbacks recebidos** (`totalFeedbacks`) | Quantos feedbacks existem no escopo | Dashboard (card, rótulo "Total acumulado no workspace"); Recebidos ("Total") | Dar contexto ao tamanho da amostra | **Sai como card.** O número de avaliações passa a aparecer no card da média. |
 | **Feedbacks positivos** / **Feedbacks críticos** (`sentimentBreakdown.positive/negative`) | Contagem de notas 4–5 e de notas 1–2 | Dashboard (dois cards) | Ver quantos gostaram e quantos não | **Renomeia** para **Positivas (4–5★)** e **Críticas (1–2★)**, com contagem **e %** ("82 · 64% das avaliações"). |
 | **Positivos / Neutros / Negativos** por nota (`sentimentBreakdown`) | Contagem de notas 4–5, 3 e 1–2 | Cabeçalho de Feedbacks › Recebidos | — usa as mesmas palavras do tom da IA | **Renomeia** para positivas / neutras / críticas, sempre indicando que são estrelas. |
-| **Distribuição das avaliações** (`ratingDistribution`) | % de feedbacks em cada nota (1 a 5) | Dashboard (rótulo "nos últimos registros", mas é **todo** o escopo) | Ver se as notas estão concentradas ou divididas | **Muda de lugar:** sai do Dashboard para a página **"Todas as métricas de estrelas"**, com o rótulo corrigido e as **neutras (3★)**. |
+| **Distribuição das avaliações** (`ratingDistribution`) | % de feedbacks em cada nota (1 a 5) | Dashboard (rótulo "nos últimos registros", mas é **todo** o escopo) | Ver se as notas estão concentradas ou divididas | **Muda de lugar:** sai do Dashboard para a página **"Todas as métricas de estrelas"**, com o rótulo corrigido e as **neutras (3★)**. Desde 12/11/2026, essa página se chama **"Nota"** (`/user/ratings`). |
 | **Clientes satisfeitos** (CSAT, `csat`) | % de notas 4–5 | Dashboard (Satisfação e sentimento) | Responder "de cada 100, quantos ficaram satisfeitos?" | **Funde** no % do card de Positivas. |
 | **Saldo de satisfação** (`netSatisfaction`) | % de notas 4–5 menos % de notas 1–2 | Dashboard (Satisfação e sentimento) | Ver o equilíbrio entre satisfeitos e insatisfeitos | **Sai do Dashboard:** é % positivas − % críticas, que os dois cards já mostram. |
 | **Nota por pergunta** (`mean`, `ci`, `satisfiedPct`, `distribution`, `status`) | Média, % de satisfeitos e distribuição de cada pergunta e subpergunta, com faixa provável | Insights › Perguntas; Dashboard ("Perguntas com menor nota", as 3 piores, só a média) | Achar a pergunta que puxa a nota para baixo | **Muda de lugar:** seção **"Perguntas do formulário"** no Dashboard (perguntas atuais na ordem do formulário) e **uma página por pergunta** com suas subperguntas. Saem Insights › Perguntas e "Perguntas com menor nota". |
@@ -77,13 +77,13 @@ Fonte: `GET /feedbacks/analysis` e `GET /feedbacks/insights/report`. **Só exist
 | **Palavras-chave** (`topKeywords`) | Termos mais repetidos | Estatísticas; Analisados › Todos | Ver termos recorrentes | **Sai:** repete o que categorias e assuntos já mostram. |
 | **Assuntos que mais impactam** (`aspectSentiments`) | Assuntos citados no texto com o saldo de sentimento de cada um, ordenados por impacto | Estatísticas | Priorizar o que mais incomoda ou agrada | **Mantém** como métrica principal de temas: diz do que falam e se falam bem ou mal. |
 | **Momentos emocionais** | Grupos com até 5 exemplos: momentos que encantam, pontos de dor, neutros e divergências nota × texto | Insights › Emocional | Entender com exemplos reais o que desperta emoção | **Sai como bloco:** vira filtros da lista de comentários — **Positivos · Neutros · Negativos · Nota e texto não combinam**. A divergência era a única parte que não existia em outro lugar. |
-| **Relatório de insights** (resumo e recomendações) | Texto da IA com pontos fortes, oportunidades e recomendações | Insights › Relatórios; Dashboard | Saber o que fazer a seguir | **Mantém** como "Resumo e recomendações da IA". O "clima" dele vai para o bloco do tom. |
+| **Relatório de insights** (resumo e recomendações) | Texto da IA com pontos fortes, oportunidades e recomendações | Insights › Relatórios; Dashboard | Saber o que fazer a seguir | **Mantém** como "Resumo dos comentários e recomendações". O "clima" dele vai para o bloco do tom. |
 
 ### Operacionais e de confiabilidade
 
 | Métrica (nome na tela) | O que mede | Onde aparece hoje | Decisão (16/10/2026) |
 |---|---|---|---|
-| **Aguardando análise** (`pendingCount`) | Feedbacks do escopo **com comentário** ainda não lidos pela IA (`comentados − analisados`) | Dashboard (cabeçalho) | **Mantém** como aviso, não como métrica. |
+| **Aguardando análise** (`pendingCount`) | Feedbacks do escopo **com comentário** ainda não lidos pela IA (`comentados − analisados`) | Dashboard (cabeçalho) | **Mantém** como aviso, não como métrica. Desde 12/11/2026 fica no sino do cabeçalho, com "Ver todos os feedbacks". |
 | **Total analisado** (`totalAnalyzed`) | Feedbacks do escopo já lidos pela IA | Analisados › Todos; selos de confiança da lente Comentários | **Mantém** como contexto da lente Comentários. |
 | **Selo de confiança** (`confidenceTier`) | Quão sólida é a amostra pelo tamanho `n` | Dashboard, Estatísticas, Emocional, Perguntas | **Funde** com a faixa provável no indicador **Precisão** (ver abaixo). |
 | **Faixa provável** (intervalos de confiança) | Intervalo onde o valor real provavelmente está | Dashboard (média); Perguntas; Estatísticas (tom dos comentários) | **Funde** com o selo no indicador **Precisão** (ver abaixo). |
@@ -104,7 +104,7 @@ Fonte: `GET /feedbacks/analysis` e `GET /feedbacks/insights/report`. **Só exist
 - O rótulo abre um **painel na mesma tela** com a faixa em linguagem simples, o número de respostas, por que aquele nível, como melhorar e o aviso de representatividade.
 - **Destaque só quando importa:** precisão alta fica discreta; média ou baixa aparecem em evidência.
 
-Calculados, mas **sem uso em nenhuma tela hoje**: `sentiment_score` (intensidade por feedback), `confidence` da classificação, intervalos de Wilson de categorias e palavras-chave, e a média bayesiana.
+Calculados, mas **sem uso em nenhuma tela hoje**: `sentiment_score` (intensidade por feedback), `confidence` da classificação, intervalos de Wilson de categorias e palavras-chave, e a média bayesiana. Fora das telas, o Diagnóstico do escopo usa o `sentiment_score` para escolher a amostra de comentários e manda à IA o `confidenceTier` de cada número (`feedback-analytics-api-gateway/src/libs/scopeDiagnosis.ts`).
 
 ---
 
@@ -115,19 +115,31 @@ Resultado da revisão com o dono do produto em 16/10/2026. O princípio: o siste
 ### Dashboard
 
 ```
+Diagnóstico do escopo ✨IA
+  (no topo com 10 ou mais avaliações no período; com menos, vai para o fim do Dashboard)
+
 Avaliação por estrelas                              📍 Avaliação geral da empresa
   Média: 4,2 /5 ★ Boa · 128 avaliações   Positivas (4–5★): 82 · 64%
-  Críticas (1–2★): 10 · 8%                    Ver todas as métricas de estrelas →
+  Neutras (3★): 36 · 28%                 Críticas (1–2★): 10 · 8%
+                              Comparar dois itens →   Ver a nota completa →
 
 Perguntas do formulário                             📍 Avaliação geral da empresa
   Pergunta 1 · "Como foi o atendimento?"  3,1 /5 Mediana · 64 respostas · 40% satisfeitos
                                           Ver todas as métricas desta pergunta →
   (até 3 perguntas, na ordem do formulário)
 
+Por onde chegaram                                   📍 Avaliação geral da empresa
+  QR Code · Link compartilhado · Etiqueta NFC: avaliações, % e média de cada um
+                              Ver horários de pico e clientes que voltam →
+
 Análise dos comentários ✨IA                         📍 Avaliação geral da empresa
+  Quem escreve comentário (uma linha)
   Tom dos comentários: +45 · Positivo · 20 comentários analisados · Precisão
-  Resumo e recomendações da IA       Ver a análise completa dos comentários →
+  Resumo dos comentários e recomendações
+                                    Ver a análise completa dos comentários →
 ```
+
+- **Desde 12/11/2026,** o Dashboard é um resumo por grupo, sem cabeçalho próprio: os comentários aguardando análise ficam no sino do cabeçalho e o botão "QR Code" fica na barra de escopo e período. "Comparar dois itens" só aparece com 2 ou mais itens do mesmo tipo. O movimento das avaliações saiu do Dashboard e fica na página "Nota".
 
 - **Avaliação por estrelas.** O nome deixa claro que é só a nota de 1 a 5 ("feedback" sugeria tudo o que o cliente mandou). Os cards falam de **avaliações**. Saem do Dashboard o card "Feedbacks recebidos" e o bloco "Satisfação e sentimento".
 - **Perguntas do formulário.**
@@ -135,42 +147,44 @@ Análise dos comentários ✨IA                         📍 Avaliação geral d
   - **Tipo sem item escolhido:** a seção não lista perguntas (elas seriam de itens diferentes, sem identificação). Mostra "Cada produto tem as suas perguntas. Escolha um para vê-las", com os itens como links.
   - **Item sem perguntas:** "Este item não tem perguntas no formulário".
   - **Perguntas excluídas do formulário:** um link "Perguntas que saíram do formulário" no fim da seção.
-- **Análise dos comentários ✨IA.** Novo nome da antiga seção "Insights": termo em português que diz de onde vêm os dados. Acompanham o nome o botão "Gerar Insights com IA", que vira **"Analisar comentários com IA"**, o "Relatório de Insights", que vira **"Resumo e recomendações da IA"**, os passos do guia e os títulos. No Dashboard, o bloco mostra o **tom dos comentários** e o **resumo da IA**; os assuntos ficam na Visão geral.
+- **Análise dos comentários ✨IA.** Novo nome da antiga seção "Insights": termo em português que diz de onde vêm os dados. Acompanham o nome o botão "Gerar Insights com IA", que vira **"Analisar comentários com IA"**, o "Relatório de Insights", que vira **"Resumo dos comentários e recomendações"**, os passos do guia e os títulos. No Dashboard, o bloco mostra uma linha sobre **quem escreve comentário**, o **tom dos comentários** e o **resumo da IA**; os assuntos ficam no Resumo da análise.
 
 ### Páginas de detalhe (dinâmicas, pelo escopo)
 
-- **Todas as métricas de estrelas:** distribuição das avaliações (1 a 5★), com as neutras (3★), o movimento das avaliações no tempo, os dias e horários de pico e os clientes que voltam (veja **Métricas que não vêm só da nota**, abaixo).
+- **Nota** (`/user/ratings`): os quatro cards da Avaliação por estrelas, a "Distribuição das avaliações" (1 a 5★, com as neutras) e o "Movimento das avaliações" no tempo.
+- **Clientes e canais** (`/user/customers`): "Por onde chegaram", "Dias e horários de pico" e "Clientes que voltam" (veja **Métricas que não vêm só da nota**, abaixo).
 - **Página de uma pergunta:** a pergunta escolhida e **cada subpergunta dela**, com nota, distribuição de péssimo a ótimo, % de satisfeitos e precisão. No fim, histórico recolhido (versões antigas do texto e subperguntas desativadas).
 
 ### Seção "Análise dos comentários" ✨IA: de 6 páginas para 2
 
 Hoje: Relatórios, Emocional, Estatísticas e Feedbacks › Analisados (Todos, Positivos, Negativos). Passa a ser:
 
-- **Visão geral** (`/user/insights/overview`): Tom dos comentários · Assuntos que mais impactam (categorias como reserva) · Resumo e recomendações da IA.
+- **Resumo** (`/user/insights/overview`, título "Análise dos comentários"): Quem escreve comentário · Tom dos comentários · Assuntos que mais impactam (categorias como reserva) · Resumo dos comentários e recomendações. No menu, "Visão geral" é o nome do Dashboard.
 - **Comentários** (`/user/insights/comments`): a lista segue o escopo do cabeçalho (Feedbacks › Analisados o ignorava), com os filtros Todos · Positivos · Neutros · Negativos · Nota e texto não combinam. O filtro fica no endereço (`?filtro=`).
 
-Os endereços antigos redirecionam: Relatórios, Emocional e Estatísticas levam à Visão geral; Feedbacks › Analisados (Todos, Positivos, Negativos) leva à lista, já com o filtro do tom.
+Os endereços antigos redirecionam: `/user/insights`, Relatórios, Emocional e Estatísticas levam ao Resumo; Insights › Perguntas leva ao Dashboard; Feedbacks › Analisados (Todos, Positivos, Negativos) leva à lista, já com o filtro do tom.
 
 ### Guia do sistema
 
-Os passos do guia acompanham a nova estrutura. Com a etapa 02, as métricas novas (18/10/2026) e o diagnóstico do escopo, são 16 passos, na ordem:
+Os passos do guia acompanham a nova estrutura. Com a etapa 02, as métricas novas (18/10/2026), o diagnóstico do escopo e as páginas "Nota" e "Clientes e canais" (12/11/2026), são 17 passos, na ordem:
 
-1. Dashboard;
+1. **Dashboard de Resultados**;
 2. **Escopo e período**;
-3. **Diagnóstico do escopo ✨IA**;
+3. **Diagnóstico do escopo ✨ IA**;
 4. **Avaliação por estrelas**;
-5. **Movimento das avaliações**;
-6. **Perguntas do formulário**, com o peso na nota e o "Melhore primeiro";
-7. **Análise dos comentários** (o card do Dashboard);
-8. **Visão geral da análise**;
-9. **Comentários**;
-10. **Comparar itens**;
-11. **Todas as métricas de estrelas**;
-12. Avaliação da empresa;
-13. Catálogo;
-14. Configuração de IA;
-15. Perfil;
-16. Dados da empresa.
+5. **Perguntas do formulário**, com o peso na nota e o "Melhore primeiro";
+6. **Análise dos comentários ✨ IA** (o card do Dashboard);
+7. **Resumo da análise**;
+8. **Comentários**;
+9. **Comparar itens**;
+10. **Nota**;
+11. **Movimento das avaliações** (na página Nota);
+12. **Clientes e canais**;
+13. Avaliação da empresa;
+14. Catálogo da Empresa;
+15. Configuração de IA;
+16. Acesse seu Perfil;
+17. Dados e configurações da empresa.
 
 O guia não abre sozinho: o Dashboard convida o gestor (no primeiro feedback ou numa próxima sessão), e ele segue disponível no menu da conta.
 
@@ -211,29 +225,32 @@ Como o período funciona:
 
 - **Janelas móveis.** As janelas contam dias inteiros e incluem hoje: "Últimos 7 dias" é hoje e os 6 dias anteriores. No Personalizado, o dia final entra inteiro.
 - **Fuso do gestor.** A Web resolve o período no fuso do navegador e envia ao gateway instantes absolutos (`start_date`/`end_date`, com o início incluído e o fim excluído).
-- **Onde vale.** O período vale para o Dashboard, Todas as métricas de estrelas, as páginas de perguntas, o tom dos comentários e a lista de comentários.
+- **Onde vale.** O período vale para o Dashboard, as páginas "Nota" e "Clientes e canais", as páginas de perguntas, o Comparar itens, o tom dos comentários, os assuntos, o "Quem escreve comentário" e a lista de comentários.
 - **Etiqueta de escopo.** A etiqueta passa a dizer o período ("Produto · Pizza · Últimos 30 dias"). Os textos de vazio e de precisão também ("no produto Pizza nos últimos 30 dias").
 
 O que **não** segue o período:
 
-- **Contagens e regras de toda a história.** O aviso "aguardando análise", os marcos de feedback e o mínimo de feedbacks para a IA continuam contando o histórico inteiro do escopo.
+- **Contagens e regras de toda a história.** O aviso "aguardando análise", os marcos de feedback e o mínimo de feedbacks para a Análise dos comentários continuam contando o histórico inteiro do escopo. O Diagnóstico do escopo é a exceção: ele exige 10 avaliações **no período**.
 - **O resumo da IA.** Ele não é recortado por data. Com um período escolhido, aparece o aviso "O resumo considera todos os comentários analisados". A leitura da IA por período veio depois, com o **Diagnóstico do escopo** (ver [Análise dos comentários](painel-insights-ia.md)).
 - **A lista de Feedbacks recebidos.** Ela não tem período.
 
 **Comparar com o período anterior.** Com um período escolhido, aparece o botão **Comparar com o período anterior**.
 
 - **Período de referência.** O anterior tem o mesmo tamanho e vem logo antes. Por exemplo: "30 dias anteriores", "3 meses anteriores" ou, no Personalizado, as datas.
-- **Onde aparecem as diferenças.** Cada métrica mostra a diferença com seta e cor: média, % positivas, % críticas (subir é piorar), nota de cada pergunta e tom dos comentários.
+- **Onde aparecem as diferenças.** Cada métrica mostra a diferença com seta e cor: média, % positivas, % críticas (subir é piorar), nota de cada pergunta, tom dos comentários e % de quem escreve comentário. As neutras não mostram diferença.
 - **Diferença incerta.** Quando as margens de erro dos dois períodos se sobrepõem, a diferença aparece em cinza como **Diferença incerta**, porque pode ser só acaso. As margens são:
   - média e perguntas: o IC t que já vem do gateway;
   - positivas e críticas: Wilson;
-  - tom: a margem do NSS, calculada pelas contagens de positivos, neutros e negativos.
+  - tom: a margem do NSS, calculada pelas contagens de positivos, neutros e negativos;
+  - quem escreve comentário: o IC de Wilson que já vem do gateway.
+
+  As margens de positivas, críticas e tom são a exceção à regra "a matemática vive no backend": a Web as calcula a partir das contagens (`wilsonPctInterval` e `nssInterval`, em `feedback-analytics-web/src/lib/utils/periodComparison.ts`).
 - **Sem referência.** Se não há avaliações no período anterior, aparece **Sem dados no período anterior**.
 
 **Comparar itens (A × B).** É uma página própria (`/user/compare`), no menu lateral e no link "Comparar dois itens" da Avaliação por estrelas.
 
 - **Quais itens.** Compara dois itens do **mesmo tipo** (dois produtos, dois serviços ou dois departamentos), no mesmo período. "Geral" e "Todos os…" não entram, porque não são um item. Um tipo só aparece quando tem pelo menos 2 itens.
-- **Quais métricas.** Mostra só as que os dois têm: nº de avaliações, média, % positivas, % críticas, tom e precisão da média. As perguntas ficam de fora, porque cada item tem as suas.
+- **Quais métricas.** Mostra só as que os dois têm: nº de avaliações, média, % positivas, % neutras, % críticas, tom, "Escreveram comentário" e precisão da média. Neutras e "Escreveram comentário" não têm vencedor: mais ou menos não é melhor nem pior. As perguntas ficam de fora, porque cada item tem as suas.
 - **Quem está melhor.** Esta coluna diz o item e a diferença. Usa as mesmas margens da comparação com o período anterior, então também pode dizer **Diferença incerta**.
 
 Ficam para depois: comparar mais de 2 itens e o período na lista de Feedbacks recebidos.
@@ -252,16 +269,16 @@ Todas seguem o escopo e o período do cabeçalho, e cada uma tem a ajuda (?) em 
 
 | Métrica | Pergunta que responde | Como é calculada | Onde aparece |
 |---|---|---|---|
-| **Movimento das avaliações** | Estou recebendo mais ou menos avaliações? A nota vem subindo ou caindo? | Quantidade e média por dia, semana ou mês, agrupadas no banco no fuso do gestor. Os intervalos sem avaliação contam como zero (`GET /feedbacks/timeline`) | Dashboard (compacta) e Todas as métricas de estrelas |
-| **O que mais pesa na nota** | Melhorar qual ponto muda mais a nota geral? | Correlação de Spearman entre a nota da pergunta e as estrelas do mesmo feedback, com IC 95% (`ratingWeight` em `/feedbacks/questions`) | Selo em cada pergunta e "Melhore primeiro" nas Perguntas do formulário e na página da pergunta |
-| **Dias e horários de pico** | Quando os clientes mais avaliam e em que horário a nota cai? | Quantidade e média por dia da semana × faixa de 6 horas (madrugada, manhã, tarde, noite), no fuso do gestor (`GET /feedbacks/heatmap`) | Todas as métricas de estrelas |
-| **Clientes que voltam** | Os clientes voltam? Quem volta está mais satisfeito? | % das avaliações de quem já tinha avaliado a empresa, pelo `row_number()` por aparelho, e a média de quem volta × primeira vez, com IC (`GET /feedbacks/customers`) | Todas as métricas de estrelas |
+| **Movimento das avaliações** | Estou recebendo mais ou menos avaliações? A nota vem subindo ou caindo? | Quantidade e média por dia, semana ou mês, agrupadas no banco no fuso do gestor. Os intervalos sem avaliação contam como zero (`GET /feedbacks/timeline`) | Página "Nota" (saiu do Dashboard em 12/11/2026) |
+| **O que mais pesa na nota** | Melhorar qual ponto muda mais a nota geral? | Correlação de Spearman entre a nota da pergunta e as estrelas do mesmo feedback, com IC 95% (`ratingWeight` em `/feedbacks/questions`) | Selo em cada pergunta, nas Perguntas do formulário e na página da pergunta; "Melhore primeiro" só nas Perguntas do formulário do Dashboard |
+| **Dias e horários de pico** | Quando os clientes mais avaliam e em que horário a nota cai? | Quantidade e média por dia da semana × faixa de 6 horas (madrugada, manhã, tarde, noite), no fuso do gestor (`GET /feedbacks/heatmap`) | Página "Clientes e canais" |
+| **Clientes que voltam** | Os clientes voltam? Quem volta está mais satisfeito? | % das avaliações de quem já tinha avaliado a empresa, pelo `row_number()` por aparelho, e a média de quem volta × primeira vez, com IC (`GET /feedbacks/customers`) | Página "Clientes e canais" |
 
 Como cada métrica aparece e os cuidados de leitura:
 
 - **Movimento das avaliações.**
   - **Gráfico:** barras com a quantidade e, embaixo, uma linha com a média, no mesmo eixo de tempo.
-  - **Agrupamento:** por dia nos períodos de 7 e 30 dias, por semana nos de 3 e 6 meses. Sem período, por semana, ou por mês quando o histórico passa de 6 meses.
+  - **Agrupamento:** por dia nos períodos de 7 e 30 dias, por semana nos de 3 e 6 meses. No Personalizado, pelo tamanho: por dia até 62 dias, por semana até 366 dias e por mês acima disso. Sem período, por semana, ou por mês quando o histórico passa de 6 meses.
   - **Amostra pequena:** intervalos com menos de 5 avaliações aparecem com bolinha vazada, porque a média ali é pouco confiável.
 - **O que mais pesa na nota.**
   - **Selos:** "Pesa muito na nota" (r ≥ 0,5), "Pesa na nota" (0,3 a 0,5) e "Pesa pouco na nota" (abaixo de 0,3).
@@ -287,8 +304,8 @@ Duas métricas vêm do `GET /feedbacks/stats` e seguem o escopo e o período:
 
 | Métrica | Pergunta que responde | Como é calculada | Onde aparece |
 |---|---|---|---|
-| **Por onde chegaram** | Qual canal traz mais respostas, e a nota muda de um para outro? | Quantidade e média das estrelas, com IC t, por canal: QR Code, link e etiqueta NFC (`channelBreakdown`). Avaliações sem a marca de canal (anteriores a ela ou de QR Codes antigos) ficam à parte | Dashboard |
-| **Quem escreve comentário** | Quanto o tom dos comentários e o resumo da IA representam os clientes? | % das avaliações com comentário, com IC de Wilson, e a média de estrelas de quem comentou × quem não comentou (`commentParticipation`) | Visão geral da análise e, numa linha, no bloco de comentários do Dashboard |
+| **Por onde chegaram** | Qual canal traz mais respostas, e a nota muda de um para outro? | Quantidade e média das estrelas, com IC t, por canal: QR Code, link e etiqueta NFC (`channelBreakdown`). Avaliações sem a marca de canal (anteriores a ela ou de QR Codes antigos) ficam à parte | Dashboard (resumo, com o link "Ver horários de pico e clientes que voltam") e página "Clientes e canais" |
+| **Quem escreve comentário** | Quanto o tom dos comentários e o resumo da IA representam os clientes? | % das avaliações com comentário, com IC de Wilson, e a média de estrelas de quem comentou × quem não comentou (`commentParticipation`) | Resumo da análise, numa linha no bloco de comentários do Dashboard e na linha "Escreveram comentário" do Comparar itens |
 
 - **Por onde chegaram:** com um canal só, a seção vira uma linha. O "Testar o formulário" não aparece.
 - **Quem escreve comentário:**
@@ -302,7 +319,7 @@ Duas métricas vêm do `GET /feedbacks/stats` e seguem o escopo e o período:
 
 Diagnóstico da revisão de 16/10/2026, base para a reorganização:
 
-1. **Mesmas palavras, lentes diferentes.** "Positivos/Negativos" ora são notas (cards do Dashboard, cabeçalho de Recebidos), ora são o tom do texto pela IA (Analisados, Estatísticas). Na origem, o campo `sentimentBreakdown` do `/feedbacks/stats` é calculado **pelas estrelas**, apesar do nome (`getFeedbacksStatsController`).
+1. **Mesmas palavras, lentes diferentes.** "Positivos/Negativos" ora são notas (cards do Dashboard, cabeçalho de Recebidos), ora são o tom do texto pela IA (Analisados, Estatísticas). Na origem, o campo `sentimentBreakdown` do `/feedbacks/stats` é calculado **pelas estrelas**, apesar do nome (hoje em `computeScopedStats`, `feedback-analytics-api-gateway/src/services/scopeMetrics.service.ts`).
 2. **A mesma métrica repetida com nomes diferentes.** O tom da IA aparece como distribuição, termômetro, clima e saldo em quatro telas; Estatísticas e Emocional exibem o mesmo bloco.
 3. **Redundância.** A contagem de "positivos" (notas 4–5) e o CSAT (% de notas 4–5) são a mesma informação; `averageRating` e `starMean` também.
 4. **Rótulos imprecisos.** "Total acumulado no workspace" (é do escopo); "nos últimos registros" (é todo o escopo); "críticos" num card e "negativos" no resto.

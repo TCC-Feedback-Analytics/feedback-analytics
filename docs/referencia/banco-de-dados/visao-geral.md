@@ -633,5 +633,5 @@ O sistema não usa o Supabase Storage: nenhuma migration nem código do Gateway 
 - [Migrations com Drizzle](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/migrations-drizzle.md)
 - [Funcionalidades — Visão Geral](../../concepcao/requisitos-e-funcionalidades.md)
 - [Anti-spam e Fingerprint](../../produto/anti-spam-fingerprint.md)
-- [Higienização JWT / LGPD](../../produto/higienizacao-jwt-lgpd.md) (histórico da época do Supabase Auth)
+- [Minimização de dados pessoais (LGPD)](../../produto/minimizacao-dados-pessoais.md) (inclui o histórico da época do Supabase Auth)
 - [SQL legado das tabelas, funções e triggers](https://github.com/TCC-Feedback-Analytics/feedback-analytics/tree/main/database/sql/) (dumps de antes das migrations Drizzle)

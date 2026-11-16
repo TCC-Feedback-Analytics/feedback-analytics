@@ -27,7 +27,7 @@ Todos os dados abaixo ficam num único banco **PostgreSQL hospedado no Supabase*
 | Telefone | `user.phone` | Contato com o gestor, pedido no complemento do cadastro (`+55`), único por conta | — |
 | Foto | `user.image` | Avatar, quando o login é pelo Google | — |
 | Senha | `account.password` | Login por e-mail e senha. Guardada só como **hash**, nunca em texto | — |
-| Tokens do Google | `account.access_token`, `account.refresh_token`, `account.id_token` | Guardados pelo Better Auth no login com Google. O sistema **não usa** esses tokens depois do login | — |
+| Tokens do Google | `account.access_token`, `account.refresh_token`, `account.id_token` | **Não são gravados.** O Better Auth lê o perfil com eles no login com Google, e o gateway grava os três vazios (`discardOAuthTokens`); o sistema não chama o Google depois do login | — |
 | Sessão | `session.token`, `session.ip_address`, `session.user_agent`, `session.expires_at` | Manter o gestor logado e saber de que aparelho a sessão foi aberta | — |
 | Links de confirmação e de nova senha | `verification` | Validar o link enviado por e-mail | — |
 | Aceite dos termos | `enterprise.terms_version`, `enterprise.terms_accepted_at` | Provar qual versão dos Termos e da Política foi aceita, e quando | — |

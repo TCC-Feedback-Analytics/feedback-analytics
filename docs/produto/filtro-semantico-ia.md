@@ -48,7 +48,7 @@ Para cada lote, monta o payload:
   - Texto de cada comentário (e a pergunta própria do escopo, quando houver)
   - Nota em estrelas e respostas às perguntas, com o texto de cada pergunta
   - Ponto de coleta e item do catálogo
-  - Contexto do negócio (objetivo, meta de análise, resumo, produtos)
+  - Contexto do negócio (nome da empresa, objetivo, meta de análise, resumo, produtos)
         ↓
 Payload enviado ao LLM da empresa (OpenRouter, com a chave e o modelo dela)
         ↓
@@ -58,12 +58,13 @@ resumo e recomendações em pt-BR
 Por feedback: sentimento, intensidade (sentiment_score ∈ [-1,1]),
 confiança (confidence ∈ [0,1]), aspectos (ABSA), categorias e keywords
         ↓
-Categorias e keywords passam pelo saneamento (filtro) e pela taxonomia
+Aspectos, categorias e keywords passam pelo saneamento (filtro);
+as categorias passam também pela taxonomia
         ↓
 Resultados persistidos em feedback_analysis
         ↓
-No relatório: os insights de cada lote são consolidados numa síntese final
-(resumo + recomendações) → feedback_insights_report
+Na mesma tarefa, a IA relê, em lotes de até 20, todos os comentários já analisados do escopo
+e junta os resumos dos lotes numa síntese final (resumo + recomendações) → feedback_insights_report
 ```
 
 ---
@@ -71,13 +72,13 @@ No relatório: os insights de cada lote são consolidados numa síntese final
 ## As Três Camadas do Filtro
 
 1. **No prompt.** A IA recebe a regra de que categorias e palavras-chave vêm **exclusivamente** do comentário. Ela não pode copiar o texto das perguntas nem das subperguntas, nem usar os rótulos "péssimo", "ruim", "mediana", "boa" e "ótima". Quando o escopo tem pergunta própria no campo de comentário, o texto é lido como resposta a ela, e a pergunta também não pode virar termo.
-2. **No saneamento.** Cada categoria e palavra-chave devolvida pela IA é normalizada (minúsculas, sem acento e sem pontuação) e descartada quando:
+2. **No saneamento.** Cada categoria, palavra-chave e aspecto devolvido pela IA é normalizado (minúsculas, sem acento e sem pontuação, fora o hífen) e descartado quando:
     - é um dos rótulos de resposta ou um valor marcado pelo cliente;
     - é igual ao texto inteiro de uma pergunta ou subpergunta que o cliente respondeu naquele feedback;
     - não está **ancorada** no comentário, ou seja, não aparece no texto nem divide com ele ao menos uma palavra relevante (4 letras ou mais, fora as palavras muito comuns);
     - repete um termo já aceito.
 
-    Ficam no máximo **6 palavras-chave** e **4 categorias** por feedback.
+    Ficam no máximo **6 palavras-chave**, **4 categorias** e **6 aspectos** por feedback.
 3. **Na taxonomia.** As categorias aceitas são mapeadas para rótulos fixos por escopo (veja abaixo).
 
 > O saneamento compara cada termo com a pergunta **inteira**, não palavra por palavra. Uma palavra que está na pergunta (como "atendimento") só fica no resultado se o cliente a escreveu no comentário — aí ela é a voz dele.
@@ -99,13 +100,15 @@ No relatório: os insights de cada lote são consolidados numa síntese final
 
 ## Resiliência: Fallback Local
 
-O fallback local cobre o caso em que a IA responde, mas **nenhuma palavra-chave sobrevive ao saneamento** de um feedback:
+O fallback local cobre o caso em que a IA responde, mas **nenhuma palavra-chave ou nenhuma categoria sobrevive ao saneamento** de um feedback:
 
 - As palavras-chave saem do próprio comentário: palavras com 4 letras ou mais, sem as palavras muito comuns do português (artigos, preposições, conjunções) e sem os cinco rótulos de resposta — até **4** palavras
-- Sem nenhuma categoria válida, o feedback fica com as **2 primeiras palavras-chave** como categorias
+- Sem nenhuma categoria válida, mesmo com palavras-chave da IA, o feedback fica com as **2 primeiras palavras-chave** como categorias, já mapeadas pela taxonomia
 - Esse caminho não remove as palavras das perguntas: ele só usa o que está escrito no comentário
 
-Quando a chamada ao LLM **falha** — provedor fora do ar, JSON inválido, resposta incompleta ou fora do pt-BR depois da nova tentativa —, não há resultado local. O serviço de IA devolve erro sem resultado parcial, e nada é gravado para aquele lote. No gateway, o job tenta de novo os erros temporários e termina como falho nos demais, com o código do erro; os feedbacks do lote continuam aguardando análise.
+Quando a chamada ao LLM **falha** — provedor fora do ar, JSON inválido, resposta incompleta ou fora do pt-BR depois da nova tentativa —, não há resultado local. O serviço de IA devolve erro sem resultado parcial, e nada é gravado para aquele lote. Chave recusada (`ia_provider_auth_error`), créditos esgotados (`ia_provider_credits_exhausted`), resposta cortada (`truncated_ai_response`), vazia (`empty_ai_response`), recusada (`ai_response_refused`) ou fora do formato (`invalid_provider_response`) voltam como `502`; sem chave configurada, `500`.
+
+No gateway, o job tenta de novo os erros temporários (falha de conexão, provedor fora do ar, limite de uso ou erro do provedor) até 3 vezes por lote, com espera de 10 s e depois 20 s. Nos demais erros, ou na terceira falha, termina como falho, com o código do erro. Os lotes já gravados ficam; os feedbacks do lote que falhou continuam aguardando análise. Se a cota de chamadas à IA da empresa, por minuto ou por dia, acabar, o job espera (`waiting_budget`, "Aguardando a cota da IA.") e retoma sozinho.
 
 ---
 
@@ -114,11 +117,12 @@ Quando a chamada ao LLM **falha** — provedor fora do ar, JSON inválido, respo
 - O contexto de negócio da empresa (`collecting_data_enterprise`) é injetado no prompt para personalizar as análises. A análise exige os três campos de contexto preenchidos: `company_objective`, `analytics_goal` e `business_summary`
 - O processamento é **assíncrono**, numa fila com worker: o pedido responde `202` na hora e a Web acompanha o job, sem bloquear a coleta nem a tela
 - Só feedbacks **com comentário** vão para a IA. O mínimo é de **10** feedbacks com comentário no escopo; sem isso, o job falha com `insufficient_feedbacks_for_analysis`
-- A Web não limita a quantidade: cada execução pega todos os comentários pendentes do escopo, do mais antigo para o mais novo. A API aceita um `limit` opcional, de no máximo 100
+- A Web não limita a quantidade: cada execução pega todos os comentários pendentes do escopo, do mais antigo para o mais novo. A rota `analyze-raw` aceita um `limit` opcional, de no máximo 100
 - Os lotes têm até **20** feedbacks por chamada ao LLM (`IA_MAX_FEEDBACKS_PER_BATCH`, no gateway), para a resposta caber no teto de tokens de saída do modelo
 - Os resultados são persistidos em `feedback_analysis` (por feedback) e `feedback_insights_report` (por escopo)
-- O serviço usa o OpenRouter com a chave e o modelo configurados no perfil de cada empresa. Sem chave, o job falha com `ia_config_required`. O Gateway cifra a credencial no banco e a envia ao `ia-analyze` apenas nos headers internos `x-llm-*`; `IA_ANALYZE_REMOTE_URL` aponta somente a URL do serviço
-- Para proteger o teto de tokens do modelo, cada mensagem de feedback é truncada em **2000 caracteres** (`MAX_FEEDBACK_MESSAGE_CHARS`, com marca `… [truncado]`) e as respostas dinâmicas enviadas no payload são limitadas a **20** (`MAX_DYNAMIC_ANSWERS`) — o conteúdo útil de praticamente todo feedback real cabe nesses limites
+- O serviço usa o OpenRouter com a chave e o modelo que cada empresa cadastra em Configuração de IA. Sem chave, o job falha com `ia_config_required`. O Gateway cifra a credencial no banco e a envia ao `ia-analyze` apenas nos headers internos `x-llm-*`; `IA_ANALYZE_REMOTE_URL` aponta somente a URL do serviço
+- Para proteger o teto de tokens do modelo, cada mensagem de feedback é truncada em **2000 caracteres** (`MAX_FEEDBACK_MESSAGE_CHARS`, com marca `… [truncado]`) e as respostas e as subrespostas enviadas no payload são limitadas a **20** cada (`MAX_DYNAMIC_ANSWERS`) — o conteúdo útil de praticamente todo feedback real cabe nesses limites
+- A IA não recebe dados pessoais do cliente. Vão só o comentário, a nota, as respostas, o ponto de coleta, o item do catálogo e o contexto da empresa. O comentário vai como o cliente escreveu: se ele puser um nome no texto, o nome vai junto
 
 ---
 
@@ -126,7 +130,7 @@ Quando a chamada ao LLM **falha** — provedor fora do ar, JSON inválido, respo
 
 O saneamento anti-poluição decide **quais** termos sobrevivem; a taxonomia decide **como** rotulá-los de forma comparável. É o complemento natural do filtro: depois que as categorias saneadas são extraídas, elas passam por uma **taxonomia fixa de drivers de CX por escopo** (`COMPANY`, `PRODUCT`, `SERVICE`, `DEPARTMENT`).
 
-Cada categoria saneada é **canonicalizada** para um rótulo de driver quando bate com o canônico ou um de seus sinônimos — por exemplo, no escopo `COMPANY`, `"suporte"` e `"atendente"` viram **`atendimento`**, e `"preço"`, `"valor"` ou `"caro"` viram **`preco`**. Quando não há correspondência, o termo é **preservado como emergente**, sem perda de sinal.
+Cada categoria saneada é **canonicalizada** para um rótulo de driver quando ela, ou uma das palavras dela, bate com o canônico ou um de seus sinônimos — por exemplo, no escopo `COMPANY`, `"suporte"` e `"atendente"` viram **`atendimento`**, e `"preço"`, `"valor"` ou `"caro"` viram **`preco`**. Quando não há correspondência, o termo é **preservado como emergente**, sem perda de sinal.
 
 Por que isso importa:
 

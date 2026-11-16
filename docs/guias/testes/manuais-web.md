@@ -138,7 +138,7 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
 - **Objetivo:** enviar um feedback completo pelo formulário público e ver a confirmação.
 - **Pré-condições:**
   - `enterprise_id` da conta de teste disponível (ID de empresa válido).
-  - A empresa precisa ter um **ponto de coleta QR ativo** (`type=QR_CODE`, `status=ACTIVE`), ou seja, a coleta ativada em **Canais de coleta**. Prefira o ponto de escopo empresa (sem item de catálogo). Sem um ponto ativo, a página nem mostra o formulário: aparece "QR Code indisponível: não há ponto de coleta ativo para este código. Verifique o QR Code ou contate a empresa."
+  - A empresa precisa ter um **ponto de coleta QR ativo** (`type=QR_CODE`, `status=ACTIVE`), ou seja, a coleta ativada em **Canais de coleta**. Prefira o ponto de escopo empresa (sem item de catálogo). Sem um ponto ativo, a página nem mostra o formulário: aparece "Este formulário está desativado ou o endereço é inválido. Peça um novo QR Code ou link ao estabelecimento."
   - O dispositivo não pode ter enviado feedback **para o mesmo ponto no mesmo dia**: o gateway identifica o aparelho por navegador (User-Agent) e IP, e o dia vira à meia-noite de Brasília. Para reexecutar: use outro navegador, outro ponto de coleta ou espere o dia seguinte (ou limpe o registro em `tracked_devices` no banco local).
 - **Passos:**
   1. Monte a URL com o `enterprise` e o `collection_point` (e `item`, se o ponto for específico de um item), acrescente `&canal=qr` e navegue até ela.
@@ -189,7 +189,7 @@ Rota: `/user/edit/feedback-general` (menu **Configuração da coleta › Avalia�
   1. Em `/user/edit/feedback-general`, se a coleta estiver pausada, clique em **"Ativar coleta"**.
   2. Clique em **"Pausar coleta"** e abra o link da empresa (CT-UC05-04) numa janela anônima.
   3. Clique em **"Ativar coleta"** de novo.
-- **Resultado esperado:** passo 1 → aviso **"Coleta ativada!"** ("Agora os clientes podem enviar feedback"), estado **"Recebendo respostas"** e a imagem do QR Code no cartão **QR Code**; passo 2 → aviso **"Coleta desativada!"** ("Coleta de feedback pausada"), estado **"Pausado"**, e o link abre o aviso "QR Code indisponível" em vez do formulário (o mesmo vale para o QR Code e a etiqueta NFC); passo 3 → a coleta volta a **"Recebendo respostas"** e o **mesmo** QR Code continua valendo.
+- **Resultado esperado:** passo 1 → aviso **"Coleta ativada!"** ("Agora os clientes podem enviar feedback"), estado **"Recebendo respostas"** e a imagem do QR Code no cartão **QR Code**; passo 2 → aviso **"Coleta desativada!"** ("Coleta de feedback pausada"), estado **"Pausado"**, e o link abre o aviso "Este formulário está desativado…" em vez do formulário (o mesmo vale para o QR Code e a etiqueta NFC); passo 3 → a coleta volta a **"Recebendo respostas"** e o **mesmo** QR Code continua valendo.
 
 ### CT-UC05-04 — Copiar o link e o endereço da etiqueta NFC
 

@@ -34,7 +34,7 @@
 |---|---|
 | Identificador da empresa ausente na URL | Exibe a tela de erro "Não foi possível continuar" com "ID da empresa não encontrado na URL. Verifique o QR Code." — o formulário não é carregado |
 | Empresa não encontrada | Exibe a tela de erro com "Empresa não encontrada. Verifique se o QR Code é válido." — o formulário não é carregado |
-| Sem ponto de coleta ativo para o escopo (coleta pausada na empresa ou no item) | Exibe a tela de erro com "QR Code indisponível: não há ponto de coleta ativo para este código. Verifique o QR Code ou contate a empresa." — o formulário não é carregado |
+| Sem ponto de coleta ativo para o escopo (coleta pausada na empresa ou no item) | Exibe a tela de erro com "Este formulário está desativado ou o endereço é inválido. Peça um novo QR Code ou link ao estabelecimento." — o formulário não é carregado |
 | Coleta pausada ou item desativado depois que o formulário abriu | O gateway recusa o envio com `404 collection_point_not_found`; a Web mostra o toast "Erro ao enviar feedback" e, no formulário, "Este formulário está desativado ou o endereço é inválido. Peça um novo QR Code ou link ao estabelecimento." |
 | Escopo sem perguntas ativas | O formulário mostra só a nota e o comentário (quando o campo não está oculto) e aceita o envio |
 | Nota não selecionada | Bloqueia o envio e exibe "Por favor, selecione uma avaliação." |
@@ -42,7 +42,7 @@
 | Subperguntas não respondidas | Bloqueia o envio e exibe "Responda todas as subperguntas antes de enviar." |
 | Comentário em branco | Aceita o envio: o feedback fica só com as estrelas e as respostas, não vai para a IA e não conta como "aguardando análise". Com o campo oculto no escopo, nenhum texto é enviado |
 | Aparelho já enviou feedback para este ponto de coleta hoje (anti-spam diário) | O gateway recusa com `409 DEVICE_ALREADY_SUBMITTED` e a Web mostra "Obrigado por participar": "Este dispositivo já enviou uma resposta por aqui hoje. Você poderá compartilhar uma nova opinião amanhã." O aparelho é identificado no backend por um fingerprint de user agent e IP, e o dia vira à meia-noite de Brasília |
-| Aparelho bloqueado | O gateway recusa com `403 DEVICE_BLOCKED`; a Web mostra o toast "Erro ao enviar feedback" e, no formulário, "Seu dispositivo está temporariamente bloqueado para novos envios." Hoje o bloqueio só existe no banco: não há tela nem rota para bloquear um aparelho |
+| Aparelho bloqueado | O gateway recusa com `403 DEVICE_BLOCKED`; a Web mostra o toast "Erro ao enviar feedback" e, no formulário, "Este dispositivo está bloqueado para novos envios neste estabelecimento." Hoje o bloqueio só existe no banco: não há tela nem rota para bloquear um aparelho |
 | Falha de rede ou erro do servidor ao enviar | Exibe o toast "Erro ao enviar feedback" e a mensagem inline no formulário — o cliente pode corrigir e tentar novamente |
 
 ---

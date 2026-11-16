@@ -36,13 +36,16 @@ ou o item e a marca do canal na URL (canal=qr | link | nfc)
 Frontend chama o API Gateway (GET /api/public/enterprise/:id)
         ↓
 API confirma que a empresa existe e resolve o ponto de coleta ATIVO do escopo
+(no caso de um item, o item do catálogo também precisa estar ativo)
         ↓
 Sem ponto de coleta ativo → tela de erro (coleta desativada)
         ↓
 Formulário é exibido com as perguntas do escopo e o campo de comentário dele
         ↓
 Cliente dá a nota (obrigatória), responde as perguntas e, se quiser,
-comenta e informa nome, e-mail e gênero
+comenta e abre o bloco "Informações pessoais" (nome, e-mail e gênero)
+        ↓
+Antes do botão "Enviar Feedback", o formulário mostra o aviso da Política de Privacidade
         ↓
 Envio (POST /api/public/qrcode/feedback) com o canal; o servidor calcula
 o fingerprint do aparelho (anti-spam)
@@ -54,7 +57,7 @@ Feedback persistido no banco → tela de confirmação exibida
 
 ## Canais de Coleta
 
-Cada escopo (a avaliação da empresa, em `/user/qrcode/enterprise`, ou um item do catálogo) tem a seção **Canais de coleta** na configuração. No topo fica o interruptor **Coleta de respostas**, que liga ou pausa a coleta do escopo; abaixo, um card por canal:
+Cada escopo (a **Avaliação da empresa**, em Configuração da coleta → `/user/edit/feedback-general`, ou um item do catálogo, em `/user/edit/feedback/:kind/:itemId`) tem a seção **Canais de coleta** na configuração. O antigo `/user/qrcode/enterprise` só redireciona para a Avaliação da empresa. No Dashboard, o botão **"QR Code"** da barra de escopo leva à configuração do escopo selecionado. No topo fica o interruptor **Coleta de respostas**, que liga ou pausa a coleta do escopo; abaixo, um card por canal:
 
 | Canal | Como o gestor usa | Marca na URL |
 |---|---|---|
@@ -64,12 +67,12 @@ Cada escopo (a avaliação da empresa, em `/user/qrcode/enterprise`, ou um item 
 
 - Os três apontam para o **mesmo ponto de coleta** do escopo: a marca só diz por onde o cliente chegou. Ela é gravada em `feedback.channel` (`QR`, `LINK` ou `NFC`).
 - Marca ausente, desconhecida ou o antigo valor `QRCODE` grava `null` (sem canal), sem recusar a resposta.
-- **Testar o formulário:** o painel abre o formulário com `canal=teste`. Esses feedbacks ficam marcados como `TEST` e aparecem na lista de Feedbacks recebidos com a marca "Teste", mas ficam **fora** de todas as métricas, do mínimo de feedbacks e da análise da IA.
+- **Testar o formulário:** nos "Primeiros passos" do Dashboard, o painel abre o formulário geral com `canal=teste`. Esses feedbacks ficam marcados como `TEST` e aparecem na lista de Feedbacks recebidos com a marca "Teste", mas ficam **fora** de todas as métricas, do mínimo de feedbacks e da análise da IA.
 - Com a coleta do escopo pausada, nenhum canal recebe respostas.
 
 ### Por onde chegaram
 
-- O Dashboard tem a seção **"Por onde chegaram"**: quantas avaliações vieram de cada canal e a média das estrelas de cada um. As avaliações sem marca de canal (de antes dela) ficam à parte.
+- A seção **"Por onde chegaram"** mostra quantas avaliações vieram de cada canal e a média das estrelas de cada um. As avaliações sem marca de canal (de antes dela) ficam à parte. No Dashboard ela é um resumo que leva à página **Clientes e canais** (`/user/customers`), com o detalhe por canal, "Dias e horários de pico" e "Clientes que voltam".
 - A lista de Feedbacks recebidos mostra o canal de cada feedback.
 - O diagnóstico do escopo feito pela IA também recebe os números por canal.
 
@@ -104,10 +107,13 @@ Sem comentário, o feedback não vai para a IA nem conta como "aguardando análi
 ## Detalhes Técnicos
 
 - O endereço do formulário leva `enterprise`, e opcionalmente `collection_point` e `item`, mais a marca `canal`. Na etiqueta NFC o `item` fica de fora, para o endereço caber na memória da etiqueta
-- Antes de exibir o formulário, o backend confirma que a empresa existe (view `enterprise_public`) e resolve o ponto de coleta do tipo `QR_CODE` (o nome técnico vale para os três canais) com status `ACTIVE`. Sem ele, o formulário não é exibido — o cliente vê uma tela de erro explicativa
-- O envio também exige o ponto de coleta ativo (senão `404 collection_point_not_found`) e respostas que batam exatamente com as perguntas ativas do escopo (senão `400 invalid_payload`)
+- Antes de exibir o formulário, o backend confirma que a empresa existe (view `enterprise_public`) e resolve o ponto de coleta do tipo `QR_CODE` (o nome técnico vale para os três canais) com status `ACTIVE` e, no caso de um item, com o item do catálogo `ACTIVE`: tirar o item do catálogo ou desativar o tipo faz o formulário dele parar de abrir e de aceitar respostas, mesmo com o ponto de coleta ainda `ACTIVE` (RNE-009). Sem ponto de coleta, o formulário não é exibido — o cliente vê uma tela de erro explicativa:
+    - sem ponto de coleta ativo (ou com o item fora do catálogo): "Este formulário está desativado ou o endereço é inválido. Peça um novo QR Code ou link ao estabelecimento." É a mesma frase do envio recusado, para quem chegou por QR Code, link ou NFC
+    - empresa inexistente: "Empresa não encontrada. Verifique se o QR Code é válido."
+- O envio também exige o ponto de coleta ativo (senão `404 collection_point_not_found`) e respostas que batam exatamente com as perguntas ativas do escopo (senão `400 invalid_payload`). Com o `404` (ou `enterprise_not_found`), a tela diz a mesma frase da abertura: "Este formulário está desativado ou o endereço é inválido. Peça um novo QR Code ou link ao estabelecimento."
 - A submissão **não requer autenticação** — é uma rota pública com proteção via fingerprint (1 envio por aparelho, por ponto de coleta, por dia)
-- O comentário aceita até 5000 caracteres. Dos dados opcionais de quem respondeu, só nome, e-mail e gênero são gravados (no cadastro do cliente, deduplicado por e-mail na empresa)
+- O comentário aceita até 5000 caracteres. Dos dados opcionais de quem respondeu, só nome, e-mail e gênero são gravados (no cadastro do cliente, deduplicado por e-mail na empresa). O cadastro só é criado quando vem nome ou e-mail: o gênero sozinho é descartado, e um cliente já encontrado pelo e-mail não tem nome nem gênero atualizados
+- Esses dados ficam no bloco **"Informações pessoais"** ("Nome, e-mail e gênero · Opcional"), que o cliente abre se quiser. Antes do botão "Enviar Feedback", o formulário avisa: "Seus dados são protegidos e usados apenas para melhorar sua experiência. Ao enviar, você concorda com a Política de Privacidade", com link para `/privacidade`
 - A imagem do QR Code é gerada em PNG no próprio navegador (biblioteca `qrcode`), a partir do endereço do formulário, sem enviar dados a terceiros, e pode ser baixada; o botão de compartilhar envia o link (pelo `navigator.share` ou, sem ele, copiando)
 
 ---

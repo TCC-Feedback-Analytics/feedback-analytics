@@ -77,7 +77,7 @@ O gestor não precisa da equipe de suporte em nenhum passo.
 
 ## Guia do Sistema por Convite
 
-O guia interativo (16 passos pelo painel) **não abre sozinho**. O Dashboard convida o gestor:
+O guia interativo (17 passos pelo painel) **não abre sozinho**. O Dashboard convida o gestor:
 
 - quando chega o **primeiro feedback** da conta; ou
 - sem feedback, numa **próxima sessão** do navegador, nunca logo depois do cadastro.
