@@ -1,19 +1,22 @@
 # Testes de Usabilidade e Campo (UAT)
 
-### Este documento descreve o plano de execução para os **Testes de Campo / Testes de Aceitação do Usuário (UAT)** do Feedback Analytics. Esses testes serão conduzidos em um cenário de uso real com usuários finais (Pequenas e Médias Empresas — PMEs e profissionais autônomos).
+Este documento descreve o plano de execução para os **Testes de Campo / Testes de Aceitação do Usuário (UAT)** do Feedback Analytics. Esses testes serão conduzidos em um cenário de uso real com usuários finais (Pequenas e Médias Empresas — PMEs e profissionais autônomos).
+
 ---
 ## 1. Informações Gerais
 * **Objetivo:** Validar a usabilidade prática do sistema, a estabilidade da arquitetura técnica (API Gateway/BFF e o Postgres hospedado no Supabase) e a eficácia/assertividade da inteligência artificial (o LLM que cada empresa configura pelo OpenRouter) em um ambiente real e cotidiano de operação.
 * **Duração:** _[Data de Início]_ a _[Data de Término]_ (a definir).
 * **Empresas Participantes:** _[Inserir nomes das empresas participantes]_ (a definir).
 * **Responsáveis:** Cada membro da equipe é responsável direto pelo suporte técnico, monitoramento e comunicação constante com os gestores das empresas que trouxe para o projeto de teste.
+
 ---
 ## 2. Fase Pré-Teste
 Ações que devem ser obrigatoriamente concluídas **antes** de disponibilizar o sistema para uso comercial das empresas parceiras:
 * **Limpeza e Higienização de Dados:** Zerar completamente as tabelas de dados de operação (`feedback` e `feedback_analysis`) no ambiente de **produção** (não há mais ambiente de homologação — o deploy é main-only) para garantir que métricas antigas ou testes de desenvolvimento não poluam os relatórios reais das empresas.
-* **Auditoria de Variáveis de Ambiente:** Confirmar se as variáveis cruciais estão seguras, ativas e configuradas nos projetos da Vercel — no API Gateway, `DATABASE_URL`, `BETTER_AUTH_SECRET`, o SMTP da Brevo, `IA_CONFIG_ENCRYPTION_KEY`, `WORKER_TICK_TOKEN` e o token interno do IA Analyze (o mesmo valor em `IA_ANALYZE_REMOTE_TOKEN` e, no IA Analyze, em `IA_ANALYZE_INTERNAL_TOKEN`) — e se o secret `WORKER_TICK_TOKEN` do GitHub bate com o da Vercel, para a fila da IA andar. A chave do LLM não é variável de ambiente: cada empresa participante configura a própria chave OpenRouter em **Configuração de IA**.
+* **Auditoria de Variáveis de Ambiente:** Confirmar se as variáveis cruciais estão seguras, ativas e configuradas nos projetos da Vercel — no API Gateway, `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `IA_ANALYZE_REMOTE_URL`, o SMTP da Brevo, `IA_CONFIG_ENCRYPTION_KEY`, `WORKER_TICK_TOKEN` e o token interno do IA Analyze (o mesmo valor em `IA_ANALYZE_REMOTE_TOKEN` e, no IA Analyze, em `IA_ANALYZE_INTERNAL_TOKEN`) — e se o secret `WORKER_TICK_TOKEN` do GitHub bate com o da Vercel, para a fila da IA andar. A chave do LLM não é variável de ambiente: cada empresa participante configura a própria chave OpenRouter em **Configuração de IA**.
 * **Termo de Consentimento (Aspectos Éticos):** Obter o aceite formal ou a assinatura dos gestores parceiros no Termo de Consentimento Livre e Esclarecido (TCLE) que regulamenta a participação no teste de usabilidade.
 * **Kit de Coleta (SUS):** Garantir que o link do formulário (Google Forms) contendo o questionário estruturado da escala SUS (*System Usability Scale*) esteja pronto, revisado e operacional.
+
 ---
 ## 3. Fase de Execução (Monitoramento Diário)
 Acompanhamento passivo e técnico para identificar anomalias sem interferir na experiência direta do cliente e do gestor:
@@ -21,10 +24,11 @@ Acompanhamento passivo e técnico para identificar anomalias sem interferir na e
 * **Monitoramento Anti-Spam (Diário):** Analisar a tabela `tracked_devices` (um registro por empresa e fingerprint, com `feedback_count` e `last_feedback_at`; como o fingerprint junta só navegador e IP, o mesmo aparelho é o mesmo registro em qualquer dia) para ver se algum aparelho concentra respostas. O sistema aceita uma resposta por aparelho, ponto de coleta e dia; a segunda é recusada e **não** fica gravada, então o banco não guarda a contagem de tentativas recusadas. Bloquear um aparelho (`is_blocked`) só é possível direto no banco: não há tela nem rota para isso.
 * **Conferência dos canais (Diário):** Ver na coluna `channel` da tabela `feedback` por onde as respostas chegam (`QR`, `LINK` ou `NFC`). Respostas com `TEST` vêm do "Testar o formulário" e ficam fora das métricas e da IA.
 * **Auditoria das Análises de IA (A cada 2 dias):** Sempre que os gestores rodarem a análise dos comentários com IA (ela entra numa fila e é processada em segundo plano), consultar a tabela `feedback_analysis` para assegurar que cada comentário analisado tem `sentiment`, `categories`, `keywords` e `aspects` preenchidos, e a tabela `ia_analysis_job` para ver se algum job terminou em `failed`. Verificar também se não houve retornos nulos ou erros de alucinação.
+
 ---
 ## 4. Fase de Encerramento (Coleta de Dados)
 Ações consolidadas no último dia do período de testes em campo:
 * **Suspensão da Coleta:** Pausar a coleta em **Canais de coleta** (na avaliação da empresa e em cada item) ou instruir as empresas parceiras a retirarem temporariamente os QR Codes e as etiquetas NFC do ponto de atendimento. Com a coleta pausada, o link compartilhado também deixa de aceitar respostas.
 * **Extração de Dados Operacionais:** Exportar e realizar o backup das tabelas `feedback`, `feedback_analysis` e `tracked_devices` do Supabase para formato de planilha (.csv ou .xlsx) para posterior tabulação estatística.
 * **Aplicação do Questionário SUS:** Disparar o link do questionário SUS (Google Forms) para os gestores que operaram o painel/dashboard.
-* **Entrevistas Qualitativas Rápidas:** Agendar uma chamada de voz/vídeo de aproximadamente 10 minutos (ou enviar 3 perguntas abertas por meio de aplicativo de mensagem instantânea) para capturar a percepção subjetiva e qualitativa do gestor sobre o valor gerou o dashboard e o nível de concordância técnica com os insights gerados pela inteligência artificial.
+* **Entrevistas Qualitativas Rápidas:** Agendar uma chamada de voz/vídeo de aproximadamente 10 minutos (ou enviar 3 perguntas abertas por meio de aplicativo de mensagem instantânea) para capturar a percepção subjetiva e qualitativa do gestor sobre o valor que o dashboard gerou e o nível de concordância técnica com os insights gerados pela inteligência artificial.

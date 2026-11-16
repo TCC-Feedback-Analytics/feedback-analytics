@@ -60,7 +60,7 @@ Disponível só quando a Web está com `VITE_GOOGLE_AUTH_ENABLED=true` (as crede
 - **[CT-UC01-02]** ✅ *Coberto manual (runbook)* - Exceção — e-mail duplicado (prevenção de enumeração): cadastrar com o e-mail da conta de teste e um celular livre deve **seguir para a tela "Confirme seu e-mail"** normalmente, com o e-mail digitado, "Reenviar e-mail de confirmação" e "Já confirmei · Ir para login", sem nenhum aviso de que o e-mail já está em uso.
 - **[CT-UC01-03]** ⛔ *Obsoleto* - Exceção — documento já cadastrado: o cadastro não pede mais CPF/CNPJ, então o cenário não se aplica. A checagem de duplicidade que existe hoje é a do telefone (`409 phone_taken`), no CT-UC01-08.
 - **[CT-UC01-04]** ⛔ *Obsoleto* - Exceção — documento inválido: não há mais campo de CPF/CNPJ no cadastro.
-- **[CT-UC01-05]** 🔵 *Unidade já atende* - Exceção — telefone inválido: inserir telefone fora do padrão BR deve bloquear o campo.
-- **[CT-UC01-06]** 🔵 *Unidade já atende* - Exceção — termos não aceitos: tentar enviar sem marcar os termos deve impedir o cadastro.
+- **[CT-UC01-05]** 📝 *Planejado / não implementado* - Exceção — telefone inválido: inserir telefone fora do padrão BR deve bloquear o campo. Os testes de unidade conferem só a formatação do telefone, não o bloqueio.
+- **[CT-UC01-06]** 📝 *Planejado / não implementado* - Exceção — termos não aceitos: tentar enviar sem marcar os termos deve impedir o cadastro. Só o "Complete seu cadastro" do Google tem teste de unidade para os termos.
 - **[CT-UC01-07]** ✅ *Coberto manual (runbook)* - Exceção — reenvio de e-mail: solicitar reenvio do e-mail de confirmação deve exibir a confirmação genérica de envio e iniciar a contagem até o próximo reenvio ("Solicitar novamente em mm:ss").
 - **[CT-UC01-08]** ✅ *Coberto manual (runbook)* - Exceção — celular já cadastrado: cadastrar com o celular de outra conta deve exibir "Telefone já cadastrado." e manter o formulário na tela.

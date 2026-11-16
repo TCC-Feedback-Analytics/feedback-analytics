@@ -2,19 +2,19 @@
 
 Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço **API Gateway**. Os testes cobrem as rotas, os controladores (*controllers*), os serviços, os repositórios (o SQL que o Drizzle monta), a fila e o worker da IA, isolando o banco de dados e as chamadas externas por meio de mocks. As suítes que exigiam um **banco/ambiente real** (integração e e2e de *cutover*) foram removidas do CI e passaram a ser um [runbook manual](./manuais-api-gateway.md).
 
-!!! info "Conferido em 03/11/2026"
-    Inventário refeito contra o repositório: **48 arquivos** em `src/tests/*.test.ts`. A tabela antiga, de 8 arquivos e 77 testes, citava suítes que não existem mais (`auth.test.ts`) e um mock do Supabase que saiu com a migração para Better Auth e Drizzle. O número de testes muda a cada PR; o total atual sai no fim do `npm test`.
+!!! info "Conferido em 16/11/2026"
+    Inventário refeito contra o repositório: **50 arquivos** em `src/tests/*.test.ts`. A tabela antiga, de 8 arquivos e 77 testes, citava suítes que não existem mais (`auth.test.ts`) e um mock do Supabase que saiu com a migração para Better Auth e Drizzle. O número de testes muda a cada PR; o total atual sai no fim do `npm test` (456 em 16/11/2026, 2 deles pulados: a suíte contra Postgres real).
 
 ---
 
 ## Status da Cobertura
 
-Os testes do API Gateway utilizam o **Vitest** como motor de testes (`vitest.config.ts`: ambiente `node`, arquivos `src/tests/**/*.test.ts`) e o **Supertest** para simular requisições HTTP reais diretamente contra a aplicação Express (14 dos 48 arquivos). O banco não é consultado: os testes mockam o cliente Drizzle (`../db/client.js`), os repositórios, o middleware de autenticação e os providers do IA Analyze. Os testes de SQL usam `drizzle.mock()`, que monta a consulta sem conectar, e conferem o texto e os parâmetros gerados.
+Os testes do API Gateway utilizam o **Vitest** como motor de testes (`vitest.config.ts`: ambiente `node`, arquivos `src/tests/**/*.test.ts`) e o **Supertest** para simular requisições HTTP reais diretamente contra a aplicação Express (14 dos 50 arquivos). O banco não é consultado: os testes mockam o cliente Drizzle (`../db/client.js`), os repositórios, o middleware de autenticação e os providers do IA Analyze. Os testes de SQL usam `drizzle.mock()`, que monta a consulta sem conectar, e conferem o texto e os parâmetros gerados.
 
-> **Total: 48 arquivos de teste em `src/tests/`**
+> **Total: 50 arquivos de teste em `src/tests/`**
 
 !!! info "O que roda no CI (e o que virou manual)"
-    Os arquivos abaixo são testes **unitários/de rota mockados** e **seguem automatizados no CI** (job `unit-tests` do `ci.yml`). Além deles, o CI mantém o **smoke de migrations** (`schema-migrations.yml`): sobe um Postgres efêmero no runner, **sem credenciais**, aplica as migrations e o seed e roda `drizzle-kit check` para validar o schema versus as migrations.
+    Os arquivos abaixo são testes **unitários/de rota mockados** e **seguem automatizados no CI** (job `unit-tests` do `ci.yml`). Além deles, o CI mantém o **smoke de migrations** (`schema-migrations.yml`): sobe um Postgres efêmero no runner, **sem credenciais**, aplica as migrations e o seed e roda `drizzle-kit check` para validar o schema versus as migrations. Ele só roda quando o push ou o PR mexe nos arquivos do banco (`db/`, `drizzle/`, `docker-compose.yml`, `package.json`).
 
     A única suíte contra **Postgres real** que restou é `onboarding.database.test.ts`, opt-in: só roda com `ONBOARDING_TEST_DATABASE_URL` definida e fica pulada no `npm test` comum e no CI.
 
@@ -42,11 +42,12 @@ ONBOARDING_TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/feedb
 
 ## Testes Automatizados
 
-Abaixo, os 48 arquivos agrupados pelo que cobrem. Todos ficam em [`src/tests/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/src/tests).
+Abaixo, os 50 arquivos agrupados pelo que cobrem. Todos ficam em [`src/tests/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/src/tests).
 
 | Área | Arquivos de teste | O que cobre |
 | :--- | :--- | :--- |
-| **Conta e autenticação** | `registerPassword`, `googleSignup`, `accountDeletion`, `email`, `onboarding`, `onboarding.database` | Força da senha no cadastro (zxcvbn), configuração do "Entrar com Google", o que é apagado antes de excluir a conta, envio de e-mail na Vercel e a API do guia de primeiros passos (esta última também contra Postgres real, opt-in). |
+| **Conta e autenticação** | `registerPassword`, `googleSignup`, `authCallback`, `accountDeletion`, `email`, `onboarding`, `onboarding.database` | Força da senha no cadastro (zxcvbn), configuração do "Entrar com Google", a volta dos links do Better Auth (o link de nova senha vencido vai para `/forgot-password?error=INVALID_TOKEN`), o que é apagado antes de excluir a conta, envio de e-mail na Vercel e a API do guia de primeiros passos (esta última também contra Postgres real, opt-in). |
+| **Minimização de dados (LGPD)** | `dataMinimization` | Sessão e cookie sem CPF, documento ou telefone, conta do Google gravada sem os tokens, empresa sem campos de documento e formulário público e cadastro sem CPF. |
 | **Isolamento multi-tenant** | `tenantScope` | O filtro por `enterprise_id` que a aplicação força em toda consulta. |
 | **Empresa e coleta (QR Code, link e NFC)** | `enterprise-controller`, `collection-points-qr-controller`, `qrcode-feedback`, `commentField` | Controllers da empresa e dos pontos de coleta, a coleta pública de feedback (`POST /api/public/qrcode/feedback`, com o canal de chegada e o anti-spam por dispositivo) e o campo de comentário por escopo. |
 | **Feedbacks e métricas** | `feedbacks`, `customers`, `customersSql`, `channelBreakdown`, `commentParticipation`, `heatmap`, `heatmapSql`, `timeline`, `timelineSql`, `period`, `scopeMetrics`, `questionsRatingWeight` | Listagem protegida de feedbacks, clientes que voltam, canais de chegada, participação nos comentários, dias e horários de pico, movimento no tempo, período das métricas, métricas do escopo e o peso de cada pergunta na nota — os arquivos `*Sql` conferem o SQL gerado. |

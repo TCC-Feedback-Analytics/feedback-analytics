@@ -48,7 +48,7 @@
 
 **Cenários a cobrir:**
 
-- **[CT-UC03-01]** 📝 *Planejado / não implementado* - Caminho feliz: gestor informa e-mail válido, recebe link, acessa a tela de redefinição, define nova senha e consegue fazer login com ela. Sem cobertura E2E (depende de e-mail real).
-- **[CT-UC03-02]** 📝 *Planejado / não implementado* - Exceção — e-mail inexistente: informar e-mail não cadastrado deve exibir a mesma mensagem genérica de sucesso (sem revelar que não existe). Sem cobertura E2E.
+- **[CT-UC03-01]** ✅ *Coberto manual (runbook)* - Caminho feliz: gestor informa e-mail válido, recebe link, acessa a tela de redefinição, define nova senha e consegue fazer login com ela. No ambiente local, o e-mail chega no Mailpit.
+- **[CT-UC03-02]** ✅ *Coberto manual (runbook)* - Exceção — e-mail inexistente: informar e-mail não cadastrado deve exibir a mesma mensagem genérica de sucesso (sem revelar que não existe).
 - **[CT-UC03-03]** 🔵 *Unidade já atende* - Exceção — link expirado: abrir um link de redefinição vencido ou já usado leva a `/forgot-password?error=INVALID_TOKEN` com o aviso "O link de redefinição expirou ou já foi usado. Peça um novo abaixo.". Coberto pelos testes do callback no gateway (`src/tests/authCallback.test.ts`) e da tela na Web (`pages/tests/forgotPassword.test.tsx`).
-- **[CT-UC03-04]** 🔵 *Unidade já atende* - Exceção — senhas divergentes: digitar senhas diferentes nos dois campos deve bloquear o envio com mensagem de inconsistência.
+- **[CT-UC03-04]** ✅ *Coberto manual (runbook)* - Exceção — senhas divergentes: digitar senhas diferentes nos dois campos deve bloquear o envio com "As senhas não coincidem". A regra existe no schema dos contratos, mas nenhum teste automatizado a confere.

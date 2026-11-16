@@ -15,6 +15,7 @@ Estes cenários substituem a suíte automatizada que rodava contra o Postgres lo
 2. Garanta o `.env` local. Valores mínimos (ver `.env.example`):
    - `DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/feedback`
    - `BETTER_AUTH_SECRET=<qualquer segredo>` e `BETTER_AUTH_URL=http://localhost:3000`
+   - `PUBLIC_SITE_URL=http://localhost:5173` (o `.env.example` traz a variável vazia; vazia, os links de confirmação e de recuperação voltam para a API, e não para a Web)
    - `IA_ANALYZE_EXECUTION_MODE=local` (para os fluxos de IA)
    - `IA_CONFIG_ENCRYPTION_KEY=<gere com: openssl rand -base64 32>` (cifra a chave OpenRouter; sem ela, salvar a chave responde 500)
    - `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_TEST_ENTERPRISE_ID` (obrigatórios — sem eles o `db:reset` falha).
@@ -47,8 +48,8 @@ Defina no shell (Git Bash) para encurtar os exemplos:
 BASE=http://localhost:3000/api
 ENT_A=aaaaaaaa-0000-0000-0000-000000000001
 ENT_B=bbbbbbbb-0000-0000-0000-000000000001
-QR_A=cccccccc-0000-0000-0000-0000000000aa      # ponto QR "Geral A"
-QR_B=cccccccc-0000-0000-0000-0000000000bb      # ponto QR "Geral B"
+QR_A=cccccccc-0000-0000-0000-0000000000aa      # ponto QR "QR Geral A"
+QR_B=cccccccc-0000-0000-0000-0000000000bb      # ponto QR "QR Geral B"
 Q_A1=dddddddd-0000-0000-0000-0000000000a1      # pergunta COMPANY A, ordem 1
 Q_A2=dddddddd-0000-0000-0000-0000000000a2      # pergunta COMPANY A, ordem 2
 ```
@@ -75,8 +76,8 @@ docker exec -it feedback-api-db psql -U postgres -d feedback -c "SELECT ..."
 
 ### Dataset determinístico do seed (resumo)
 
-- **Empresa A**: 5 feedbacks com notas 5, 4, 2, 3, 5 (soma 19 → média 3,8); 3 deles com análise de IA (2 `positive`, 1 `negative`); 2 perguntas COMPANY ativas; 1 ponto QR "Geral A" ativo; 1 relatório de insights COMPANY cujo resumo cita "atendimento".
-- **Empresa B**: 2 feedbacks com notas 5 e 1 (média 3); nenhuma análise de IA; nenhuma pergunta; 1 ponto QR "Geral B" ativo; 1 relatório de insights COMPANY cujo resumo cita "corte".
+- **Empresa A**: 5 feedbacks com notas 5, 4, 2, 3, 5 (soma 19 → média 3,8); 3 deles com análise de IA (2 `positive`, 1 `negative`); 2 perguntas COMPANY ativas; 1 ponto QR "QR Geral A" ativo; 1 relatório de insights COMPANY cujo resumo cita "atendimento".
+- **Empresa B**: 2 feedbacks com notas 5 e 1 (média 3); nenhuma análise de IA; nenhuma pergunta; 1 ponto QR "QR Geral B" ativo; 1 relatório de insights COMPANY cujo resumo cita "corte".
 - Nas duas: nenhum feedback com canal (`channel` nulo), nenhuma configuração de IA (sem chave OpenRouter), nenhum campo de comentário configurado (vale o convite padrão) e nenhum diagnóstico. A empresa A tem os três campos de contexto preenchidos e perguntas COMPANY próprias (não as padrão).
 - Invariante central de **todas** as seções: **isolamento por `enterprise_id`** — nenhum tenant enxerga dados do outro.
 
@@ -152,12 +153,12 @@ Todos sob `$BASE/public/auth`. Valores de erro são os que o teste verifica.
 | E-mail não verificado (RNE-014) | registre um usuário e **não** confirme; `POST /login` | **401**, `error` = `invalid_credentials`; o corpo **não** pode conter `confirm` nem `verificad` (anti-enumeração) |
 | Payload inválido no login | `POST /login` `{"email":"nao-eh-email","password":"123"}` | **400**, `error` = `invalid_payload` |
 | Register com e-mail já usado | `POST /register` com e-mail existente (e um telefone livre) | **200**, `{"ok":true,"message":"confirmation_required"}` (anti-enumeração) |
-| Register com telefone já usado | `POST /register` com `phone` já existente | **409**, `error` = `phone_taken`. O telefone é conferido **antes** do e-mail |
+| Register com telefone já usado | `POST /register` com `phone` já existente e uma senha forte | **409**, `error` = `phone_taken`, `message` = "Telefone já cadastrado.". A força da senha é conferida primeiro, depois o telefone e só então o e-mail |
 | Register com senha fraca | `POST /register` com senha de 10+ caracteres e nota abaixo de 4 no zxcvbn (ex.: uma palavra comum repetida) | **400**, `error` = `password_too_weak` |
 | Register payload inválido | `POST /register` `{"email":"x"}` | **400**, `error` = `invalid_payload` |
 | Forgot-password (sempre 200) | `POST /forgot-password` `{email}` | **200**, `{"ok":true,"message":"Se este e-mail estiver cadastrado, você receberá as instruções em breve."}` |
 | Forgot-password e-mail inválido | `POST /forgot-password` `{"email":"nao-eh-email"}` | **400**, `error` = `invalid_payload` |
-| Resend-confirmation (sempre 200) | `POST /resend-confirmation` `{email}` com um e-mail que ainda não pediu reenvio | **200**, `{"ok":true,"message":"Se existir uma conta pendente...","retryAfterSeconds":60}`, com ou sem conta pendente |
+| Resend-confirmation (sempre 200) | `POST /resend-confirmation` `{email}` com um e-mail que ainda não pediu reenvio | **200**, `{"ok":true,"message":"Se existir uma conta pendente para este e-mail, enviaremos uma nova confirmação.","retryAfterSeconds":60}`, com ou sem conta pendente |
 | Resend-confirmation repetido | repita a mesma chamada logo em seguida | **429**, `error` = `rate_limited`, `retryAfterSeconds` no corpo e header `Retry-After` com o mesmo valor (use `curl -i`) |
 | Resend-confirmation e-mail inválido | `POST /resend-confirmation` `{"email":"nao-eh-email"}` | **400**, `error` = `invalid_payload` |
 | Logout | `POST /logout` com cookie de sessão | **204** (sem corpo) |
@@ -260,7 +261,7 @@ Cobre perfil (get/patch por usuário) e o upsert/patch transacional de `collecti
 
 **Objetivo:** atualizar apenas os campos enviados, preservando o resto.
 **Passos:** `PATCH $BASE/protected/user/enterprise` com `{"terms_version":"v2"}`.
-**Resultado esperado:** 200; `enterprise.terms_version` = `"v2"`; `enterprise.terms_accepted_at` **inalterado**. (Campos aceitos: `terms_version`, de 1 a 32 caracteres, e `terms_accepted_at`, data ISO 8601. Corpo vazio ou só com campos desconhecidos, como o antigo `account_type`, → **400** `invalid_payload`.)
+**Resultado esperado:** 200; `enterprise.terms_version` = `"v2"`; `enterprise.terms_accepted_at` **inalterado**. (Campos aceitos: `terms_version`, de 1 a 32 caracteres, e `terms_accepted_at`, data e hora ISO 8601 em UTC, com `Z` (ex.: `2026-11-16T13:00:00Z`; só a data ou com fuso `-03:00` → **400**). Corpo vazio ou só com campos desconhecidos, como o antigo `account_type`, → **400** `invalid_payload`.)
 
 ### Upsert cria collecting + catálogo + 3 perguntas COMPANY
 
@@ -291,7 +292,7 @@ SELECT status FROM public.catalog_items WHERE name = 'P2'; -- INACTIVE
 ### Subpergunta ausente vira INACTIVE (soft-delete)
 
 **Objetivo:** remover uma subpergunta no PATCH a **desativa** (preserva a linha), não apaga.
-**Passos:** crie Q1 com 1 subpergunta ativa; depois `PATCH` reenviando Q1 **sem** a subpergunta.
+**Passos:** crie Q1 com 1 subpergunta ativa; depois `PATCH` reenviando as 3 perguntas em `company_feedback_questions`, com Q1 **sem** a subpergunta (com menos de 3 perguntas, ordem repetida ou texto fora de 20 a 150 caracteres, a resposta é **400** `upsert_failed`).
 **Resultado esperado:** no snapshot, a subpergunta continua existindo porém com `is_active=false`.
 
 ### Atomicidade: rollback quando a pergunta é inválida
@@ -333,7 +334,7 @@ Cobre o QR "geral" (COMPANY) e o QR por item de catálogo: ativar/reusar/desativ
 4. `POST .../collection-points/qr/catalog/disable` com o mesmo `catalog_item_id`.
 5. `POST .../collection-points/qr/catalog/enable` de novo.
 
-**Resultado esperado:** passo 1 lista o item (`active:false`, `collection_point_id:null`); passo 2 → `{"collection_point_id":<uuid>,"active":true}`; passo 3 → **mesmo `collection_point_id`** (reusa); passo 4 → `{"active":false}` e no catálogo o item fica `active:false` (ponto `INACTIVE`); passo 5 → **mesmo `collection_point_id`** e existe **apenas um** ponto para o item.
+**Resultado esperado:** passo 1 lista o item (`active:false`, `collection_point_id:null`); passo 2 → `{"catalog_item_id":<id>,"collection_point_id":<uuid>,"active":true}`; passo 3 → **mesmo `collection_point_id`** (reusa); passo 4 → `{"catalog_item_id":<id>,"active":false}` e no catálogo o item fica `active:false` (ponto `INACTIVE`); passo 5 → **mesmo `collection_point_id`** e existe **apenas um** ponto para o item.
 
 ### saveCatalogQuestions — transacional, contagem variável
 
@@ -357,7 +358,7 @@ SELECT count(*) FROM public.questions_of_feedbacks WHERE is_active = false; -- >
 
 **Objetivo:** um gestor não acessa item de catálogo de outra empresa.
 **Passos:** autenticado como gestor de A, `POST .../collection-points/qr/catalog/enable` com um `catalog_item_id` que pertence a **outra** empresa.
-**Resultado esperado:** **404** (`getCatalogItemForEnterprise` retorna nada para o tenant errado) — o item não vaza entre empresas.
+**Resultado esperado:** **404** `collection_point_error` (`getCatalogItemForEnterprise` retorna nada para o tenant errado; o mesmo vale para item `INACTIVE`) — o item não vaza entre empresas.
 
 ---
 
@@ -422,6 +423,8 @@ Endpoint **público**: `POST $BASE/public/qrcode/feedback`. Escrita atômica (di
 
 > O "dispositivo" é um fingerprint `md5(user-agent | ip)`, sem o dia. Via `curl` do mesmo host, o fingerprint se repete em qualquer dia (o limite de um envio por ponto vira à meia-noite de Brasília); troque o header `User-Agent` para simular outro dispositivo.
 
+> **Atenção (16/11/2026):** o corpo é validado com `z.uuidv4()` (`@feedback/lib-shared`, `schemas/public/feedbackSchema.ts`). Os IDs fixos do seed (`$ENT_A`, `$QR_A`, `$Q_A1`, `$Q_A2`, `$ENT_B`, `$QR_B`) não são UUID v4 (o 3º grupo começa com `0`), e o envio com eles volta **400** `invalid_payload` antes de qualquer gravação. A troca dos IDs do seed por UUID v4 está em andamento no Gateway. Até lá, faça os envios desta seção com um gestor recém-registrado: ative o QR geral dele e use o `id`, o `collection_point_id` e os `questions[].id` de `GET $BASE/public/enterprise/<id da empresa nova>`. A empresa nova começa sem feedbacks e com 3 perguntas, então as contagens esperadas mudam.
+
 ### Feedback anônimo com respostas (empresa A)
 
 **Objetivo:** criar dispositivo + feedback + respostas numa transação.
@@ -456,7 +459,7 @@ curl -X POST "$BASE/public/qrcode/feedback" -H 'Content-Type: application/json' 
 ### Anti-adulteração / atomicidade (rollback)
 
 **Objetivo:** resposta com `question_id` que não pertence ao conjunto ativo não persiste nada.
-**Passos:** `POST` para `$ENT_A` com uma `answers` referenciando `99999999-9999-9999-9999-999999999999` (pergunta inexistente).
+**Passos:** `POST` para `$ENT_A` com uma `answers` referenciando `99999999-9999-4999-8999-999999999999` (pergunta inexistente, mas no formato UUID v4 que o schema exige).
 **Resultado esperado:** **400** (`invalid_payload`); **nenhum** feedback ou dispositivo é criado (A continua com 5 feedbacks). No teste de repositório isso dispara `QrFeedbackWriteError` com rollback; via HTTP a validação barra antes, com o mesmo invariante: sem feedback órfão.
 
 ### Isolamento de dispositivo e de cliente entre empresas
@@ -637,7 +640,7 @@ Cobre `resolveScopeCollectionPointIds`, exposto pelos parâmetros `scope_type` e
 
 ## Análise de IA — leituras de escopo (`iaAnalyze.itest`)
 
-Cobre as leituras do `iaAnalyze.repository` (feedbacks para análise, já-analisados, contexto e relatórios), que alimentam `POST $BASE/protected/ia-analyze/analyze-raw` e `POST .../regenerate-insights`. As contagens são observáveis pelos endpoints determinísticos abaixo. Os endpoints de escrita `analyze-raw`/`regenerate-insights` **sempre enfileiram** e respondem **202** `{"jobId":...,"status":"queued"}`; o resultado sai no job (`GET $BASE/protected/ia-analyze/jobs/<jobId>`), que só chega a `completed` com a chave OpenRouter da empresa configurada e o `ia-analyze` no ar (rode com `IA_ANALYZE_EXECUTION_MODE=local`). Com o seed (sem chave e com só 5 feedbacks em A), o job termina `failed`, com o motivo em `errorCode`. `db:reset` antes.
+Cobre as leituras do `iaAnalyze.repository` (feedbacks para análise, já-analisados, contexto e relatórios), que alimentam `POST $BASE/protected/ia-analyze/analyze-raw` e `POST .../regenerate-insights`. As contagens são observáveis pelos endpoints determinísticos abaixo. Os endpoints de escrita `analyze-raw`/`regenerate-insights` **sempre enfileiram** e respondem **202** `{"jobId":...,"status":"queued"}` (se já houver um job ativo do mesmo tipo e escopo, devolvem esse job, com o status dele: `queued`, `running` ou `waiting_budget`); o resultado sai no job (`GET $BASE/protected/ia-analyze/jobs/<jobId>`), que só chega a `completed` com a chave OpenRouter da empresa configurada e o `ia-analyze` no ar (rode com `IA_ANALYZE_EXECUTION_MODE=local`). Com o seed (sem chave e com só 5 feedbacks em A), o job termina `failed`, com o motivo em `errorCode`. `db:reset` antes.
 
 ### Feedbacks para análise e já-analisados (A=5 / A=3)
 
@@ -782,6 +785,21 @@ Endpoints protegidos sob `$BASE/protected/user/ia-config` e `$BASE/protected/use
 4. `DELETE .../ia-config`.
 
 **Resultado esperado:** passo 1 → 200 `{"hasKey":true,"provider":"openrouter","model":...,"keyHint":"<4 últimos caracteres>"}`; passo 2 → `source` = `"user"` e `currentModelAvailable` = `true`; passo 3 → 200 com o modelo novo e `questionsGeneration` (os mesmos status do `retry`); passo 4 → 200 `{"hasKey":false,"provider":null,"model":null,"keyHint":null}`. O "Conectar com OpenRouter" de ponta a ponta (`openrouter.ai/auth` → `/user/openrouter/callback` → `connect`) precisa do navegador: faça pela Web, em Configuração de IA.
+
+---
+
+### Rotas que este runbook não cobre
+
+Existem no código e não têm passo aqui. A referência delas é o `docs/endpoints.md` do Gateway.
+
+- `GET /api/public/auth/callback?type=recovery…`: grava o cookie `ba_reset`; link vencido ou sem token redireciona para `<web>/forgot-password?error=INVALID_TOKEN`.
+- `PATCH /api/protected/user/password` (`{password, confirmPassword}`), o fim da recuperação de senha: 200 `{"ok":true,"message":"Senha redefinida com sucesso."}`, 400 `invalid_payload`, 400 `reset_password_weak` e 401 `reset_password_invalid_token`. O fluxo inteiro está no CT-UC03-01 do [runbook da Web](./manuais-web.md).
+- `POST /api/auth/send-verification-email`: o Gateway troca a rota nativa do Better Auth pelo reenvio com limite.
+- `PATCH /api/protected/user/metadados` (`{full_name}`), `POST /api/protected/user/phone/start` e `POST /api/protected/user/phone/verify`.
+- `GET /api/protected/user/feedbacks/timeline`, `/heatmap` e `/customers`, com os erros `invalid_period`, `invalid_timeline` e `timeline_too_many_points`; os filtros `start_date` e `end_date` das estatísticas, da análise e das perguntas; e o `?item=` da lista.
+- `GET /api/protected/ia-analyze/jobs`: lista os jobs ativos.
+- `POST /api/internal/worker/tick`: sem o token, 401 `unauthorized_worker_request`.
+- Erros do formulário público: 404 `collection_point_not_found` (inclui item `INACTIVE`) e 403 `DEVICE_BLOCKED`. No reenvio da confirmação, o 503 `service_unavailable`; na regeneração dos insights, o mínimo de 10 feedbacks já analisados (`insufficient_feedbacks_for_analysis`).
 
 ---
 

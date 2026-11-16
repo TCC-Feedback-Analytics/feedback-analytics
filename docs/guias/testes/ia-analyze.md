@@ -2,8 +2,8 @@
 
 Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço Serverless **IA Analyze**. O serviço recebe pedidos do API Gateway, chama o LLM da empresa (provedor, chave e modelo chegam nos headers `x-llm-*`; o Gateway configura o **OpenRouter**, e há também um adaptador **Gemini**) e devolve sentimentos estruturados, palavras-chave, aspectos, a síntese dos insights, o diagnóstico do escopo e as perguntas geradas para o formulário da empresa.
 
-!!! info "Conferido em 03/11/2026"
-    Inventário refeito contra o repositório: **13 arquivos** de teste. A versão anterior listava 6 arquivos e 46 testes e tratava o Gemini como único provedor. O número de testes muda a cada PR; o total atual sai no fim do `npm test`.
+!!! info "Conferido em 16/11/2026"
+    Inventário refeito contra o repositório: **13 arquivos** de teste. A versão anterior listava 6 arquivos e 46 testes e tratava o Gemini como único provedor. O número de testes muda a cada PR; o total atual sai no fim do `npm test` (148 em 16/11/2026).
 
 ---
 
@@ -14,7 +14,7 @@ Os testes do serviço IA utilizam o **Vitest** como motor de execução (`vitest
 > **Total: 13 arquivos de teste em `src/tests/`**
 
 !!! note "Sem suíte dependente de ambiente"
-    Todas as suítes do IA Analyze são **unitárias/de rota mockadas** e **seguem automatizadas no CI** (job `unit-tests` do `ci.yml`). O serviço não tem banco e não possui testes de integração ou e2e que dependam de ambiente real, portanto não foi afetado pela conversão dessas camadas em runbooks manuais — mudança que atingiu apenas o [API Gateway](./manuais-api-gateway.md) e o [Web (Playwright)](./manuais-web.md).
+    Todas as suítes do IA Analyze são **unitárias/de rota mockadas** e **seguem automatizadas no CI** (job `unit-tests` do `ci.yml`). O serviço não tem banco e não possui testes de integração ou e2e que dependam de ambiente real, portanto não foi afetado pela conversão dessas camadas em runbooks manuais — mudança que atingiu apenas o [API Gateway](./manuais-api-gateway.md) e o [Web](./manuais-web.md).
 
 ---
 

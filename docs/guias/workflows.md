@@ -30,9 +30,9 @@ O CI automático (lint, typecheck e testes de **unidade**; na Web, também o bui
 
 | Serviço (repo) | CI | Deploy | Alvo |
 |---|---|---|---|
-| `feedback-analytics-web` | lint + typecheck + build + testes unitários (Node 24) | `deploy-web.yml` (manual, só `main`, Node 20) | Site estático (CDN) |
-| `feedback-analytics-api-gateway` | lint + typecheck + testes unitários · smoke de migrations (Node 20) | `deploy-api.yml` (manual, só `main`, aplica as migrations antes) | Serverless Function |
-| `feedback-analytics-ia-analyze` | lint + typecheck + testes unitários (Node 20) | `deploy-ia-analyze.yml` (manual, só `main`) | Serverless Function |
+| `feedback-analytics-web` | lint + typecheck + build + testes unitários (Node 24) | `deploy-web.yml` (manual, só `main`, Node 24) | Site estático (CDN) |
+| `feedback-analytics-api-gateway` | lint + typecheck (Node 20) + testes unitários (Node 24) · smoke de migrations (Node 20) | `deploy-api.yml` (manual, só `main`, aplica as migrations antes) | Serverless Function |
+| `feedback-analytics-ia-analyze` | lint + typecheck + testes unitários (Node 22) | `deploy-ia-analyze.yml` (manual, só `main`) | Serverless Function |
 | `feedback-analytics` (docs) | `deploy-docs.yml` em pull request (só o build MkDocs `--strict`) | `deploy-docs.yml` (push a `main` que mexe na doc, ou manual) | GitHub Pages |
 
 Além deles, o API Gateway tem o `ia-worker.yml`, que chama o worker da fila de IA em produção a cada 5 minutos.
@@ -102,9 +102,9 @@ feature → developer → main
 
 Os passos concretos (steps, `npm ci`, config Vercel) vivem em cada repo, junto do código que validam. Em linhas gerais:
 
-- **CI (`ci.yml`)** — roda em push/PR nas branches protegidas (`main` e `developer`), em dois jobs paralelos. Os dois reescrevem `ssh→https` no git (para o `npm ci` baixar o `@feedback/lib-shared`, repositório público, sem token) e instalam as dependências. O job de qualidade roda lint + typecheck (`tsc -p tsconfig.ci.json --noEmit`, que exclui os testes) e, na Web, também `npm run build`; o job `unit-tests` roda o Vitest (`npm test` no Gateway e no IA Analyze, `npm run test -- run` na Web). Node 20 no Gateway e no IA Analyze, Node 24 na Web.
+- **CI (`ci.yml`)** — roda em push/PR nas branches protegidas (`main` e `developer`), em dois jobs paralelos. Os dois reescrevem `ssh→https` no git (para o `npm ci` baixar o `@feedback/lib-shared`, repositório público, sem token) e instalam as dependências. O job de qualidade roda lint + typecheck (`tsc -p tsconfig.ci.json --noEmit`, que exclui os testes) e, na Web, também `npm run build`; o job `unit-tests` roda o Vitest (`npm test` no Gateway e no IA Analyze, `npm run test -- run` na Web). No Gateway, o job de qualidade usa Node 20 e o `unit-tests` usa Node 24. O IA Analyze usa Node 22 e a Web, Node 24.
 - **Smoke de migrations (`schema-migrations.yml`, no api-gateway)** — em push/PR para `main` e `developer` que tocam `db/**`, `drizzle/**`, `scripts/db-local.mjs`, `docker-compose.yml`, `package.json`, `package-lock.json` ou o próprio workflow: sobe o Postgres do docker-compose no runner, roda `node scripts/db-local.mjs` (migrations + seed) e `npm run db:check` (`drizzle-kit check`) para garantir que `schema.ts` ↔ migrations batem. Não usa credenciais externas.
-- **Deploy (`deploy-*.yml`)** — `workflow_dispatch` manual com o campo `confirm_deploy` = `ok`, aceito **apenas na branch `main`**; roda `npm ci` e publica com a Vercel CLI (`npx vercel deploy --yes --prod --local-config vercel.json`), em Node 20. Por serviço:
+- **Deploy (`deploy-*.yml`)** — `workflow_dispatch` manual com o campo `confirm_deploy` = `ok`, aceito **apenas na branch `main`**; roda `npm ci` e publica com a Vercel CLI (`npx vercel deploy --yes --prod --token "$VERCEL_TOKEN" --local-config vercel.json`). Usa Node 20 no Gateway, Node 22 no IA Analyze e Node 24 na Web. Por serviço:
     - **API Gateway (`deploy-api.yml`)** — gera o bundle com `esbuild` (`index.ts → _bundle.cjs`) e executa `npm run db:migrate` com o secret `DATABASE_URL` antes de publicar; secret ausente ou migration com erro interrompem o deploy. Execuções na mesma branch ficam em fila, sem cancelar a que está em andamento.
     - **Web (`deploy-web.yml`)** — o workflow não builda: envia o código e a Vercel faz o build, por isso as variáveis `VITE_*` ficam no projeto da Vercel. Um deploy novo cancela o anterior.
     - **IA Analyze (`deploy-ia-analyze.yml`)** — sem bundle: o `@vercel/node` roda `src/index.ts` direto. Um deploy novo cancela o anterior.
@@ -138,7 +138,7 @@ Os secrets são configurados em cada repositório GitHub em **Settings → Secre
 | 1 | `feature/*` | Desenvolvimento local |
 | 2 | PR → `developer` | CI roda automaticamente: lint + typecheck + testes unitários (+ build na Web; + smoke de migrations no Gateway, quando a PR mexe no banco). Merge bloqueado se falhar. |
 | 3 | `developer` (integração) | Código integrado. Antes de promover, o time roda os [runbooks manuais](testes/manuais-web.md) conforme necessário. |
-| 4 | PR → `main` | CI roda novamente (lint + typecheck + unit, + build na Web). Merge bloqueado se falhar. |
+| 4 | PR → `main` | CI roda novamente (lint + typecheck + unit, + build na Web; + smoke de migrations no Gateway, quando a PR mexe no banco). Merge bloqueado se falhar. |
 | 5 | `main` (produção) | Deploy manual via `workflow_dispatch` com confirmação `ok` → deploy `--prod` na Vercel do serviço alterado (no Gateway, depois de aplicar as migrations pendentes) |
 
 > **Cada serviço é deployado independentemente** — deploya-se somente o frontend sem tocar o API Gateway ou o serviço de IA.

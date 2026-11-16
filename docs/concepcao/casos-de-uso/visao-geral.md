@@ -131,7 +131,7 @@ A suíte de testes E2E do Playwright (`feedback-analytics-web/e2e/`) foi **remov
 |---|---|
 | [uc-01-cadastro-conta.md](uc-01-cadastro-conta.md) | ✅ E-mail duplicado, reenvio da confirmação e celular duplicado (o cenário de documento duplicado ficou obsoleto: o cadastro não pede mais CPF/CNPJ) |
 | [uc-02-login.md](uc-02-login.md) | ✅ 3 cenários (entrar com o Google é condicional) |
-| [uc-03-recuperacao-senha.md](uc-03-recuperacao-senha.md) | ❌ Fora do runbook do Web (unidade / manual pontual) |
+| [uc-03-recuperacao-senha.md](uc-03-recuperacao-senha.md) | ✅ Pedir o link e trocar a senha, e-mail não cadastrado e senhas diferentes (o link vencido é conferido por testes de unidade) |
 | [uc-04-envio-feedback-qrcode.md](uc-04-envio-feedback-qrcode.md) | ✅ 3 cenários (envio válido é condicional) |
 | [uc-05-geracao-qrcode.md](uc-05-geracao-qrcode.md) | ✅ Smoke + ativar e pausar a coleta, copiar o link e o endereço da etiqueta, campo de comentário |
 | [uc-06-ativacao-tipos-feedback.md](uc-06-ativacao-tipos-feedback.md) | 🔎 Apenas smoke (carregamento da página) |

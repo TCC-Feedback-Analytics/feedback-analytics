@@ -54,6 +54,6 @@ O link fixo "Problemas para entrar?" abre um dialog com "Redefinir senha" (UC-03
 
 - **[CT-UC02-01]** ✅ *Coberto manual (runbook)* - Caminho feliz: gestor insere credenciais válidas, clica em "Entrar" e é redirecionado para `/user/dashboard`, com o aviso "Login realizado com sucesso.".
 - **[CT-UC02-02]** ✅ *Coberto manual (runbook)* - Exceção — credenciais inválidas: inserir senha errada deve exibir "E-mail ou senha incorretos.", abrir sozinho o dialog "Problemas para entrar?" e manter a URL em `/login`.
-- **[CT-UC02-03]** 🚫 *Não é possível testar com Playwright* - Exceção — rate limit: após múltiplas tentativas incorretas, deve exibir mensagem de bloqueio temporário.
-- **[CT-UC02-04]** 🔵 *Unidade já atende* - Exceção — campos vazios: tentar enviar o formulário sem preencher os campos deve destacá-los como obrigatórios.
+- **[CT-UC02-03]** ❌ *Cenário não coberto* - Exceção — rate limit: após múltiplas tentativas incorretas, deve exibir mensagem de bloqueio temporário. Hoje o login ainda não tem limite de tentativas.
+- **[CT-UC02-04]** 📝 *Planejado / não implementado* - Exceção — campos vazios: tentar enviar o formulário sem preencher os campos deve destacá-los como obrigatórios. Nenhum teste de unidade confere esse bloqueio hoje.
 - **[CT-UC02-05]** ✅ *Coberto manual (runbook, condicional)* - Fluxo alternativo — entrar com o Google: uma conta Google nova clica em "Continuar com Google", cai em "Complete seu cadastro" (`/auth/complete-signup`), informa o celular, aceita os termos, clica em "Concluir cadastro" e vai para o dashboard. Só se aplica com o Google ligado na Web e no gateway.

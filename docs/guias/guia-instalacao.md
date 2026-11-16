@@ -8,7 +8,7 @@ Certifique-se de ter instalado:
 
 | Ferramenta | Versão Mínima | Como verificar |
 |---|---|---|
-| **Node.js** | 20.x | `node -v` |
+| **Node.js** | 22.12 | `node -v` |
 | **npm** | 10.x | `npm -v` |
 | **Git** | — | `git --version` |
 | **Docker Desktop** | — | `docker --version` — sobe o banco local do API Gateway (Postgres na porta **5433**) e o **Mailpit** (SMTP local, captura os e-mails de auth) pelo `docker-compose.yml` do Gateway |
@@ -26,7 +26,7 @@ git clone https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gatew
 git clone https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze.git
 ```
 
-> Os serviços consomem o pacote público [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts) por **tag git** declarada no `package.json` de cada repo — hoje `v1.8.0` no Gateway e na Web e `v1.7.0` no IA Analyze. O `npm install` já o baixa e compila; não há token envolvido.
+> Os serviços consomem o pacote público [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts) por **tag git** declarada no `package.json` de cada repo — hoje `v1.9.0` na Web, `v1.8.0` no Gateway e `v1.7.0` no IA Analyze. O `npm install` já o baixa e compila; não há token envolvido.
 
 ---
 
@@ -67,7 +67,7 @@ Partindo do `.env.example`, ajuste para o ambiente local:
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/feedback
 
 # Autenticação — Better Auth
-BETTER_AUTH_SECRET=segredo_aleatorio_aqui   # gere com: openssl rand -base64 32 (SEM ele o app NÃO sobe)
+BETTER_AUTH_SECRET=segredo_aleatorio_aqui   # gere com: openssl rand -base64 32 (obrigatório)
 BETTER_AUTH_URL=http://localhost:3000
 PUBLIC_SITE_URL=http://localhost:5173
 
@@ -87,16 +87,16 @@ E2E_TEST_ENTERPRISE_ID=aaaaaaaa-0000-0000-0000-000000000001
 O SMTP já vem apontado para o Mailpit (`SMTP_HOST=127.0.0.1`, `SMTP_PORT=1025`, `SMTP_SECURE=false`, sem usuário e senha), e o CORS já aceita `http://localhost:5173` sem configuração. As demais variáveis (worker da fila, limites da IA, Google, reenvio de e-mail) podem ficar como estão no `.env.example`. Detalhes do banco local no [`db/local/README.md`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/db/local/README.md) do Gateway.
 
 !!! warning "`BETTER_AUTH_SECRET` é obrigatório"
-    Sem `BETTER_AUTH_SECRET` o api-gateway **não sobe**. Gere um valor aleatório com `openssl rand -base64 32` e mantenha-o secreto.
+    Sem `BETTER_AUTH_SECRET` o api-gateway **não sobe** em produção. No local, o Better Auth usa um segredo padrão inseguro e o `db:seed:e2e` falha. Gere um valor aleatório com `openssl rand -base64 32` e mantenha-o secreto.
 
-!!! warning "Preencha `IA_ANALYZE_REMOTE_URL` no local"
-    O `.env.example` traz `IA_ANALYZE_REMOTE_URL` e `IA_ANALYZE_REMOTE_PREVIEW_ALIAS_URL` vazias: assim o Gateway local chama o IA Analyze em `http://localhost:4100`. Preenchida, a variável de preview teria prioridade sobre o localhost.
+!!! warning "Deixe `IA_ANALYZE_REMOTE_PREVIEW_ALIAS_URL` vazia no local"
+    O `.env.example` traz `IA_ANALYZE_REMOTE_URL` e `IA_ANALYZE_REMOTE_PREVIEW_ALIAS_URL` vazias. Com as duas vazias, o Gateway local chama o IA Analyze em `http://localhost:4100`. Se só a de preview estiver preenchida, o Gateway chama esse endereço em vez do localhost.
 
 !!! note "Autenticação saiu do Supabase Auth → Better Auth"
     O login/cadastro/sessão usam **Better Auth**, montado no Gateway, com a sessão em cookie httpOnly. O Supabase ficou só como **provedor do Postgres** em produção. As tabelas do Better Auth (`user`, `session`, `account`, `verification`) ficam no mesmo Postgres e são criadas pelas migrations. Não use mais `SUPABASE_URL`, `SUPABASE_ANON_KEY` nem `AUTH_PROVIDER`.
 
 !!! tip "Produção (Vercel)"
-    As variáveis de runtime ficam nas Settings do projeto Vercel de cada serviço. No Gateway de produção: `BETTER_AUTH_URL` é a URL da **Web** (que repassa `/api/*`), `COOKIE_CROSS_SITE=false`, `IA_ANALYZE_REMOTE_URL` com a URL do IA Analyze, `WORKER_TICK_TOKEN` preenchido e `CORS_ALLOWED_ORIGINS` com `https://feedback-analytics-web.vercel.app`. O e-mail sai pela **Brevo**: `SMTP_HOST=smtp-relay.brevo.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER=<login SMTP da Brevo>`, `SMTP_PASS=<chave SMTP da Brevo, não a API key>` e `MAIL_FROM=<remetente verificado na Brevo>`.
+    As variáveis de runtime ficam nas Settings do projeto Vercel de cada serviço. No Gateway de produção: `BETTER_AUTH_URL` é a URL da **Web** (que repassa `/api/*`), `COOKIE_CROSS_SITE=false`, `PUBLIC_SITE_URL` com a URL da Web, `IA_ANALYZE_EXECUTION_MODE=remote`, `IA_ANALYZE_REMOTE_URL` com a URL do IA Analyze e `IA_ANALYZE_REMOTE_TOKEN` igual ao do IA Analyze, `WORKER_TICK_TOKEN` preenchido e `CORS_ALLOWED_ORIGINS` com `https://feedback-analytics-web.vercel.app`. O e-mail sai pela **Brevo**: `SMTP_HOST=smtp-relay.brevo.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER=<login SMTP da Brevo>`, `SMTP_PASS=<chave SMTP da Brevo, não a API key>` e `MAIL_FROM=<remetente verificado na Brevo>`.
 
 ### `feedback-analytics-ia-analyze/.env`
 
@@ -109,7 +109,7 @@ PORT=4100
 O provedor, o modelo e a chave OpenRouter não ficam no `.env` do IA Analyze. Cada empresa configura sua chave no app; o Gateway a armazena cifrada e envia pelos headers internos `x-llm-*`.
 
 !!! warning "Token compartilhado (nomes diferentes nos dois lados)"
-    No API Gateway o token interno se chama `IA_ANALYZE_REMOTE_TOKEN`; no IA Analyze, `IA_ANALYZE_INTERNAL_TOKEN`. Ambos devem ter o **mesmo valor** — o Gateway o envia no header `x-ia-analyze-token` e o serviço valida. Use uma string longa e aleatória (mínimo 32 caracteres). No local, com `IA_ANALYZE_INTERNAL_TOKEN` vazio, `analyze` e `synthesize-insights` ficam abertos; na Vercel, sem ele, `diagnose-scope` e `generate-company-questions` respondem `503`.
+    No API Gateway o token interno se chama `IA_ANALYZE_REMOTE_TOKEN`; no IA Analyze, `IA_ANALYZE_INTERNAL_TOKEN`. Ambos devem ter o **mesmo valor** — o Gateway o envia no header `x-ia-analyze-token` e o serviço valida. Use uma string longa e aleatória (mínimo 32 caracteres). No local, com `IA_ANALYZE_INTERNAL_TOKEN` vazio, as quatro rotas internas ficam abertas. Na Vercel ou com `NODE_ENV=production`, sem ele, todas respondem `503 internal_auth_not_configured`.
 
 !!! note "`DATABASE_URL` em produção — use o Transaction Pooler"
     Na Vercel, o Gateway usa a conexão **Transaction Pooler** do Supabase (`...pooler.supabase.com:6543`, com `prepare: false`), não a conexão direta (`db.[ref].supabase.co`), e entra com o papel `feedback_app`, que só lê e escreve dados. O secret `DATABASE_URL` do GitHub, que aplica as migrations no deploy, usa o `postgres`. Ver [CI/CD — Workflows e Deploys](workflows.md).
@@ -127,7 +127,7 @@ npm run db:reset        # recria o schema pelas migrations + seed determinístic
 
 O `db:reset` roda, nesta ordem:
 
-1. `node scripts/db-local.mjs` — apaga e recria os schemas, aplica as migrations (`drizzle-kit migrate`) e o seed `db/local/seed.sql`: duas empresas (A `aaaaaaaa-0000-0000-0000-000000000001` e B `bbbbbbbb-0000-0000-0000-000000000001`), com pontos de coleta, perguntas, feedbacks, análises e um relatório de insights cada.
+1. `node scripts/db-local.mjs` — apaga e recria os schemas, aplica as migrations (`drizzle-kit migrate`) e o seed `db/local/seed.sql`: duas empresas (A `aaaaaaaa-0000-0000-0000-000000000001` e B `bbbbbbbb-0000-0000-0000-000000000001`), com pontos de coleta, feedbacks e um relatório de insights cada. Só a empresa A tem perguntas e análises.
 2. `npm run db:seed:e2e` — cria o usuário de teste do Better Auth (e-mail verificado e senha) com `E2E_TEST_EMAIL` e `E2E_TEST_PASSWORD`, com telefone (`E2E_TEST_PHONE`; vazio, gerado a partir do e-mail) para o login não cair em "Complete seu cadastro", e o vincula à empresa de `E2E_TEST_ENTERPRISE_ID` (a empresa A serve). Exige também `DATABASE_URL` e `BETTER_AUTH_SECRET`; sem essas variáveis o `db:reset` falha neste passo, com o schema e o seed SQL já aplicados. Pode ser rodado sozinho e é idempotente.
 
 Depois, entre no app com o e-mail e a senha do usuário de teste.
@@ -194,13 +194,15 @@ Se ambos retornarem `ok: true`, o ambiente está funcionando. Abra http://localh
 
 ## Troubleshooting
 
+A análise e a regeneração de insights sempre respondem `202`. Nelas, `ia_config_required` e os dois códigos `422` aparecem no `errorCode` do job. Como status HTTP, só aparecem no diagnóstico do escopo.
+
 | Erro | Causa | Solução |
 |---|---|---|
 | `409 ia_config_required` | Empresa sem chave OpenRouter | Configure a chave e o modelo em **Configuração de IA** |
 | `401 unauthorized_internal_request` | Tokens internos diferentes | Iguale `IA_ANALYZE_REMOTE_TOKEN` (gateway) e `IA_ANALYZE_INTERNAL_TOKEN` (ia-analyze) |
 | `422 collecting_data_required_for_analysis` | Empresa sem contexto para a IA | Preencha o objetivo da empresa, o objetivo analítico e o resumo do negócio |
 | `422 insufficient_feedbacks_for_analysis` | Menos de 10 feedbacks no escopo | Colete mais feedbacks antes de analisar |
-| `ECONNREFUSED :4100` | IA Analyze não está rodando | Suba o serviço `feedback-analytics-ia-analyze` |
+| `failed_remote_ia_analyze_request` no job de IA | IA Analyze não está rodando | Suba o serviço `feedback-analytics-ia-analyze` |
 | `ECONNREFUSED 127.0.0.1:5433` | Banco local fora do ar | Abra o Docker Desktop e rode `npm run db:local:up` no Gateway |
 | `db:reset` falha no `db:seed:e2e` | Faltam variáveis do usuário de teste | Preencha `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_TEST_ENTERPRISE_ID` e `BETTER_AUTH_SECRET` e rode `npm run db:seed:e2e` |
 | `ENOTFOUND db.[ref].supabase.co` | `DATABASE_URL` de produção usando conexão direta | Troque pela conexão **Transaction Pooler** (`...pooler.supabase.com:6543`) |

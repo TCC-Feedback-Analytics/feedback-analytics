@@ -1,7 +1,7 @@
 # Testes Manuais — Web (Casos de Uso)
 
 !!! note "Por que este runbook existe"
-    A suíte **Playwright (e2e)** do `feedback-analytics-web` — que rodava contra o ambiente **homolog** deployado + Supabase, além do gate `e2e-main.yml` — foi **removida**. A cobertura dos casos de uso (UC-01…UC-12) passou a ser **manual**, reproduzível por este roteiro clicando na aplicação. Os testes **unitários** (Vitest/jsdom) continuam automatizados no CI.
+    A suíte **Playwright (e2e)** do `feedback-analytics-web` — que rodava contra o ambiente **homolog** deployado + Supabase, além do gate `e2e-main.yml` — foi **removida**. A cobertura dos casos de uso (UC-01 a UC-12) passou a ser **manual**, reproduzível por este roteiro clicando na aplicação. Os testes **unitários** (Vitest/jsdom) continuam automatizados no CI.
 
 Cada seção corresponde a um caso de uso (UC) e a um ou mais casos de teste (CT). Execute os passos clicando na aplicação e confira os resultados esperados.
 
@@ -87,7 +87,7 @@ Rota: `/register` (título "Crie sua conta") · Executar **deslogado**. Campos d
   5. Preencha **Senha** e **Confirmar senha** com a senha de apoio.
   6. Marque o checkbox de **termos**.
   7. Clique em **Criar Conta** (submit).
-- **Resultado esperado:** aparece o aviso de erro **"Telefone ja cadastrado."** (assim, sem acento), com "Informe outro numero para continuar o cadastro.", e o formulário continua na tela.
+- **Resultado esperado:** aparece o aviso de erro **"Telefone já cadastrado."**, com "Informe outro número para continuar o cadastro.", e o formulário continua na tela.
 
 ---
 
@@ -104,7 +104,7 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
   2. Preencha **E-mail** com o e-mail de teste.
   3. Preencha **Senha** com a senha de teste.
   4. Clique em **Entrar**.
-- **Resultado esperado:** a URL muda para `/user/dashboard`, aparece o aviso **"Login realizado com sucesso."** e a saudação **"Olá,"** fica visível.
+- **Resultado esperado:** a URL muda para `/user/dashboard` (o `?login=success` sai sozinho) e aparece o aviso **"Login realizado com sucesso."** ("Bem-vindo de volta.").
 
 ### CT-UC02-02 — Senha incorreta exibe mensagem de erro
 
@@ -126,6 +126,40 @@ Rota: `/login` · Executar **deslogado**. Campos: `E-mail`, `Senha`.
   2. Entre com a conta Google e autorize.
   3. Na volta, em `/auth/complete-signup`, confira o **nome do negócio** (vem preenchido com o nome do Google), informe um **celular** livre, marque os **termos** e clique em **"Concluir cadastro"**.
 - **Resultado esperado:** depois do passo 2, a URL é `/auth/complete-signup`; depois do passo 3, vai para `/user/dashboard`. Com um celular já usado, o campo mostra "Este telefone já está em outra conta.". Uma conta Google que já completou o cadastro vai direto para `/user/dashboard`; uma falha no Google volta para `/login?error=google` com "Não deu para entrar com o Google. Tente de novo ou use e-mail e senha."
+
+---
+
+## UC-03 — Recuperação de senha
+
+Rotas: `/forgot-password` e `/auth/reset-password` · Executar **deslogado**. O e-mail com o link chega no Mailpit (`http://localhost:8025`) no ambiente local; em produção, na caixa real. O link vencido (CT-UC03-03) é conferido por testes de unidade e não precisa de roteiro.
+
+### CT-UC03-01 — Pedir o link e definir uma nova senha
+
+- **Objetivo:** confirmar a recuperação de ponta a ponta.
+- **Pré-condições:** deslogado; conta descartável com e-mail confirmado e acesso à caixa dela (no local, o Mailpit). A senha da conta muda.
+- **Passos:**
+  1. Em `/login`, clique em **"Esqueci minha senha"**.
+  2. Em `/forgot-password` ("Recupere seu acesso"), informe o e-mail da conta e clique em **"Enviar instruções"**.
+  3. Abra o e-mail no Mailpit e clique no link de redefinição.
+  4. Em "Redefina sua senha", preencha **Nova senha** e **Confirmar nova senha** com a mesma senha forte e clique em **"Redefinir senha"**.
+  5. Entre com a senha nova.
+- **Resultado esperado:** passo 2 → aviso **"E-mail enviado!"** ("Se este e-mail estiver cadastrado, você receberá as instruções em breve."); passo 3 → a URL é `/auth/reset-password`; passo 4 → volta para `/login?reset=success` com **"Senha alterada."** ("Entre com a nova senha."); passo 5 → vai para `/user/dashboard`. A senha antiga deixa de funcionar. Abrir o mesmo link de novo leva a `/forgot-password?error=INVALID_TOKEN`, com "O link de redefinição expirou ou já foi usado. Peça um novo abaixo.".
+
+### CT-UC03-02 — E-mail não cadastrado recebe a mesma resposta
+
+- **Objetivo:** confirmar que a tela não revela se o e-mail existe.
+- **Pré-condições:** deslogado.
+- **Passos:**
+  1. Em `/forgot-password`, informe `nao-existe@teste.com` e clique em **"Enviar instruções"**.
+- **Resultado esperado:** o mesmo aviso **"E-mail enviado!"** do CT-UC03-01, e nenhum e-mail chega no Mailpit.
+
+### CT-UC03-04 — Senhas diferentes não são enviadas
+
+- **Objetivo:** confirmar o bloqueio na tela de nova senha.
+- **Pré-condições:** um link de redefinição ainda válido (passos 1 a 3 do CT-UC03-01).
+- **Passos:**
+  1. Em "Redefina sua senha", preencha **Nova senha** e **Confirmar nova senha** com valores diferentes e clique em **"Redefinir senha"**.
+- **Resultado esperado:** abaixo de **Confirmar nova senha** aparece **"As senhas não coincidem"**, a URL continua em `/auth/reset-password` e a senha não muda.
 
 ---
 
@@ -253,7 +287,7 @@ Rota: `/user/edit/feedback-products` · **Autenticado**.
   3. Em **Canais de coleta**, ative a coleta do item e copie o link.
   4. Em **Campo de comentário**, escolha **"Pergunta própria"**, escreva `O que você mudaria aqui?` e salve.
   5. Abra o link copiado numa janela anônima.
-- **Resultado esperado:** passo 2 → a tela mostra os dados do item (**"Salvar dados do item"**), as perguntas, o **"Campo de comentário"** e os **Canais de coleta**, com o breadcrumb "Configuração da coleta › Catálogo › <item>"; passo 3 → aviso **"Coleta ativada!"** ("Item disponível para coleta de feedback."); passo 5 → o formulário do item mostra a pergunta própria do item, sem afetar a da empresa (CT-UC05-08). Um id inexistente na URL mostra "Item não encontrado".
+- **Resultado esperado:** passo 2 → a tela mostra os dados do item (**"Salvar dados do item"**), as perguntas, o **"Campo de comentário"** e os **Canais de coleta**, com o breadcrumb "Configuração da coleta › Catálogo › Produtos › <item>"; passo 3 → aviso **"Coleta ativada!"** ("Item disponível para coleta de feedback."); passo 5 → o formulário do item mostra a pergunta própria do item, sem afetar a da empresa (CT-UC05-08). Um id inexistente na URL mostra "Item não encontrado".
 
 ---
 
@@ -279,7 +313,7 @@ Rota: `/user/profile` · **Autenticado**. O contexto da empresa para a IA fica n
   2. Avance com **"Próximo Passo"** até **"Sua meta"** ("O que você mais quer melhorar nos próximos meses?").
   3. Preencha com `Melhorar a satisfação dos clientes em 20%` (os outros dois campos do contexto precisam estar preenchidos para salvar).
   4. Avance até **"4. Modelo LLM"** e clique em **"Salvar sem configurar IA"** (ou **"Salvar e concluir"**, se a IA já estiver configurada).
-- **Resultado esperado:** aparece o aviso **"Contexto salvo!"**, a janela fecha e o bloco **"2. Sua meta"** do cartão mostra o texto novo. Com algum dos três campos vazio, o salvamento é barrado com "Complete os campos obrigatórios".
+- **Resultado esperado:** aparece o aviso **"Contexto salvo!"**, a janela fecha e o bloco **"2. Sua meta"** do cartão mostra o texto novo. Com algum dos três campos vazio, **"Próximo Passo"**, **"Salvar sem configurar IA"** e **"Salvar e concluir"** ficam desabilitados.
 
 ### CT-UC08-04 — Resumo do negócio pode ser preenchido e salvo
 
@@ -308,14 +342,14 @@ Rota: `/user/profile` · **Autenticado**. O contexto da empresa para a IA fica n
 
 Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe o **escopo** (empresa ou um item) e o **período**; todas as seções seguem essa escolha.
 
-> **Conta sem nenhum feedback:** no lugar das seções de métricas, o Dashboard mostra as boas-vindas e a prévia "Aguardando os primeiros feedbacks". Os **"Primeiros passos"** (ativar a coleta e, se quiser, testar o formulário) aparecem no topo quando a coleta da empresa está pausada ao abrir o Dashboard, como na conta nova (CT-UC09-13). Os CT-UC09-02 a 04, 09 e 10 pedem uma conta com feedbacks.
+> **Conta sem nenhum feedback:** no lugar das seções de métricas, o Dashboard mostra as boas-vindas ("Seu painel está pronto. Falta o primeiro feedback.", com "Aguardando os primeiros feedbacks") e a prévia "O que vai aparecer aqui". Os **"Primeiros passos"** (ativar a coleta e, se quiser, testar o formulário) aparecem no topo quando a coleta da empresa está pausada ao abrir o Dashboard, como na conta nova (CT-UC09-13). Os CT-UC09-02 a 04, 09 e 10 pedem uma conta com feedbacks.
 
-### CT-UC09-01 — Dashboard carrega e exibe saudação personalizada
+### CT-UC09-01 — Dashboard carrega com a barra de escopo e período
 
-- **Objetivo:** confirmar carregamento do dashboard com saudação.
+- **Objetivo:** confirmar o carregamento do Dashboard (Visão geral).
 - **Passos:**
   1. Navegue para `/user/dashboard` e aguarde o conteúdo principal.
-- **Resultado esperado:** a URL corresponde a `/user/dashboard` e a saudação **"Olá,"** está visível.
+- **Resultado esperado:** a URL corresponde a `/user/dashboard`, o item **"Visão geral"** do menu fica destacado e, abaixo do cabeçalho, aparece a barra de escopo e período com os botões **"QR Code"** e **"Analisar comentários com IA"**. O **"QR Code"** leva à tela de canais do escopo (empresa → `/user/edit/feedback-general`). O Dashboard não tem título, breadcrumb nem saudação próprios.
 
 ### CT-UC09-02 — Dashboard exibe a Avaliação por estrelas
 
@@ -323,11 +357,11 @@ Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe
   1. No dashboard, localize a seção **"Avaliação por estrelas"**.
 - **Resultado esperado:** aparece o card **"Média"** com a nota /5, o rótulo (Ótima, Boa, Mediana, Ruim ou Péssima) e o número de avaliações, **ou** "Ainda sem avaliações" no escopo. A etiqueta de escopo aparece no canto da seção (ex.: "Avaliação geral da empresa"). Com um período escolhido, os cards mostram também a comparação com o período anterior.
 
-### CT-UC09-03 — Dashboard exibe avaliações positivas e críticas
+### CT-UC09-03 — Dashboard exibe avaliações positivas, neutras e críticas
 
 - **Passos:**
-  1. Na seção **"Avaliação por estrelas"**, localize os cards de positivas e críticas.
-- **Resultado esperado:** aparecem **"Positivas (4–5★)"** e **"Críticas (1–2★)"**, cada um com contagem e %. O link **"Ver todas as métricas de estrelas"** leva a `/user/ratings`. Com pelo menos dois itens do mesmo tipo no catálogo, aparece também **"Comparar dois itens"**, que leva a `/user/compare`.
+  1. Na seção **"Avaliação por estrelas"**, localize os cards de positivas, neutras e críticas.
+- **Resultado esperado:** aparecem **"Positivas (4–5★)"**, **"Neutras (3★)"** e **"Críticas (1–2★)"**, cada um com contagem e %. O link **"Ver a nota completa"** leva a `/user/ratings`. Com pelo menos dois itens do mesmo tipo no catálogo, aparece também **"Comparar dois itens"**, que leva a `/user/compare`.
 
 ### CT-UC09-04 — Dashboard exibe a Análise dos comentários
 
@@ -335,10 +369,10 @@ Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe
   1. No dashboard, localize a seção **"Análise dos comentários ✨ IA"**.
 - **Resultado esperado:** aparecem o bloco **"Tom dos comentários"** (ou "Ainda sem comentários analisados pela IA") e o card **"Resumo dos comentários e recomendações"** (ou "Ainda não há resumo dos comentários para este escopo"). O link **"Ver a análise completa dos comentários"** leva a `/user/insights/overview`.
 
-### CT-UC09-05 — Clique em "Ver feedbacks" navega para a listagem completa
+### CT-UC09-05 — "Ver todos os feedbacks", no sino, navega para a listagem completa
 
 - **Passos:**
-  1. No dashboard, clique no link **"Ver feedbacks"**.
+  1. No dashboard, clique no sino do cabeçalho e, na janela "Status dos Feedbacks", em **"Ver todos os feedbacks"**.
 - **Resultado esperado:** a URL muda para `/user/feedbacks/all`.
 
 ### CT-UC09-09 — "Por onde chegaram" separa os canais de coleta
@@ -346,7 +380,7 @@ Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe
 - **Objetivo:** confirmar que o Dashboard mostra por qual canal chegaram as avaliações.
 - **Pré-condições:** logado; feedbacks recebidos por pelo menos um canal marcado (ex.: o do CT-UC04-01, pelo QR, e um pelo link do CT-UC05-04, de outro navegador).
 - **Passos:**
-  1. No dashboard, localize a seção **"Por onde chegaram"** (abaixo de "Avaliação por estrelas").
+  1. No dashboard, localize a seção **"Por onde chegaram"** (abaixo de "Perguntas do formulário"; ela também está na página **"Clientes e canais"**, `/user/customers`).
 - **Resultado esperado:** com um canal só, aparece "Todas as avaliações marcadas ... vieram pelo **QR Code**" (ou **Link compartilhado** / **Etiqueta NFC**); com mais de um, uma linha por canal com contagem, % e média. Avaliações sem a marca de canal (anteriores a ela ou de QR Codes impressos antes dela) aparecem numa linha à parte, com a orientação de baixar o QR Code de novo. Sem nenhuma avaliação no escopo, a seção não aparece. Os envios do "Testar o formulário" não entram.
 
 ### CT-UC09-10 — Diagnóstico do escopo e histórico
@@ -360,22 +394,22 @@ Rota: `/user/dashboard` · **Autenticado**. A barra abaixo do cabeçalho escolhe
   4. Clique em **"Ver o histórico de diagnósticos"** (ou use o menu **"Diagnósticos ✨"**).
 - **Resultado esperado:** passo 2 → aparece "A IA está lendo os números e os comentários. Leva alguns segundos." (ou "Aguardando a vez na cota da IA…"); passo 3 → o diagnóstico mostra o período, o número de avaliações e as seções **"O que fazer, em ordem"**, **"O que vai bem"**, **"O que preocupa"** e **"O que mudou"**; o botão passa a **"Gerar de novo"** (ou **"Atualizar diagnóstico"**, quando chegam avaliações novas, ou **"Gerar para o período selecionado"**, se o período mudar); passo 4 → `/user/diagnosis` lista os diagnósticos do escopo, o mais recente aberto. Sem IA, a seção mostra "Configure a IA para receber o diagnóstico." com o link **"Configurar a IA"**; sem o contexto, "A IA precisa conhecer a empresa para recomendar."; com menos de 10 avaliações, "São precisas pelo menos 10 avaliações ..." e o botão desabilitado. Sem diagnóstico no escopo, `/user/diagnosis` mostra "Ainda não há diagnóstico ..." com o link **"Gerar o primeiro no Dashboard"**.
 
-### CT-UC09-11 — Todas as métricas de estrelas
+### CT-UC09-11 — Nota completa
 
-- **Objetivo:** confirmar a página com as métricas completas das notas.
+- **Objetivo:** confirmar a página Nota, com o detalhe da avaliação por estrelas.
 - **Pré-condições:** logado; conta com feedbacks.
 - **Passos:**
-  1. No dashboard, clique em **"Ver todas as métricas de estrelas"**.
-- **Resultado esperado:** a URL muda para `/user/ratings`, com **"Avaliação por estrelas"** (agora com **"Neutras (3★)"**), **"Distribuição das avaliações"**, **"Movimento das avaliações"**, **"Dias e horários de pico"** e **"Clientes que voltam"** (cada uma com "Ainda sem avaliações ..." quando o escopo não tem dados).
+  1. No dashboard, clique em **"Ver a nota completa"** (ou em **"Nota"** no menu).
+- **Resultado esperado:** a URL muda para `/user/ratings`, com o título **"Nota"**, **"Avaliação por estrelas"** (Média, Positivas, **"Neutras (3★)"** e Críticas), **"Distribuição das avaliações"** e **"Movimento das avaliações"**. Sem avaliações no escopo, "Avaliação por estrelas" e "Movimento das avaliações" mostram "Ainda sem avaliações ..." e a distribuição não aparece. **"Dias e horários de pico"** e **"Clientes que voltam"** ficam em **"Clientes e canais"** (`/user/customers`).
 
 ### CT-UC09-12 — Comparar dois itens
 
 - **Objetivo:** confirmar a comparação lado a lado de dois itens do mesmo tipo.
 - **Pré-condições:** logado.
 - **Passos:**
-  1. Abra o menu **"Comparar itens"** (`/user/compare`).
+  1. Abra o menu **"Comparar itens"** (`/user/compare`; se não couber no cabeçalho, fica em **"Mais"**).
   2. Com dois ou mais itens do mesmo tipo, escolha o tipo, os dois itens e o período.
-- **Resultado esperado:** sem dois itens do mesmo tipo, a página mostra o passo a passo para chegar lá ("Cadastre os itens no Catálogo", "Ative a coleta de cada item", "Volte aqui e escolha os dois"). Com eles, aparece **"Leitura lado a lado"**, uma tabela com **Nº de avaliações**, **Média**, **Positivas (4–5★)**, **Críticas (1–2★)**, **Tom dos comentários**, **Escreveram comentário** e **Precisão da média**, e a coluna **"Quem está melhor"** (com "Diferença incerta" quando as margens se sobrepõem).
+- **Resultado esperado:** sem dois itens do mesmo tipo, a página mostra o passo a passo para chegar lá ("Cadastre os itens no Catálogo", "Ative a coleta de cada item", "Volte aqui e escolha os dois"). Com eles, aparece **"Leitura lado a lado"**, uma tabela com **Nº de avaliações**, **Média**, **Positivas (4–5★)**, **Neutras (3★)**, **Críticas (1–2★)**, **Tom dos comentários**, **Escreveram comentário** e **Precisão da média**, e a coluna **"Quem está melhor"** (com "Diferença incerta" quando as margens se sobrepõem).
 
 ### CT-UC09-13 — Primeiros passos e "Testar o formulário"
 
@@ -408,16 +442,16 @@ Rota: `/user/feedbacks/all` · **Autenticado**.
 
 ## UC-11 — Análise dos comentários com IA
 
-Rotas: `/user/insights/overview` (Visão geral) e `/user/insights/comments` (Comentários) · **Autenticado**. Os endereços antigos (`/user/insights`, `/user/insights/reports`, `emotional`, `statistics` e `/user/feedbacks/analytics/*`) redirecionam para elas (ver CT-UC12-16).
+Rotas: `/user/insights/overview` (Resumo, título "Análise dos comentários") e `/user/insights/comments` (Comentários) · **Autenticado**. Os endereços antigos (`/user/insights`, `/user/insights/reports`, `emotional`, `statistics` e `/user/feedbacks/analytics/*`) redirecionam para elas (ver CT-UC12-16).
 
-### CT-UC11-01 — Visão geral carrega com a análise ou o estado vazio
+### CT-UC11-01 — Resumo carrega com a análise ou o estado vazio
 
 - **Passos:**
   1. Navegue para `/user/insights/overview` e aguarde o conteúdo principal.
   2. Aguarde o carregamento assíncrono (até ~15s).
 - **Resultado esperado:** aparecem **"Tom dos comentários"** e **"Resumo dos comentários e recomendações ✨ IA"**, com dados **ou** com os estados vazios ("Ainda sem comentários analisados pela IA" / "Ainda não há resumo dos comentários para este escopo").
 
-### CT-UC11-02 — Visão geral exibe o tom e os assuntos
+### CT-UC11-02 — Resumo exibe o tom e os assuntos
 
 - **Passos:**
   1. Navegue para `/user/insights/overview` e aguarde o carregamento.
@@ -538,9 +572,9 @@ Rotas: `/user/profile`, `/user/qrcode/enterprise`, `/user/edit/types-feedback`, 
 
 ### Observações finais
 
-- **Sessão:** faça login uma vez (ver "Como fazer login") antes de executar as UCs 05–12; reutilize a mesma aba/sessão. Para UC-01, UC-02, UC-04 e CT-UC12-07, use uma janela **anônima/deslogada**.
+- **Sessão:** faça login uma vez (ver "Como fazer login") antes de executar as UCs 05–12; reutilize a mesma aba/sessão. Para UC-01 a UC-04 e CT-UC12-07, use uma janela **anônima/deslogada**.
 - **Latência:** telas com carregamento assíncrono podem levar até ~15s; aguarde o estado final antes de concluir que houve falha.
 - **UC-04 é a mais sensível a dados:** exige empresa válida, coleta ativa (ponto de coleta ativo, o mesmo para QR Code, link e NFC) e dispositivo sem envio prévio no mesmo ponto e no mesmo dia — prepare esses dados antes de testar.
-- **Casos com IA** (CT-UC08-07, CT-UC09-10, CT-UC11-05) consomem a cota da chave OpenRouter da empresa. **Casos destrutivos** (CT-UC12-15) só em conta descartável.
+- **Casos com IA** (CT-UC08-07, CT-UC09-10, CT-UC11-05) consomem a cota da chave OpenRouter da empresa. **Casos destrutivos** (CT-UC03-01, que troca a senha, e CT-UC12-15) só em conta descartável.
 - **Ordem que evita retrabalho:** CT-UC05-02 (ativar a coleta) antes de UC-04 e CT-UC05-08; UC-04 antes de CT-UC09-09; CT-UC12-09 por último na sessão logada, porque troca o e-mail de login da conta.
 - **IDs dos casos:** seguem os documentos de cada caso de uso (`concepcao/casos-de-uso/uc-xx-*.md`). Os casos que entraram depois da suíte Playwright usam o ID do cenário correspondente nesses documentos (ex.: CT-UC04-02, CT-UC12-09) ou um número novo no fim da lista (ex.: CT-UC01-08, CT-UC09-09).

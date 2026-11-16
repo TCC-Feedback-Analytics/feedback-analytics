@@ -154,7 +154,6 @@ nav:
           - Frontend (web): guias/testes/web.md
           - API Gateway: guias/testes/api-gateway.md
           - IA Analyze: guias/testes/ia-analyze.md
-          - Vitest & Playwright: guias/testes/vitest_playwright.md
-          - Lacunas E2E: guias/testes/lucanas_e2e.md
+          - Ferramentas de teste (Vitest): guias/testes/vitest_playwright.md
           - Testes de usabilidade: guias/testes/usabilidade.md
   - Changelog: changelog_documentacao.md

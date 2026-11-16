@@ -67,7 +67,7 @@
 
 **Cenários a cobrir:**
 
-- **[CT-UC09-01]** ✅ *Coberto manual (runbook)* - Caminho feliz: gestor autenticado acessa `/user/dashboard` e vê o breadcrumb "Visão geral" e a barra de escopo e período com o botão "QR Code", que leva à tela de canais do escopo.
+- **[CT-UC09-01]** ✅ *Coberto manual (runbook)* - Caminho feliz: gestor autenticado acessa `/user/dashboard`, vê o item "Visão geral" destacado no menu e a barra de escopo e período com o botão "QR Code", que leva à tela de canais do escopo. O Dashboard não tem título nem breadcrumb próprios.
 - **[CT-UC09-02]** ✅ *Coberto manual (runbook)* - Avaliação por estrelas: o card "Média" mostra a nota /5, o rótulo (Ótima, Boa, Mediana, Ruim ou Péssima) e o número de avaliações, ou "Ainda sem avaliações" no escopo; a etiqueta de escopo aparece no canto da seção e, com um período escolhido, os cards trazem a comparação com o período anterior.
 - **[CT-UC09-03]** ✅ *Coberto manual (runbook)* - Positivas, neutras e críticas: os cards "Positivas (4–5★)", "Neutras (3★)" e "Críticas (1–2★)" aparecem com contagem e %. O link "Ver a nota completa" leva a `/user/ratings` e, com pelo menos dois itens do mesmo tipo no catálogo, "Comparar dois itens" leva a `/user/compare`.
 - **[CT-UC09-04]** ✅ *Coberto manual (runbook)* - Análise dos comentários: aparecem o bloco "Tom dos comentários" (ou "Ainda sem comentários analisados pela IA") e o card "Resumo dos comentários e recomendações" (ou "Ainda não há resumo dos comentários para este escopo"); o link "Ver a análise completa dos comentários" leva a `/user/insights/overview`.
