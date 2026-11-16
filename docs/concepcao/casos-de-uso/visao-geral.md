@@ -6,13 +6,13 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 
 > **Caso de Uso ↔ cenários de teste**
 >
-> Os cenários da seção "Base para Teste E2E" de cada UC são a referência de comportamento esperado. Eles eram cobertos por uma suíte **Playwright (e2e)**, agora **removida**; passaram a ser executados **manualmente**, seguindo o [runbook de testes manuais do Web](../../guias/testes/manuais-web.md). O mapeamento **não é 1:1 com todos os cenários**: nem todo cenário documentado vira um passo do runbook, e parte dos UCs tem apenas smoke de carregamento. A cobertura real de cada cenário (✅ manual, smoke, planejado, unidade/integração) está indicada caso a caso na seção de testes de cada UC.
+> Os cenários da seção "Base para Teste E2E" de cada UC são a referência de comportamento esperado. Eles eram cobertos por uma suíte **Playwright (e2e)**, agora **removida**; passaram a ser executados **manualmente**, seguindo o [runbook de testes manuais do Web](../../guias/testes/manuais-web.md). O mapeamento **não é 1:1 com todos os cenários**: nem todo cenário documentado vira um passo do runbook, e parte dos UCs tem apenas smoke de carregamento. A cobertura real de cada cenário está indicada caso a caso na seção de testes de cada UC: ✅ *Coberto manual (runbook)*, ✅ *Coberto manual (smoke)* (só o carregamento da página), ✅ *Coberto manual (runbook, condicional)* (depende de uma pré-condição, como o Google ligado ou uma conta nova), 📝 planejado, ❌ não coberto e 🔵 unidade/integração.
 >
 > **Estado atual da cobertura:**
 > - A suíte **Playwright (e2e)** foi **removida** — a pasta `feedback-analytics-web/e2e/` não existe mais.
 > - O [runbook de testes manuais do Web](../../guias/testes/manuais-web.md) reproduz manualmente os cenários de **11 dos 12 UCs** (UC-01, 02, 04, 05, 06, 07, 08, 09, 10, 11, 12).
 > - **UC-03 fica fora do runbook do Web** (depende de e-mail real) — permanece coberto por unidade/manual pontual.
-> - **UC-05, UC-06, UC-07 e UC-10** têm apenas **smoke de carregamento de página** no runbook — os fluxos de ação documentados não são exercitados nesses cenários.
+> - **UC-06 e UC-10** têm apenas **smoke de carregamento de página** no runbook — os fluxos de ação documentados não são exercitados nesses cenários. UC-05 e UC-07 têm o smoke e também cenários de ação.
 
 ---
 
@@ -28,7 +28,7 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 | [UC-06](uc-06-ativacao-tipos-feedback.md) | Ativação de Tipos de Feedback | Gestor | Definir quais categorias a empresa coleta |
 | [UC-07](uc-07-configuracao-catalogo.md) | Configuração do Catálogo | Gestor | Cadastrar itens e configurar perguntas, comentário e canais por item |
 | [UC-08](uc-08-configuracao-coleta-ia.md) | Configuração de Dados de Coleta (IA) | Gestor | Preencher o contexto do negócio e conectar a IA |
-| [UC-09](uc-09-dashboard.md) | Visualização do Dashboard | Gestor | Visão geral dos feedbacks por escopo e período, com o diagnóstico da IA |
+| [UC-09](uc-09-dashboard.md) | Visualização do Dashboard | Gestor | Visão geral dos feedbacks por escopo e período, com o diagnóstico da IA e as páginas "Nota" e "Clientes e canais" |
 | [UC-10](uc-10-listagem-feedbacks.md) | Listagem e Filtragem de Feedbacks | Gestor | Navegar, filtrar e detalhar feedbacks |
 | [UC-11](uc-11-insights-ia.md) | Análise dos comentários com IA | Gestor | Analisar os comentários com IA e ver o tom, os assuntos, o resumo e a lista |
 | [UC-12](uc-12-gestao-perfil.md) | Gestão de Perfil | Gestor | Atualizar dados pessoais e de contato e excluir a conta |
@@ -85,7 +85,7 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 
 | UC | Descrição |
 |---|---|
-| UC-09 | Dashboard com métricas por escopo e período, "Por onde chegaram", perguntas do formulário, análise dos comentários e diagnóstico do escopo com IA |
+| UC-09 | Dashboard com métricas por escopo e período, "Por onde chegaram", perguntas do formulário, análise dos comentários e diagnóstico do escopo com IA; a página "Nota" (`/user/ratings`: média, distribuição e movimento) e a página "Clientes e canais" (`/user/customers`: canais, horários de pico e clientes que voltam) |
 | UC-10 | Listagem paginada com busca, filtros por escopo e nota, marca "Teste" e modal de detalhes completo por feedback |
 | UC-11 | Análise dos comentários com IA por escopo: tom dos comentários, assuntos que mais impactam, resumo e recomendações e lista de comentários com filtros |
 
@@ -129,18 +129,18 @@ A suíte de testes E2E do Playwright (`feedback-analytics-web/e2e/`) foi **remov
 
 | Arquivo de UC | Cobertura manual (runbook) |
 |---|---|
-| [uc-01-cadastro-conta.md](uc-01-cadastro-conta.md) | ✅ E-mail duplicado (o cenário de documento duplicado ficou obsoleto: o cadastro não pede mais CPF/CNPJ) |
-| [uc-02-login.md](uc-02-login.md) | ✅ 2 cenários |
+| [uc-01-cadastro-conta.md](uc-01-cadastro-conta.md) | ✅ E-mail duplicado, reenvio da confirmação e celular duplicado (o cenário de documento duplicado ficou obsoleto: o cadastro não pede mais CPF/CNPJ) |
+| [uc-02-login.md](uc-02-login.md) | ✅ 3 cenários (entrar com o Google é condicional) |
 | [uc-03-recuperacao-senha.md](uc-03-recuperacao-senha.md) | ❌ Fora do runbook do Web (unidade / manual pontual) |
-| [uc-04-envio-feedback-qrcode.md](uc-04-envio-feedback-qrcode.md) | ✅ 2 cenários (envio válido é condicional) |
-| [uc-05-geracao-qrcode.md](uc-05-geracao-qrcode.md) | 🔎 Apenas smoke (carregamento da página) |
+| [uc-04-envio-feedback-qrcode.md](uc-04-envio-feedback-qrcode.md) | ✅ 3 cenários (envio válido é condicional) |
+| [uc-05-geracao-qrcode.md](uc-05-geracao-qrcode.md) | ✅ Smoke + ativar e pausar a coleta, copiar o link e o endereço da etiqueta, campo de comentário |
 | [uc-06-ativacao-tipos-feedback.md](uc-06-ativacao-tipos-feedback.md) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-07-configuracao-catalogo.md](uc-07-configuracao-catalogo.md) | 🔎 Apenas smoke (carregamento da página) |
-| [uc-08-configuracao-coleta-ia.md](uc-08-configuracao-coleta-ia.md) | ✅ Smoke + 2 salvamentos condicionais |
-| [uc-09-dashboard.md](uc-09-dashboard.md) | ✅ 5 cenários |
+| [uc-07-configuracao-catalogo.md](uc-07-configuracao-catalogo.md) | ✅ Smoke + coleta por item (perguntas, comentário e canais) |
+| [uc-08-configuracao-coleta-ia.md](uc-08-configuracao-coleta-ia.md) | ✅ Smoke + 2 salvamentos condicionais + geração automática das perguntas (condicional) |
+| [uc-09-dashboard.md](uc-09-dashboard.md) | ✅ 10 cenários (CT-UC09-14 e CT-UC09-15, das páginas "Nota" e "Clientes e canais", ainda planejados) |
 | [uc-10-listagem-feedbacks.md](uc-10-listagem-feedbacks.md) | 🔎 Apenas smoke (carregamento da página) |
 | [uc-11-insights-ia.md](uc-11-insights-ia.md) | ✅ 2 smokes + regenerar (condicional) |
-| [uc-12-gestao-perfil.md](uc-12-gestao-perfil.md) | ✅ 6 cenários (2 condicionais) |
+| [uc-12-gestao-perfil.md](uc-12-gestao-perfil.md) | ✅ 10 cenários (troca de e-mail e exclusão da conta pedem conta descartável) |
 
 **Legenda de Cobertura:** ✅ = há ao menos um fluxo de ação reproduzido manualmente · 🔎 Apenas smoke = o cenário verifica apenas que a página carrega, sem exercitar os fluxos de ação documentados · ❌ = fica fora do runbook de testes manuais do Web.
 

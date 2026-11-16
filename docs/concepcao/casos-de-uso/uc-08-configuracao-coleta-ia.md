@@ -61,9 +61,9 @@
 
 **Cenários a cobrir:**
 
-- **[CT-UC08-01]** ✅ *Coberto E2E (smoke)* - Carregamento: a página de configuração de coleta carrega com o formulário visível. (Spec: `[CT-UC08-01] Página de configuração de coleta carrega com formulário visível`.) Hoje o equivalente é abrir o dialog pelo Perfil.
-- **[CT-UC08-02]** ✅ *Coberto E2E (skip condicional)* - Caminho feliz — salvar objetivo: gestor preenche o objetivo da empresa (passo "Sua meta"), salva e recebe confirmação de sucesso. Contém `test.skip()` quando o campo de objetivo não está visível. (Spec: `[CT-UC08-02] Salvar objetivo da empresa persiste e exibe confirmação`.)
+- **[CT-UC08-01]** ✅ *Coberto manual (smoke)* - Carregamento: em `/user/profile`, aparece o card "Contexto e LLM da empresa", com o selo "Configurado" ou "Incompleto", os blocos "1. Seu negócio", "2. Sua meta", "3. O que descobrir" e "4. Modelo LLM" e o botão "Editar contexto e LLM".
+- **[CT-UC08-02]** ✅ *Coberto manual (runbook, condicional)* - Caminho feliz — salvar objetivo: pelo "Editar contexto e LLM", o gestor preenche o passo "Sua meta", avança até "4. Modelo LLM" e salva ("Salvar sem configurar IA" ou "Salvar e concluir"). Aparece o toast "Contexto salvo!" e o bloco "2. Sua meta" do card mostra o texto novo. Só salva com os outros dois campos do contexto preenchidos.
 - **[CT-UC08-03]** ⛔ *Obsoleto na interface* - Campos em branco: o dialog não deixa mais salvar com algum campo de contexto vazio. O gateway ainda aceita os campos nulos no `PATCH /collecting_data`.
-- **[CT-UC08-04]** ✅ *Coberto E2E (skip condicional)* - Caminho feliz — salvar resumo do negócio: gestor preenche o resumo do negócio (passo "Seu negócio"), salva e recebe confirmação de sucesso. Contém `test.skip()` quando o campo de resumo não está visível. (Spec: `[CT-UC08-04] Resumo do negócio pode ser preenchido e salvo`.)
+- **[CT-UC08-04]** ✅ *Coberto manual (runbook, condicional)* - Caminho feliz — salvar resumo do negócio: pelo "Editar contexto e LLM", o gestor preenche o passo "Seu negócio", avança até "4. Modelo LLM" e salva. Aparece o toast "Contexto salvo!" e o bloco "1. Seu negócio" do card mostra o texto novo. Só salva com os outros dois campos do contexto preenchidos.
 - **[CT-UC08-05]** 🟠 *Integração já atende* - Caminho feliz — atualização parcial: gestor edita apenas o resumo do negócio, salva e confirma que os demais campos permanecem inalterados.
 - **[CT-UC08-06]** ❌ *Cenário não coberto* - Exceção — erro ao salvar: simular falha de rede deve exibir toast de erro sem alterar os dados do formulário.

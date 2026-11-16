@@ -23,7 +23,7 @@
 1. O gestor clica no link recebido por e-mail.
 2. O link passa pelo `GET /api/public/auth/callback` do gateway, que grava o token no cookie httpOnly `ba_reset` (vale 1 h e só é enviado para a troca de senha) e abre direto a tela de redefinição (`/auth/reset-password`, "Redefina sua senha").
 3. O gestor digita a nova senha (mínimo de 10 caracteres) e a confirmação e clica em "Redefinir senha".
-4. O sistema valida a senha com a mesma regra do cadastro e salva usando o cookie `ba_reset`, não a sessão; com sucesso, o cookie é apagado.
+4. O sistema valida a senha com o mesmo tamanho mínimo e a mesma nota no zxcvbn do cadastro, mas sem checar o nome do negócio, o e-mail e o telefone dentro dela; a tela não tem medidor de força. Depois salva usando o cookie `ba_reset`, não a sessão; com sucesso, o cookie é apagado.
 5. O gestor é redirecionado para o login (`/login?reset=success`) para acessar com a nova senha. A tela de login lê esse parâmetro e mostra "Senha alterada. Entre com a nova senha."
 
 ---
@@ -33,7 +33,8 @@
 | Situação | O que o sistema faz |
 |---|---|
 | E-mail informado não está cadastrado | Exibe a mesma mensagem genérica de sucesso (não revela se o e-mail existe) |
-| Muitas tentativas, falha do servidor, sem conexão ou e-mail malformado | Exibe o toast "Não foi possível enviar" com o motivo |
+| E-mail malformado | O formulário bloqueia o envio e mostra "E-mail inválido" abaixo do campo |
+| Muitas tentativas, falha do servidor ou sem conexão | Exibe o toast "Não foi possível enviar" com o motivo |
 | Link de redefinição expirado ou inválido | A tela de redefinição abre normalmente; ao enviar a nova senha, o gateway recusa (`401 reset_password_invalid_token`) e a tela mostra o toast "Erro ao redefinir senha" com "O link de redefinição expirou ou é inválido. Solicite um novo." |
 | Nova senha não atende aos requisitos mínimos | Bloqueia o envio e indica o que precisa ser corrigido (menos de 10 caracteres no formulário; senha fácil de adivinhar, recusada pelo gateway com `reset_password_weak`) |
 | Campos de senha e confirmação não coincidem | Bloqueia o envio e destaca a inconsistência |

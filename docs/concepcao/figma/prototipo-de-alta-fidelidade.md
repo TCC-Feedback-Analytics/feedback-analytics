@@ -3,6 +3,17 @@
 !!! note "Material de concepção (jun/2026)"
     Este documento registra o protótipo feito no Figma na fase de concepção e não foi atualizado com o produto. As telas, as rotas e os campos descritos aqui não refletem necessariamente a interface atual (por exemplo, o CPF/CNPJ mostrado no Perfil não existe mais no sistema). Nos protótipos a coleta é só por QR Code; hoje o produto também coleta por link e etiqueta NFC, pelo mesmo formulário. O que o sistema faz hoje está em [Requisitos e Funcionalidades](../requisitos-e-funcionalidades.md).
 
+    **O que mudou no sistema** (conferido em 16/11/2026):
+
+    - **Home:** os botões de chamada levam ao cadastro (`/register`), não ao login. O rodapé tem os links de Produto, Conta e Legal e a versão; não tem contato nem redes sociais.
+    - **Login e cadastro:** são rotas separadas (`/login` e `/register`), sem alternância na mesma tela, e há a entrada com o Google.
+    - **Formulário:** cada escopo tem de 0 a 3 perguntas; um item sem perguntas coleta só a nota e o comentário. As subperguntas configuradas são obrigatórias para o cliente. O comentário é opcional e pode ficar oculto no escopo.
+    - **Perfil:** não há foto de perfil nem troca de senha (a senha muda pelo "Esqueci minha senha"); há o telefone, que não aparece no protótipo.
+    - **Dashboard:** desde 12/11/2026 não tem cabeçalho próprio, e o botão do QR Code fica na barra de escopo e período. Mostra "Avaliação por estrelas" (média, positivas, neutras e críticas), "Perguntas do formulário", "Por onde chegaram", "Análise dos comentários" e o diagnóstico do escopo. "Feedbacks Recentes", "Estratégia de Coleta" e "Radar de satisfação" não existem.
+    - **Menu:** barra lateral, navegação no cabeçalho (as páginas que não cabem vão para o botão "Mais") e barra inferior no celular. Itens: "Visão geral", "Nota", "Clientes e canais", "Comparar itens", "Diagnósticos ✨", "Feedbacks" › "Recebidos", "Análise dos comentários ✨" › "Resumo" e "Comentários", e "Configuração da coleta" › "Avaliação da empresa", "Catálogo" e "Configuração de IA". O Perfil fica no menu da conta.
+    - **Rotas que hoje só redirecionam:** `/user/qrcode/enterprise` vai para `/user/edit/feedback-general` ("Avaliação da empresa"); `/user/feedbacks/analytics/all`, `/positive` e `/negative` vão para `/user/insights/comments` (com `?filtro=positivos` ou `?filtro=negativos`); `/user/insights/reports`, `/emotional` e `/statistics` vão para `/user/insights/overview` ("Resumo").
+    - **Fontes e cores:** as reais estão em [Branding & Design Tokens](./product.md).
+
 ## Visão Geral
 
 Este documento descreve o protótipo de alta fidelidade do **Feedback Analytics**, cobrindo todas as telas do sistema, fluxos de navegação, estados de UI e comportamentos esperados para guiar a implementação front-end.
@@ -135,7 +146,7 @@ Telas acessíveis apenas com autenticação. Usuários não autenticados devem s
 
 ### 6. QR Code
 
-**Rota:** `/user/qrcode/enterprise`  
+**Rota:** `/user/qrcode/enterprise` (no sistema atual, redireciona para "Avaliação da empresa", `/user/edit/feedback-general`)  
 **Objetivo:** Gerenciamento dos QR Codes gerados pelo usuário para coleta de feedbacks.
 
 #### Ações Disponíveis por QR Code
@@ -184,7 +195,7 @@ Telas acessíveis apenas com autenticação. Usuários não autenticados devem s
 **Rota:** `/user/feedbacks/analytics/all`  
 **Objetivo:** Painel analítico com dados agregados dos feedbacks, sem listagem individual.
 
-> Esta visão tem três recortes implementados como telas próprias: todos (`/user/feedbacks/analytics/all`), positivos (`/user/feedbacks/analytics/positive`) e negativos (`/user/feedbacks/analytics/negative`).
+> No protótipo, esta visão tem três recortes: todos (`/user/feedbacks/analytics/all`), positivos (`/user/feedbacks/analytics/positive`) e negativos (`/user/feedbacks/analytics/negative`). No sistema atual, essas rotas só redirecionam para "Comentários" (`/user/insights/comments`); as de positivos e negativos já abrem com o filtro de tom correspondente.
 
 #### Métricas Exibidas
 
@@ -198,7 +209,7 @@ Telas acessíveis apenas com autenticação. Usuários não autenticados devem s
 
 ### 9. Relatório IA
 
-**Rota:** `/user/insights/reports` (abas: `/user/insights/reports`, `/user/insights/emotional`, `/user/insights/statistics`)  
+**Rota:** `/user/insights/reports` (abas no protótipo: `/user/insights/reports`, `/user/insights/emotional`, `/user/insights/statistics`; no sistema atual, as três redirecionam para "Resumo", `/user/insights/overview`)  
 **Objetivo:** Geração e visualização de insights automáticos baseados nos feedbacks, utilizando inteligência artificial.
 
 #### Fluxo de Geração

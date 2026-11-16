@@ -23,7 +23,7 @@ O produto resolve isso em três etapas:
 | **2. Analise** | Um pipeline de IA interpreta cada feedback automaticamente: classifica sentimento, extrai temas e palavras-chave. |
 | **3. Decida** | O dashboard apresenta um painel de insights por escopo, com recomendações prontas. O gestor para de decidir por intuição e começa a decidir por evidência. |
 
-**Por que isso importa para o projeto:** a proposta de valor define o que deve estar sempre funcionando. Se a coleta travar, se a IA falhar ou se o dashboard demorar, o produto perde seu argumento central. Tudo que está na arquitetura técnica — anti-spam, fallback de IA, performance do dashboard — existe para proteger essas três etapas.
+**Por que isso importa para o projeto:** a proposta de valor define o que deve estar sempre funcionando. Se a coleta travar, se a IA falhar ou se o dashboard demorar, o produto perde seu argumento central. Tudo que está na arquitetura técnica — anti-spam, resiliência da IA, performance do dashboard — existe para proteger essas três etapas. Hoje a resiliência da IA não inclui um fallback quando o provedor falha: a análise falha com um código tipado e não grava resultado parcial.
 
 ---
 
@@ -105,7 +105,7 @@ O que muda na prática: o gestor abre o painel de insights e já tem a decisão 
 
 O próprio produto é o principal canal de aquisição. Quando um cliente final abre o formulário de uma empresa (pelo QR Code, pelo link ou pela etiqueta NFC) e o preenche, ele está vendo o produto em funcionamento. Uma simples atribuição no rodapé do formulário ("Powered by Feedback Analytics") transforma cada ponto de coleta em uma vitrine.
 
-**Hoje:** o formulário ainda não mostra essa atribuição no rodapé.
+**Hoje:** o formulário ainda não mostra essa atribuição no rodapé. O cabeçalho do formulário mostra a marca "Feedback Analytics", sem link para o site.
 
 **Por que é poderoso:** não tem custo por impressão e escala com o crescimento de cada cliente. Quanto mais QR Codes, links e etiquetas uma empresa distribui, mais pessoas descobrem o produto.
 

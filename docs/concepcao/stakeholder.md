@@ -55,7 +55,7 @@ Este documento mapeia quem são os stakeholders do Feedback Analytics, o que cad
 - **Descrição:** Os engenheiros responsáveis por construir, manter e evoluir o sistema.
 - **Principal Interesse / Objetivo:** Uma arquitetura clara, bem documentada, fácil de manter e que permita adicionar novas funcionalidades com segurança e agilidade.
 - **Impacto no Projeto:**
-  - A arquitetura **Serverless multi-repo** (`web`, `api-gateway`, `ia-analyze`) foi adotada para garantir autonomia entre serviços, deploys independentes e clareza de responsabilidades.
+  - A arquitetura **Serverless multi-repo** (`web`, `api-gateway`, `ia-analyze`, mais o pacote de contratos `contracts`, publicado como `@feedback/lib-shared`) foi adotada para garantir autonomia entre serviços, deploys independentes e clareza de responsabilidades.
   - A documentação técnica (`/docs`) existe para reduzir o tempo de onboarding e evitar que o conhecimento fique concentrado em uma pessoa.
   - A **cobertura de testes** (unitários e de integração; os E2E com Playwright saíram em ago/2026 e viraram roteiro manual) protege o time de regressões ao evoluir funcionalidades críticas.
   - O padrão de **variáveis de ambiente por domínio** e a separação de serviços reduzem o risco de mudanças em um serviço quebrarem outro.

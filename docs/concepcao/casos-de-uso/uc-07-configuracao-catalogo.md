@@ -65,7 +65,7 @@ A tela dedicada do item espelha a Avaliação da empresa e tem **quatro blocos i
 
 **Cenários a cobrir:**
 
-- **[CT-UC07-01]** ✅ *Coberto E2E (smoke)* - Carregamento: a página de lista do catálogo de produtos carrega corretamente — exibe o conteúdo principal ou a mensagem de tipo não ativado. (Spec: `[CT-UC07-01] Página de catálogo de produtos carrega corretamente`.) **Não** cobre adicionar/remover item nem a tela dedicada por item (dados, perguntas, QR Code).
+- **[CT-UC07-01]** ✅ *Coberto manual (smoke)* - Carregamento: em `/user/edit/feedback-products`, aparece o botão "Cadastrar produto" e a lista dos produtos (cada um com o selo "Coleta ativa" ou "Coleta inativa" e o botão "Configurar") ou o estado vazio "Nenhum produto cadastrado". A lista abre mesmo com o tipo desligado. **Não** cobre adicionar/remover item nem a tela dedicada por item (dados, perguntas, QR Code).
 - **[CT-UC07-02]** 📝 *Planejado / não implementado* - Caminho feliz — cadastrar item: na lista, o gestor cadastra um produto com nome válido, o salvamento em lote confirma e o item aparece na lista.
 - **[CT-UC07-03]** 📝 *Planejado / não implementado* - Caminho feliz — editar dados do item: na tela dedicada do item, o gestor edita o nome no bloco "Dados do {item}", clica em "Salvar dados do item" e confirma a atualização.
 - **[CT-UC07-04]** 📝 *Planejado / não implementado* - Caminho feliz — salvar perguntas: na tela dedicada do item, o gestor abre "Configurar perguntas", escreve uma pergunta válida (20–150 chars), revisa, clica em "Salvar perguntas" e recebe confirmação de sucesso.

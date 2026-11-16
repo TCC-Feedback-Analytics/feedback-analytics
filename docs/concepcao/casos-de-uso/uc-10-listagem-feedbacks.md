@@ -4,7 +4,7 @@
 |---|---|
 | **Ator** | Gestor |
 | **Objetivo** | Navegar pelo histórico de feedbacks, aplicar filtros e visualizar os detalhes de cada avaliação |
-| **Gatilho** | Gestor acessa "Feedbacks" → "Recebidos" no menu ou o link "Ver feedbacks" do dashboard |
+| **Gatilho** | Gestor acessa "Feedbacks" → "Recebidos" no menu ou o link "Ver todos os feedbacks" do sino do cabeçalho |
 
 ---
 
@@ -47,7 +47,7 @@
 
 **Cenários a cobrir:**
 
-- **[CT-UC10-01]** ✅ *Coberto E2E (smoke)* - Carregamento: a listagem carrega os feedbacks paginados ou exibe o estado vazio. (Spec: `[CT-UC10-01] Listagem carrega feedbacks ou exibe estado vazio`.) **Não** cobre abrir o modal de detalhes nem aplicar filtros.
+- **[CT-UC10-01]** ✅ *Coberto manual (smoke)* - Carregamento: em `/user/feedbacks/all`, aparece ao menos um card de feedback ou o estado vazio "Nenhum feedback encontrado"; os feedbacks do "Testar o formulário" trazem a marca "Teste". **Não** cobre abrir o modal de detalhes nem aplicar filtros.
 - **[CT-UC10-02]** 📝 *Planejado / não implementado* - Caminho feliz — modal de detalhes: clicar em um feedback deve abrir o modal com todas as seções (ponto de coleta, perguntas, dispositivo, cliente).
 - **[CT-UC10-03]** 📝 *Planejado / não implementado* - Caminho feliz — filtro por nota: selecionar nota 5 deve exibir apenas feedbacks com aquela avaliação.
 - **[CT-UC10-04]** 📝 *Planejado / não implementado* - Caminho feliz — filtro por categoria: com `?category=PRODUCT` na URL, a lista deve exibir apenas feedbacks de pontos de coleta do tipo produto (a tela não tem mais o controle de categoria).

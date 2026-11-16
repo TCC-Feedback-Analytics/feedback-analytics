@@ -3,6 +3,13 @@
 !!! note "Material de concepção (jun/2026)"
     Este documento registra a biblioteca de componentes feita no Figma na fase de concepção e não foi atualizado com o produto. Os componentes da interface atual não seguem necessariamente estes padrões.
 
+    **O que mudou no sistema** (conferido em 16/11/2026):
+
+    - **Filtros da listagem:** nota, busca no comentário, escopo e item do catálogo. Não há filtro de categorias.
+    - **Período:** um seletor com opções prontas ("Todo o período", "Últimos 7 dias", "Últimos 30 dias", "Últimos 3 meses", "Últimos 6 meses") e "Personalizado", com data inicial e final.
+    - **Paginação:** 5, 10, 20 ou 50 itens por página.
+    - **Carrosséis:** não são usados na interface.
+
 Esta seção documenta exclusivamente a biblioteca de componentes visuais reutilizáveis (Assets) desenvolvidos no Figma para o projeto **Feedback Analytics**. Esses elementos promovem a consistência visual da aplicação e centralizam os padrões de interação, estados e animações.
 
 ---
@@ -48,5 +55,4 @@ Os cartões funcionam como os blocos fundamentais de construção das interfaces
 
 | Componente | Descrição | Comportamento / Estados |
 | :--- | :--- | :--- |
-
 | **Carrosséis** | Utilizados para agrupar múltiplos cards ocupando menos espaço vertical. | **Navegação:** Setas de navegação lateral que surgem no *hover* da área do carrossel.**Paginação:** Indicadores em pontos (dots) na base informando a página atual. |

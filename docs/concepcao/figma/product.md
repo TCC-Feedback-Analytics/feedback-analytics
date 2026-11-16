@@ -3,6 +3,14 @@
 !!! note "Material de concepção (jun/2026)"
     Este documento registra as diretrizes de marca definidas no Figma na fase de concepção e não foi atualizado com o produto. A interface atual não segue necessariamente estes valores.
 
+    **O que mudou no sistema** (conferido no CSS da Web em 16/11/2026, `styles/index.css` e `styles/public/home/`):
+
+    - **Fontes:** não há uma fonte só. Os títulos usam Montserrat (`--font-title`), o texto usa Inter (`--font-body`), os botões usam Poppins (`--font-button`), as páginas da área logada usam Work Sans (`.font-work-sans`) e a Landing Page usa Space Grotesk e Geist Mono.
+    - **Cor primária:** ciano, `#3ed9e3` no tema escuro e `#0f7c8f` no claro (`.public-theme` e `.private-user-theme`).
+    - **Fundo:** o tema padrão é escuro; o claro vem pela preferência do sistema (`prefers-color-scheme: light`). O fundo branco e off-white descrito abaixo vale só para o tema claro.
+    - **Cores semânticas:** `--positive` (verde), `--neutral` (âmbar) e `--negative` (rosa/vermelho), como na proposta.
+    - **Favicon:** é o `/vite.svg` padrão. O símbolo da marca existe (`public/field-notes/symbol.png`), mas não é usado como favicon.
+
 Esta seção detalha as diretrizes da marca **Feedback Analytics** e o sistema de Design Tokens que fundamenta toda a interface visual (UI) da plataforma. O uso consistente de tipografia, paleta de cores e aplicações de marca busca proporcionar uma experiência mais sólida, coesa e profissional para os usuários corporativos e finais.
 
 ---

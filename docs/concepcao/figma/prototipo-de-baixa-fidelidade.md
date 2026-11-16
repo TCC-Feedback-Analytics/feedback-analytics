@@ -3,6 +3,14 @@
 !!! note "Material de concepção (jun/2026)"
     Este documento registra o protótipo feito no Figma na fase de concepção e não foi atualizado com o produto. As telas, as rotas e os campos descritos aqui não refletem necessariamente a interface atual (por exemplo, o CPF/CNPJ mostrado no Perfil não existe mais no sistema). Nos protótipos a coleta é só por QR Code; hoje o produto também coleta por link e etiqueta NFC, pelo mesmo formulário. O que o sistema faz hoje está em [Requisitos e Funcionalidades](../requisitos-e-funcionalidades.md).
 
+    **O que mudou no sistema** (conferido em 16/11/2026):
+
+    - **Formulário:** cada escopo tem de 0 a 3 perguntas; um item sem perguntas coleta só a nota e o comentário. As subperguntas configuradas são obrigatórias para o cliente. O comentário é opcional e pode ficar oculto no escopo.
+    - **Perfil:** não há foto de perfil nem troca de senha (a senha muda pelo "Esqueci minha senha"); há o telefone, que não aparece no protótipo.
+    - **Dashboard:** desde 12/11/2026 não tem cabeçalho próprio, e o botão do QR Code fica na barra de escopo e período. Mostra "Avaliação por estrelas" (média, positivas, neutras e críticas), "Perguntas do formulário", "Por onde chegaram", "Análise dos comentários" e o diagnóstico do escopo. Os cards de sentimentos e o "Radar de satisfação" não existem.
+    - **Menu:** "Visão geral", "Nota", "Clientes e canais", "Comparar itens", "Diagnósticos ✨", "Feedbacks" › "Recebidos", "Análise dos comentários ✨" › "Resumo" e "Comentários", e "Configuração da coleta" › "Avaliação da empresa", "Catálogo" e "Configuração de IA". O Perfil fica no menu da conta.
+    - **Rotas que hoje só redirecionam:** `/user/qrcode/enterprise` vai para `/user/edit/feedback-general` ("Avaliação da empresa"), e `/user/insights/reports` vai para `/user/insights/overview` ("Resumo").
+
 ## Visão Geral
 
 Este documento descreve o protótipo de baixa fidelidade do **Feedback Analytics**, focando na arquitetura de informação. Ele cobre as telas do sistema, fluxos de navegação básicos e os componentes estruturais esperados em cada interface para guiar a implementação front-end inicial.

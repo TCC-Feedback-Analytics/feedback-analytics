@@ -3,6 +3,16 @@
 !!! note "Material de concepção (jun/2026)"
     Este documento registra o protótipo feito no Figma na fase de concepção e não foi atualizado com o produto. As telas, os campos e os fluxos descritos aqui não refletem necessariamente a interface atual (por exemplo, o CPF/CNPJ mostrado no Perfil não existe mais no sistema e o comentário do formulário é opcional). Nos protótipos a coleta é só por QR Code; hoje o produto também coleta por link e etiqueta NFC, pelo mesmo formulário. O que o sistema faz hoje está em [Requisitos e Funcionalidades](../requisitos-e-funcionalidades.md).
 
+    **O que mudou no sistema** (conferido em 16/11/2026):
+
+    - **Formulário:** cada escopo tem de 0 a 3 perguntas; um item sem perguntas coleta só a nota e o comentário. As subperguntas configuradas são obrigatórias para o cliente. O comentário é opcional e pode ficar oculto no escopo.
+    - **Perfil:** não há foto de perfil nem troca de senha (a senha muda pelo "Esqueci minha senha"); há o telefone, que não aparece no protótipo.
+    - **Listagem:** os filtros são nota, busca, escopo e item; não há filtro de categoria. O card mostra o canal de chegada (QR Code, link ou NFC) e a marca "Teste".
+    - **Dashboard:** desde 12/11/2026 não tem cabeçalho próprio, e o botão do QR Code fica na barra de escopo e período. Mostra "Avaliação por estrelas" (média, positivas, neutras e críticas), "Perguntas do formulário", "Por onde chegaram", "Análise dos comentários" e o diagnóstico do escopo. "Estratégia de Coleta", "Radar de satisfação" e "Feedbacks Recentes" não existem; o contexto para a IA fica no Perfil.
+    - **Visão geral e Relatório IA:** viraram a "Análise dos comentários", com as telas "Resumo" e "Comentários". As categorias não são definidas pelo usuário: a IA as extrai e as encaixa numa lista fixa por tipo de escopo.
+    - **Menu:** "Visão geral", "Nota", "Clientes e canais", "Comparar itens", "Diagnósticos ✨", "Feedbacks" › "Recebidos", "Análise dos comentários ✨" › "Resumo" e "Comentários", e "Configuração da coleta" › "Avaliação da empresa", "Catálogo" e "Configuração de IA". O Perfil fica no menu da conta.
+    - **Fontes e cores:** as reais estão em [Branding & Design Tokens](./product.md).
+
 ## Visão Geral
 
 O protótipo de média fidelidade detalha os componentes estáticos, as tabelas de dados, a hierarquia tipográfica e os campos de formulário presentes em cada tela mapeada na arquitetura (baixa fidelidade). 

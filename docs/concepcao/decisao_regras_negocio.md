@@ -6,8 +6,8 @@ Cada regra aqui é uma decisão consciente de produto ou de segurança. O códig
 
 O detalhamento técnico de como cada regra é implementada está em [regras-negocio.md](../produto/regras-negocio.md).
 
-!!! note "Conferido contra o código (03/11/2026)"
-    As decisões foram escritas em junho de 2026. Nesta revisão, cada uma foi conferida no código. As que o sistema deixou de seguir estão marcadas como **decisão substituída**, com o que vale hoje; as que valem com uma ressalva ganharam um parágrafo **Hoje**.
+!!! note "Conferido contra o código (16/11/2026)"
+    As decisões foram escritas em junho de 2026. Cada uma foi conferida no código em 03/11/2026 e de novo em 16/11/2026. As que o sistema deixou de seguir estão marcadas como **decisão substituída**, com o que vale hoje; as que valem com uma ressalva ganharam um parágrafo **Hoje**.
 
 ---
 
@@ -71,6 +71,8 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 **Por quê:** links de confirmação sem prazo são um risco de segurança. Se o e-mail cair em mãos erradas tempos depois, não deve ser possível ativar a conta. Uma hora é tempo mais do que suficiente para quem acabou de se cadastrar confirmar o acesso.
 
 **O que acontece se o link expirar:** o usuário é direcionado para uma página dedicada onde pode informar o e-mail e solicitar um novo link de confirmação sem precisar refazer o cadastro.
+
+**Hoje:** o gateway não configura esse prazo; vale o padrão do Better Auth, de 3600 segundos (1 hora), conferido na versão 1.7.18 instalada.
 
 ---
 
@@ -181,6 +183,8 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 **Decisão:** o relatório de insights por escopo é sempre sobrescrito com os dados da última análise. Não há acúmulo de múltiplos relatórios antigos.
 
 **Por quê:** insights globais representam a fotografia atual do conjunto de feedbacks analisados. Manter versões antigas em paralelo seria confuso — o gestor quer saber o que está acontecendo agora, não uma média histórica de análises passadas.
+
+**Hoje:** a regra vale para todos os escopos desde a migration `0014` do gateway (05/11/2026). Antes dela, o escopo da empresa (sem item do catálogo) gravava uma linha nova a cada geração, porque o índice único tratava o item nulo como distinto; a tela lia a mais recente. A migration apagou as duplicadas e trocou o índice por uma constraint `NULLS NOT DISTINCT`.
 
 ---
 

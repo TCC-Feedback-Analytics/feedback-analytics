@@ -2,8 +2,8 @@
 
 > Documento que descreve as funcionalidades do produto, regras de negócio, requisitos funcionais (RF), requisitos não funcionais (RNF), critérios de aceitação, rastreabilidade e detalhamento de prioridades/status.
 
-!!! note "Situação conferida contra o código (03/11/2026)"
-    Os requisitos nasceram na concepção (junho e julho de 2026). Nesta revisão, cada um foi conferido no código dos repositórios `feedback-analytics-web`, `feedback-analytics-api-gateway` e `feedback-analytics-ia-analyze`. A coluna **Status** dos detalhamentos diz o que foi implementado, o que mudou e o que não foi feito. Os requisitos **RF22 a RF28** entraram agora: são funcionalidades que já existiam no código e faltavam nesta lista.
+!!! note "Situação conferida contra o código (16/11/2026)"
+    Os requisitos nasceram na concepção (junho e julho de 2026). Cada um foi conferido no código dos repositórios `feedback-analytics-web`, `feedback-analytics-api-gateway`, `feedback-analytics-ia-analyze` e `feedback-analytics-contracts`. A coluna **Status** dos detalhamentos diz o que foi implementado, o que mudou e o que não foi feito. Os requisitos **RF22 a RF28** entraram na revisão de 03/11/2026, e os **RF29 a RF37** na de 16/11/2026: são funcionalidades que já existiam no código e faltavam nesta lista.
 
 ---
 
@@ -36,10 +36,14 @@
 ### Área do Usuário Gestor (Dashboard)
 
 - **Apresentação do Produto (Landing Page Pública):** Página inicial destacando as funcionalidades da plataforma e versão do sistema gerada por CI/CD.
+- **Páginas públicas do produto e documentos legais:** "Coleta" (`/produto/coleta`), "Análise" (`/produto/analise`) e "Resultados" (`/produto/resultados`), com a navegação entre elas, e os Termos de Uso (`/termos`) e a Política de Privacidade (`/privacidade`).
 - **Dashboard Principal:**
-  - Métricas do escopo (empresa ou um item do catálogo) e do período escolhidos: estrelas, canais de chegada (QR Code, link e NFC), movimento das avaliações, perguntas do formulário, análise dos comentários e diagnóstico do escopo.
+  - Escopo (empresa ou um item do catálogo) e período escolhidos na barra do topo, que no Dashboard também tem o botão do QR Code. Com um período escolhido, "Comparar com o período anterior" mostra se cada métrica melhorou ou piorou.
+  - Um resumo por grupo, cada um com link para o detalhe: avaliação por estrelas (média, positivas, neutras e críticas), perguntas do formulário e canais de chegada (QR Code, link e NFC), além da análise dos comentários e do diagnóstico do escopo (no topo quando o escopo já tem feedbacks suficientes para a IA).
   - A listagem dos feedbacks fica na tela Feedbacks; o Dashboard não lista mais os últimos feedbacks.
-  - Telas de apoio: todas as métricas de estrelas (dias e horários de pico, clientes que voltam) e a comparação de dois itens do catálogo.
+  - Telas de detalhe: "Nota" (estrelas, distribuição de 1 a 5★ e movimento das avaliações), "Clientes e canais" (canais, dias e horários de pico e clientes que voltam), "Comparar itens" (dois itens do mesmo tipo lado a lado) e a página de cada pergunta do formulário.
+  - Conta nova: "Primeiros passos" no topo do Dashboard e o guia do sistema, que percorre as telas.
+  - O sino do cabeçalho mostra, em todas as telas logadas, quantos feedbacks do escopo aguardam a análise da IA.
 - **Perfil do Usuário:**
   - Atualiza o nome.
   - Troca o e-mail pelo `changeEmail` do Better Auth: o link vai para o endereço novo, e a troca só vale depois do clique.
@@ -57,6 +61,7 @@
   - Escolha do modelo.
 - **Gerenciamento dos Canais de Coleta:**
   - Ligar ou pausar a coleta (Ativo/Inativo) com bloqueio instantâneo, valendo para QR Code, link e NFC de uma vez.
+  - Ativar os tipos de feedback que a empresa coleta (Produtos, Serviços e Departamentos); desativar um tipo inativa todos os itens dele.
   - Gerar QR code mestre da empresa e específicos (produtos, serviços, departamentos).
   - Configurar perguntas e subperguntas dinâmicas por item.
   - **Canais de coleta:** além do QR Code, o mesmo formulário sai por link e por etiqueta NFC; cada canal leva a sua marca na URL.
@@ -69,7 +74,7 @@
 - Filtros (por nota, busca textual, item do catálogo e tipo de escopo).
 - Visualização detalhada (modal/página) de cada feedback.
 - Estatísticas quantitativas (média, distribuição percentual de notas).
-- **Análise dos comentários:** filtros por tom (positivos, neutros e negativos) e pela divergência entre a nota e o texto.
+- **Análise dos comentários:** duas telas. "Resumo" (`/user/insights/overview`) mostra o tom dos comentários, os assuntos que mais impactam e o resumo com recomendações; "Comentários" (`/user/insights/comments`) lista os comentários com filtros por tom (positivos, neutros e negativos) e pela divergência entre a nota e o texto.
 - **Insights Avançados com IA:**
   - Botão "Analisar comentários com IA", que põe o pedido numa fila; a tela acompanha o andamento.
   - Relatório global automatizado (resumo situacional + recomendações).
@@ -122,10 +127,10 @@
 | **RF05** | Gestão de QR Codes | Gerar códigos para empresa, produtos/serviços e customizar perguntas dinâmicas por item, além de habilitar/desabilitar pontos de coleta. |
 | **RF06** | Submissão de Feedback | Formulário público acessível por QR Code, link ou etiqueta NFC (nota + mensagem) com validação prévia de existência da empresa. |
 | **RF07** | Proteção Anti-Spam | Impedir mais de 1 envio por dispositivo, ponto de coleta e dia (*fingerprint*), retornando HTTP 409 em duplicidade. |
-| **RF08** | Dashboard | Apresentar estatísticas gerais e a listagem dos últimos feedbacks para a empresa logada. |
+| **RF08** | Dashboard | Apresentar à empresa logada um resumo das métricas do escopo e do período escolhidos, com link para o detalhe de cada grupo. |
 | **RF09** | Filtros e Listagem | Listar feedbacks com paginação, filtros por nota, busca textual e visualização detalhada. |
 | **RF10** | Estatísticas Base | Exibir nota média e distribuição percentual de avaliações. |
-| **RF11** | Analytics Visual | Visão analítica segmentando os feedbacks de forma visual (positivos vs. negativos). |
+| **RF11** | Analytics Visual | Visão analítica segmentando os feedbacks de forma visual (positivos, neutros e negativos). |
 | **RF12** | Insights e IA | Disparo sob demanda para geração de relatórios, insights acionáveis e análise de sentimento via IA. |
 | **RF13** | Dados Analíticos de IA | Exibir métricas da IA (total processado, distribuição, *top categories* e *keywords*). |
 | **RF14** | Gestão de Clientes | Listar clientes que se identificaram e seu histórico de submissões de feedback. |
@@ -135,7 +140,7 @@
 | **RF18** | Apresentação do Produto | Possuir uma Landing Page pública (*Home*) detalhando as funcionalidades e benefícios da plataforma. |
 | **RF19** | Exportação e Compartilhamento | O sistema deve permitir o download do QR Code (imagem PNG) e utilizar a API nativa do dispositivo para compartilhamento rápido do link de coleta. |
 | **RF20** | Filtro Semântico Anti-Poluição (IA) | O motor de IA deve impedir que as opções de resposta e os enunciados do formulário virem palavras-chave ou categorias, evitando que o próprio formulário polua a nuvem de palavras-chave. |
-| **RF21** | Exibição do Status de Assinatura | O dashboard deve exibir um badge dinâmico refletindo o `subscription_status` da empresa: âmbar com dias restantes (TRIAL), verde (ACTIVE), vermelho (EXPIRED) ou cinza (CANCELED). |
+| **RF21** | Exibição do Status de Assinatura | O painel deve exibir, no menu da conta e no Perfil, um badge dinâmico refletindo o `subscription_status` da empresa: âmbar com dias restantes (TRIAL), verde (ACTIVE), vermelho (EXPIRED) ou cinza (CANCELED). |
 | **RF22** | Canais de Coleta (QR Code, link e NFC) | O mesmo formulário público deve ser distribuído por QR Code, link e etiqueta NFC, registrando o canal de chegada de cada feedback; o "Testar o formulário" fica fora das métricas e da IA. |
 | **RF23** | Campo de Comentário por Escopo | A empresa deve escolher, para o feedback geral e para cada item do catálogo, se o campo de comentário mostra o convite padrão, uma pergunta própria ou fica oculto. |
 | **RF24** | Diagnóstico do Escopo com IA | Gerar, sob demanda, um diagnóstico do escopo que interpreta os números do período (e do anterior) e uma amostra de comentários, com histórico dos diagnósticos gerados. |
@@ -143,6 +148,15 @@
 | **RF26** | Login com Google | Permitir cadastro e login com a conta Google, completando na primeira entrada o nome do negócio, o celular e o aceite dos termos. |
 | **RF27** | Exclusão de Conta | Permitir que o gestor exclua a própria conta pelo Perfil, apagando a empresa e todos os dados dela. |
 | **RF28** | Configuração da IA por Empresa (OpenRouter) | Cada empresa deve usar a própria chave do OpenRouter, guardada cifrada, e escolher o modelo das análises. |
+| **RF29** | Páginas do Produto e Documentos Legais | Possuir páginas públicas que detalham a coleta, a análise e os resultados, além dos Termos de Uso e da Política de Privacidade. |
+| **RF30** | Detalhe da Nota | Mostrar, para o escopo e o período escolhidos, a média, as positivas, neutras e críticas, a distribuição de 1 a 5★ e o movimento das avaliações no tempo. |
+| **RF31** | Clientes e Canais | Mostrar por onde as avaliações chegaram, os dias e horários de pico e os clientes que voltam. |
+| **RF32** | Comparação de Itens | Comparar lado a lado dois itens do catálogo do mesmo tipo, no mesmo período. |
+| **RF33** | Métricas por Pergunta | Mostrar as métricas de cada pergunta do formulário e de suas subperguntas, inclusive das perguntas que saíram do formulário e têm respostas. |
+| **RF34** | Período das Métricas e Comparação com o Anterior | Permitir escolher o período das métricas e comparar cada métrica com o período anterior de mesmo tamanho. |
+| **RF35** | Guia do Sistema e Primeiros Passos | Orientar a conta nova com os primeiros passos no Dashboard e um guia que percorre as telas do painel. |
+| **RF36** | Aviso de Feedbacks Pendentes | Mostrar no cabeçalho quantos feedbacks do escopo aguardam a análise da IA e levar à análise. |
+| **RF37** | Ativação dos Tipos de Feedback | Permitir que a empresa escolha os tipos que coleta (Produtos, Serviços e Departamentos); desativar um tipo inativa os itens dele. |
 
 ---
 
@@ -168,34 +182,45 @@
 
 ## Tabela de Rastreabilidade
 
-| Funcionalidade | Requisitos Funcionais | Requisitos Não Funcionais | Regras de Negócio |
-|---|---|---|---|
-| Autenticação Completa (Login, Logout, Callback) | RF01 | RNF01 | RNE-014 |
-| Login com Google | RF26 | RNF01 | RNE-013 |
-| Exclusão de Conta | RF27 | RNF01, RNF02 | - |
-| Trial e Status de Assinatura | RF21 | RNF08 | RNE-013 |
-| Recuperação e Reenvio de E-mail | RF16, RF17 | RNF01 | RNE-014 |
-| Gestão de Perfil | RF02 | RNF01, RNF08 | RNE-008 |
-| Gestão de Empresa | RF03 | RNF01, RNF08 | - |
-| Coleta de Dados de Contexto | RF04 | RNF01 | - |
-| Configuração da IA por Empresa | RF28 | RNF01 | - |
-| Geração Automática das Perguntas | RF25 | RNF05 | RNE-010 |
-| QR Code (Geração e Exportação) | RF05, RF19 | RNF07 | RNE-002, RNE-009 |
-| Canais de Coleta (QR Code, link e NFC) | RF22 | RNF06 | RNE-002 |
-| Campo de Comentário por Escopo | RF23 | RNF06 | - |
-| Submissão de Feedback Público | RF06 | RNF04, RNF06 | RNE-002 |
-| Proteção Anti-Spam (Duplicidade) | RF07 | RNF03 | RNE-004 |
-| Dashboard Principal | RF08 | RNF04, RNF08 | RNE-001, RNE-006 |
-| Listagem, Filtros e Detalhamento | RF09 | RNF04 | RNE-001 |
-| Estatísticas Globais | RF10 | RNF04, RNF08 | RNE-006 |
-| Analytics Base | RF11 | RNF04 | - |
-| Motor de IA e Regras Anti-Poluição | RF12, RF20 | RNF05, RNF10, RNF12 | RNE-003, RNE-005 |
-| Estatísticas de Classificação da IA | RF13 | RNF05, RNF10 | RNE-003 |
-| Diagnóstico do Escopo com IA | RF24 | RNF05 | RNE-006 |
-| Histórico de Clientes | RF14 | RNF01, RNF02 | RNE-001 |
-| Rotas Protegidas e API Gateway | RF15 | RNF01, RNF02, RNF09 | RNE-001 |
-| Apresentação (Landing Page) | RF18 | RNF06, RNF13 | - |
-| Monitoramento Sistêmico | - | RNF11 | - |
+A coluna **Casos de Uso** aponta os casos de [Casos de Uso](./casos-de-uso/visao-geral.md). As páginas Nota e Clientes e canais entram no UC-09 como fluxos alternativos. "-" indica que nenhum caso de uso cobre a funcionalidade.
+
+| Funcionalidade | Requisitos Funcionais | Casos de Uso | Requisitos Não Funcionais | Regras de Negócio |
+|---|---|---|---|---|
+| Autenticação Completa (Login, Logout, Callback) | RF01 | UC-01, UC-02 | RNF01 | RNE-014 |
+| Login com Google | RF26 | UC-01, UC-02 | RNF01 | RNE-010, RNE-013 |
+| Exclusão de Conta | RF27 | UC-12 | RNF01, RNF02 | - |
+| Trial e Status de Assinatura | RF21 | UC-01, UC-12 | RNF08 | RNE-013 |
+| Recuperação e Reenvio de E-mail | RF16, RF17 | UC-01, UC-03 | RNF01 | RNE-014 |
+| Gestão de Perfil | RF02 | UC-12 | RNF01, RNF08 | RNE-008 |
+| Gestão de Empresa | RF03 | UC-12 | RNF01, RNF08 | - |
+| Coleta de Dados de Contexto | RF04 | UC-08 | RNF01 | - |
+| Configuração da IA por Empresa | RF28 | UC-08 | RNF01 | - |
+| Geração Automática das Perguntas | RF25 | UC-08 | RNF05 | RNE-010 |
+| Ativação dos Tipos de Feedback | RF37 | UC-06 | RNF01 | RNE-009 |
+| QR Code (Geração e Exportação) | RF05, RF19 | UC-05, UC-07 | RNF07 | RNE-002, RNE-009 |
+| Canais de Coleta (QR Code, link e NFC) | RF22 | UC-04, UC-05 | RNF06 | RNE-002, RNE-004, RNE-009 |
+| Campo de Comentário por Escopo | RF23 | UC-05, UC-07 | RNF06 | - |
+| Submissão de Feedback Público | RF06 | UC-04 | RNF04, RNF06 | RNE-002, RNE-009 |
+| Proteção Anti-Spam (Duplicidade) | RF07 | UC-04 | RNF03 | RNE-004 |
+| Dashboard Principal | RF08 | UC-09 | RNF04, RNF08 | RNE-001, RNE-006 |
+| Período das Métricas e Comparação com o Anterior | RF34 | UC-09 | RNF04 | RNE-006 |
+| Detalhe da Nota | RF30 | UC-09 | RNF04, RNF08 | RNE-001, RNE-006 |
+| Clientes e Canais | RF31 | UC-09 | RNF02, RNF03 | RNE-001, RNE-004 |
+| Comparação de Itens | RF32 | UC-09 | RNF04 | RNE-001, RNE-006 |
+| Métricas por Pergunta | RF33 | UC-09 | RNF08 | RNE-001, RNE-006 |
+| Guia do Sistema e Primeiros Passos | RF35 | UC-05, UC-09, UC-12 | RNF06 | - |
+| Aviso de Feedbacks Pendentes | RF36 | UC-09, UC-10 | RNF05 | RNE-001 |
+| Listagem, Filtros e Detalhamento | RF09 | UC-10 | RNF04 | RNE-001 |
+| Estatísticas Globais | RF10 | UC-09 | RNF04, RNF08 | RNE-006 |
+| Analytics Base | RF11 | UC-11 | RNF04 | - |
+| Motor de IA e Regras Anti-Poluição | RF12, RF20 | UC-11 | RNF05, RNF10, RNF12 | RNE-003, RNE-005 |
+| Estatísticas de Classificação da IA | RF13 | UC-11 | RNF05, RNF10 | RNE-003 |
+| Diagnóstico do Escopo com IA | RF24 | UC-09 | RNF05 | RNE-001 |
+| Histórico de Clientes | RF14 | - | RNF01, RNF02 | RNE-001 |
+| Rotas Protegidas e API Gateway | RF15 | UC-02 | RNF01, RNF02, RNF09 | RNE-001 |
+| Apresentação (Landing Page) | RF18 | - | RNF06, RNF13 | - |
+| Páginas do Produto e Documentos Legais | RF29 | - | RNF06 | - |
+| Monitoramento Sistêmico | - | - | RNF11 | - |
 
 ---
 
@@ -219,7 +244,7 @@
 
 ## Detalhamento dos Requisitos Funcionais (por ID)
 
-Status: **Implementado** (como pedido), **Implementado (mudou)** (existe, de outro jeito), **Parcial** (só uma parte existe) e **Não implementado**. A prioridade dos requisitos RF-022 a RF-028 não foi definida na concepção.
+Status: **Implementado** (como pedido), **Implementado (mudou)** (existe, de outro jeito), **Parcial** (só uma parte existe) e **Não implementado**. A prioridade dos requisitos RF-022 a RF-037 não foi definida na concepção.
 
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
@@ -230,27 +255,36 @@ Status: **Implementado** (como pedido), **Implementado (mudou)** (existe, de out
 | **RF-005** | Geração e Gestão de QR Codes: QR da empresa e de cada item do catálogo, com até 3 perguntas por escopo e até 3 subperguntas cada, e ativação/desativação de cada ponto de coleta. | Implementado | Alta |
 | **RF-006** | Submissão de Feedback: formulário web móvel público que confere a empresa e o ponto de coleta ativo antes de abrir. | Implementado | Alta |
 | **RF-007** | Proteção Anti-Spam: fingerprint calculado no backend (hash MD5 do navegador e do IP) e bloqueio na API (`409`) do segundo envio do mesmo aparelho, para o mesmo ponto de coleta, no mesmo dia. | Implementado | Alta |
-| **RF-008** | Dashboard: métricas do escopo e do período escolhidos (estrelas, canais, movimento, perguntas, análise dos comentários e diagnóstico). O extrato dos feedbacks recentes saiu do Dashboard e ficou na tela Feedbacks. | Implementado (mudou) | Alta |
+| **RF-008** | Dashboard: um resumo por grupo para o escopo e o período escolhidos: avaliação por estrelas (com "Ver a nota completa", RF-030), perguntas do formulário (com a página de cada pergunta, RF-033) e "Por onde chegaram" (com "Ver horários de pico e clientes que voltam", RF-031), além da análise dos comentários e do diagnóstico. O movimento das avaliações fica na página Nota. Desde 12/11/2026 o Dashboard não tem cabeçalho próprio, e o botão do QR Code fica na barra de escopo e período. O extrato dos feedbacks recentes saiu do Dashboard e ficou na tela Feedbacks. | Implementado (mudou) | Alta |
 | **RF-009** | Listagem e Filtros: listagem paginada com filtros por nota, busca no comentário, item e tipo de escopo (Query Strings), canal de chegada, marca "Teste" e detalhe em janela. | Implementado | Média |
-| **RF-010** | Estatísticas de Feedbacks: consolidação matemática de médias, volume e distribuição de 1 a 5, com movimento no tempo, dias e horários de pico e clientes que voltam. | Implementado | Média |
-| **RF-011** | Analytics de Feedbacks: a tela Análise dos comentários separa os comentários por tom (positivos, neutros e negativos) e pela divergência entre a nota e o texto. | Implementado (mudou) | Média |
+| **RF-010** | Estatísticas de Feedbacks: consolidação matemática de médias, volume e distribuição de 1 a 5, com movimento no tempo (página Nota, RF-030), dias e horários de pico e clientes que voltam (página Clientes e canais, RF-031). | Implementado | Média |
+| **RF-011** | Analytics de Feedbacks: a Análise dos comentários tem duas telas, "Resumo" (tom, assuntos que mais impactam e resumo com recomendações) e "Comentários", que separa os comentários por tom (positivos, neutros e negativos) e pela divergência entre a nota e o texto. | Implementado (mudou) | Média |
 | **RF-012** | Insights/IA sob demanda: o pedido entra numa fila (`202` com o id do job), um worker chama o `ia-analyze` com a chave OpenRouter da própria empresa, e a Web acompanha o job. | Implementado (mudou) | Média |
 | **RF-013** | Estatísticas da IA: total analisado, distribuição de sentimentos, *top categories* e *keywords* com intervalos de confiança, sentimento líquido e sentimento por aspecto. | Implementado | Média |
-| **RF-014** | Gestão de Clientes: a tela Clientes mostra "Em breve". Existem só a métrica "clientes que voltam" (contada por aparelho, sem dado pessoal) e o nome e o e-mail do cliente no detalhe do feedback. | Não implementado | Média |
+| **RF-014** | Gestão de Clientes: não há lista de clientes identificados. A tela "Clientes" (`/user/edit/customers`) mostra "Em breve" e só abre pela URL, fora do menu. O item de menu "Clientes e canais" (`/user/customers`, RF-031) é outra tela: mostra a métrica "Clientes que voltam", contada por aparelho, sem dado pessoal. O nome e o e-mail do cliente aparecem só no detalhe do feedback. | Não implementado | Média |
 | **RF-015** | Proteção de Rotas: o middleware `requireAuth` valida a sessão em toda rota protegida do gateway, e a Web redireciona para o login sem sessão. O isolamento entre empresas fica na aplicação (RNE-001). | Implementado | Alta |
 | **RF-016** | Recuperação de Acesso: Fluxo completo de "Esqueci minha senha"; o token do link vai para um cookie httpOnly que vale 1 hora e só é enviado à rota de nova senha. | Implementado | Alta |
 | **RF-017** | Reenvio de Confirmação: endpoint para reenviar o e-mail de ativação, com resposta sempre igual e limite por e-mail e por IP. | Implementado | Média |
-| **RF-018** | Apresentação do Produto: Interface pública institucional (Landing Page) para atração de novos usuários. | Implementado | Baixa |
+| **RF-018** | Apresentação do Produto: Interface pública institucional (Landing Page) para atração de novos usuários. As páginas de detalhe do produto estão no RF-029. | Implementado | Baixa |
 | **RF-019** | Exportação e Compartilhamento: download do QR Code em PNG (a imagem é gerada no navegador, sem serviço de terceiros) e compartilhamento pela API nativa; sem ela, o link é copiado. | Implementado | Média |
 | **RF-020** | Filtro Semântico Anti-Poluição (IA): o `ia-analyze` descarta palavras-chave e categorias iguais às opções de resposta, aos rótulos da escala (péssimo a ótima) ou ao texto inteiro das perguntas, e exige que o termo apareça no comentário. Não remove palavras soltas das perguntas. | Implementado (mudou) | Alta |
 | **RF-021** | Exibição do Status de Assinatura: badge no menu da conta e no Perfil (não no Dashboard), com `subscription_status` e dias restantes do trial calculados no cliente. O status só é gravado no cadastro; nada o muda depois. | Implementado (mudou) | Média |
 | **RF-022** | Canais de Coleta: o formulário recebe a marca `canal` na URL (`qr`, `link`, `nfc` ou `teste`) e grava o canal no feedback; o Dashboard mostra "Por onde chegaram", e os feedbacks de teste ficam fora das métricas e da IA. | Implementado | — |
 | **RF-023** | Campo de Comentário por Escopo: modos padrão, pergunta própria (10 a 150 caracteres) e oculto; com pergunta própria, ela é guardada com o comentário e vai para a IA; com o campo oculto, o texto enviado é descartado. | Implementado | — |
-| **RF-024** | Diagnóstico do Escopo com IA: pedido pela fila, usa os números do escopo calculados no gateway e até 60 comentários; o histórico fica em Diagnósticos. Exige o contexto da empresa e a IA configurada. | Implementado | — |
+| **RF-024** | Diagnóstico do Escopo com IA: pedido pela fila, usa os números do escopo calculados no gateway e uma amostra de até 20 comentários, cada um cortado em 500 caracteres (o `ia-analyze` aceita até 60); o histórico fica em Diagnósticos. Exige o contexto da empresa e a IA configurada. | Implementado | — |
 | **RF-025** | Geração Automática das Perguntas: quando a empresa tem os três campos de contexto, a IA configurada e ainda as perguntas padrão, um job gera 3 perguntas; se falhar, a Web avisa e oferece tentar de novo. | Implementado | — |
 | **RF-026** | Login com Google: entrada pelo Better Auth; na primeira entrada a empresa é criada e a tela "Complete seu cadastro" pede nome do negócio, celular e aceite dos termos. O mesmo e-mail com senha e com Google é a mesma conta. Só funciona com as credenciais do Google configuradas. | Implementado | — |
 | **RF-027** | Exclusão de Conta: "Excluir minha conta" no Perfil (`POST /api/auth/delete-user`), com a senha ou, para quem só entra pelo Google, uma sessão aberta nas últimas 24 horas. Apaga a empresa e tudo dela numa transação, e depois o usuário. Publicada em 02/11/2026. | Implementado | — |
 | **RF-028** | Configuração da IA por Empresa: chave do OpenRouter colada ou obtida por "Conectar com OpenRouter", guardada cifrada (AES-256-GCM), com o painel mostrando só o final; escolha do modelo. Sem chave, as análises falham com `ia_config_required`. | Implementado | — |
+| **RF-029** | Páginas do Produto e Documentos Legais: "Coleta" (`/produto/coleta`), "Análise" (`/produto/analise`) e "Resultados" (`/produto/resultados`), com a navegação ativa entre elas e animações; Termos de Uso (`/termos`) e Política de Privacidade (`/privacidade`), com links no rodapé da Landing Page. As páginas do produto entraram e os termos e a política foram reformulados em 06/11/2026; a navegação ativa e as animações, em 07/11/2026. | Implementado | — |
+| **RF-030** | Detalhe da Nota: página "Nota" (`/user/ratings`), pelo escopo e período do cabeçalho: média, positivas, neutras e críticas, "Distribuição das avaliações" de 1 a 5★ e "Movimento das avaliações". Publicada em 12/11/2026. | Implementado | — |
+| **RF-031** | Clientes e Canais: página "Clientes e canais" (`/user/customers`): "Por onde chegaram" (QR Code, link e NFC), "Dias e horários de pico" (dia da semana × faixa de 6 horas) e "Clientes que voltam" (o mesmo aparelho que já tinha avaliado a empresa, número aproximado). Publicada em 12/11/2026. | Implementado | — |
+| **RF-032** | Comparação de Itens: "Comparar itens" (`/user/compare`) põe dois itens do mesmo tipo, no mesmo período, lado a lado: média, positivas, neutras, críticas, número de avaliações, tom e precisão. As perguntas ficam de fora, porque cada item tem as suas. | Implementado | — |
+| **RF-033** | Métricas por Pergunta: a página de cada pergunta (`/user/questions/:questionId`) mostra a pergunta e as subperguntas com nota, distribuição, % de satisfeitos e precisão, e o histórico de redações antigas. "Perguntas que saíram do formulário" (`/user/questions/removed`) lista as desativadas ou excluídas que têm respostas no escopo. | Implementado | — |
+| **RF-034** | Período das Métricas e Comparação com o Anterior: "Todo o período", "Últimos 7 dias", "Últimos 30 dias", "Últimos 3 meses", "Últimos 6 meses" ou "Personalizado"; com um período escolhido, "Comparar com o período anterior" busca o período de mesmo tamanho logo antes e marca se cada métrica melhorou ou piorou. | Implementado | — |
+| **RF-035** | Guia do Sistema e Primeiros Passos: a conta nova vê os "Primeiros passos" no Dashboard ("Ativar QR Code" e "Testar o formulário (opcional)"). O guia não abre sozinho: o Dashboard convida o gestor no primeiro feedback ou numa sessão seguinte, e depois de 2 adiamentos para de convidar; o guia percorre as telas do painel, inclusive Nota, "Movimento das avaliações" e Clientes e canais, e também abre pelo "Guia do Sistema" do menu da conta. O progresso fica no gateway (`/api/protected/user/onboarding/system-guide`). | Implementado | — |
+| **RF-036** | Aviso de Feedbacks Pendentes: o sino do cabeçalho, em todas as telas logadas, mostra os comentários do escopo que aguardam a análise da IA ("comentários novos" ou "Tudo em dia!"), abre a análise e tem o link "Ver todos os feedbacks". | Implementado | — |
+| **RF-037** | Ativação dos Tipos de Feedback: no "Catálogo" (`/user/edit/types-feedback`), a empresa liga Produtos, Serviços e Departamentos. Desativar um tipo inativa todos os itens dele, e o formulário desses itens para de aceitar respostas (RNE-009); desativar Produtos também limpa a lista de produtos do contexto da IA. | Implementado | — |
 
 ---
 

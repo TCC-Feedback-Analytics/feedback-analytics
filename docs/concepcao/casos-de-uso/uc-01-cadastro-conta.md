@@ -4,7 +4,7 @@
 |---|---|
 | **Ator** | Empresa (novo cliente) |
 | **Objetivo** | Criar uma conta e ativá-la para começar a usar o produto |
-| **Gatilho** | Visitante clica em "Começar agora" na landing page, em "Registrar" no cabeçalho ou em "Cadastre-se" na tela de login |
+| **Gatilho** | Visitante clica em "Começar teste grátis" ou "Começar grátis" na página inicial, num dos botões de cadastro das páginas do produto (`/produto/coleta`, `/produto/analise`, `/produto/resultados`) ou em "Cadastre-se" na tela de login |
 
 ---
 
@@ -36,7 +36,8 @@ Disponível só quando a Web está com `VITE_GOOGLE_AUTH_ENABLED=true` (as crede
 | Situação | O que o sistema faz |
 |---|---|
 | E-mail já cadastrado na plataforma | O sistema segue normalmente para a tela "Confirme seu e-mail" — não revela se o e-mail existe (RNE-014). O e-mail de confirmação não chegará; a tela oferece o reenvio e o link para o login |
-| Telefone já cadastrado em outra conta | Exibe "Telefone ja cadastrado." e pede outro número (`409 phone_taken`); no "Complete seu cadastro", o erro aparece no campo de telefone |
+| Telefone já cadastrado em outra conta | Exibe o toast "Telefone já cadastrado." com "Informe outro número para continuar o cadastro." (`409 phone_taken`); no "Complete seu cadastro", o campo de telefone mostra "Este telefone já está em outra conta." |
+| Nome do negócio com menos de 2 ou mais de 160 caracteres | Bloqueia o envio com "Informe o nome do negócio" ou "Nome do negócio muito longo" |
 | Telefone fora do padrão brasileiro | Rejeita o campo e informa o formato esperado (`+55DDXXXXXXXXX`, com DDD e número válidos) |
 | Senha com menos de 10 caracteres ou fácil de adivinhar | Bloqueia o cadastro e explica o motivo: a senha precisa de nota 4 no zxcvbn, e nome do negócio, e-mail e telefone dentro dela derrubam a nota |
 | Senha e confirmação diferentes | Bloqueia o envio com "As senhas não conferem" |
@@ -44,7 +45,7 @@ Disponível só quando a Web está com `VITE_GOOGLE_AUTH_ENABLED=true` (as crede
 | Muitas tentativas, cadastro indisponível ou sem conexão | Exibe toast com a orientação correspondente ("Muitas tentativas em pouco tempo", "Cadastro temporariamente indisponivel" ou "Falha de conexao") |
 | E-mail de confirmação não chegou | O gestor pode pedir o reenvio na tela "Confirme seu e-mail", em `/resend-confirmation` (pelo "Problemas para entrar?" do login) ou na tela de link expirado. A resposta é sempre genérica, e o botão espera o tempo devolvido pelo gateway ("Solicitar novamente em mm:ss"): 60 s entre reenvios do mesmo e-mail, até 5 por hora por e-mail e 20 a cada 15 min por IP |
 | Link de confirmação expirado ou inválido | O sistema leva a `/auth/link-expired`, que pede o e-mail e oferece um novo envio |
-| Falha ao entrar com o Google | O botão mostra "Não deu para entrar com o Google. Tente de novo ou use e-mail e senha." |
+| Falha ao entrar com o Google | Uma falha depois da autorização volta para `/login?error=google`, e o botão do login mostra "Não deu para entrar com o Google. Tente de novo ou use e-mail e senha." Na tela de cadastro, a mesma mensagem só aparece quando o pedido do endereço do Google falha |
 
 ---
 
@@ -55,10 +56,11 @@ Disponível só quando a Web está com `VITE_GOOGLE_AUTH_ENABLED=true` (as crede
 
 **Cenários a cobrir:**
 
-- **[CT-UC01-01]** 📝 *Planejado / não implementado* - Caminho feliz: preencher todos os campos válidos, enviar, receber e-mail de confirmação e ativar a conta pelo link. Não há teste E2E correspondente no spec (depende de recebimento de e-mail real).
-- **[CT-UC01-02]** ✅ *Coberto E2E* - Exceção — e-mail duplicado (prevenção de enumeração): tentar cadastrar com e-mail já existente deve **seguir para a tela "Confirme seu e-mail"** normalmente, sem revelar que o e-mail já está em uso. (Spec: `[CT-UC01-02] Segue para a tela de sucesso ao tentar cadastrar com e-mail já existente`.)
-- **[CT-UC01-03]** ⛔ *Obsoleto* - Exceção — documento já cadastrado: o cadastro não pede mais CPF/CNPJ, então o cenário não se aplica. A checagem de duplicidade que existe hoje é a do telefone (`409 phone_taken`), sem cenário próprio. (Spec antigo: `[CT-UC01-03] Exibe erro ao tentar cadastrar com documento já existente`.)
+- **[CT-UC01-01]** 📝 *Planejado / não implementado* - Caminho feliz: preencher todos os campos válidos, enviar, receber e-mail de confirmação e ativar a conta pelo link. Fica fora do runbook (depende de recebimento de e-mail real).
+- **[CT-UC01-02]** ✅ *Coberto manual (runbook)* - Exceção — e-mail duplicado (prevenção de enumeração): cadastrar com o e-mail da conta de teste e um celular livre deve **seguir para a tela "Confirme seu e-mail"** normalmente, com o e-mail digitado, "Reenviar e-mail de confirmação" e "Já confirmei · Ir para login", sem nenhum aviso de que o e-mail já está em uso.
+- **[CT-UC01-03]** ⛔ *Obsoleto* - Exceção — documento já cadastrado: o cadastro não pede mais CPF/CNPJ, então o cenário não se aplica. A checagem de duplicidade que existe hoje é a do telefone (`409 phone_taken`), no CT-UC01-08.
 - **[CT-UC01-04]** ⛔ *Obsoleto* - Exceção — documento inválido: não há mais campo de CPF/CNPJ no cadastro.
 - **[CT-UC01-05]** 🔵 *Unidade já atende* - Exceção — telefone inválido: inserir telefone fora do padrão BR deve bloquear o campo.
 - **[CT-UC01-06]** 🔵 *Unidade já atende* - Exceção — termos não aceitos: tentar enviar sem marcar os termos deve impedir o cadastro.
-- **[CT-UC01-07]** ❌ *Cenário não coberto* - Exceção — reenvio de e-mail: solicitar reenvio do e-mail de confirmação deve exibir a confirmação genérica de envio e iniciar a contagem até o próximo reenvio.
+- **[CT-UC01-07]** ✅ *Coberto manual (runbook)* - Exceção — reenvio de e-mail: solicitar reenvio do e-mail de confirmação deve exibir a confirmação genérica de envio e iniciar a contagem até o próximo reenvio ("Solicitar novamente em mm:ss").
+- **[CT-UC01-08]** ✅ *Coberto manual (runbook)* - Exceção — celular já cadastrado: cadastrar com o celular de outra conta deve exibir "Telefone já cadastrado." e manter o formulário na tela.
