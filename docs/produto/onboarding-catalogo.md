@@ -71,7 +71,7 @@ O gestor não precisa da equipe de suporte em nenhum passo.
 - **Quando não mexe:** se o gestor já editou as perguntas da empresa, a IA não interfere. Uma geração concluída não se repete.
 - **Na configuração inicial:** a tela "Preparando sua conta" espera o resultado. Depois de 40 segundos mostra "A IA está demorando", com a troca rápida de modelo. Na falha, mostra o motivo, "Tentar de novo" e a troca de modelo. "Continuar com as perguntas padrão" aparece na falha ou depois de 3 minutos.
 - **Se falhar:** as perguntas padrão continuam. Um aviso fica no topo do painel, mesmo em outro aparelho, até o gestor tentar de novo ou escolher "Manter perguntas padrão".
-- **Limites:** um pedido novo só depois de 60 segundos do anterior e no máximo 5 por dia. Quando o provedor responde "muitas requisições" (429), o pedido tenta de novo sozinho algumas vezes antes de falhar.
+- **Limites:** um pedido novo só depois de 60 segundos do anterior e no máximo 5 nas últimas 24 horas (uma janela que anda com o relógio, não o dia do calendário). Os dois valores podem ser trocados no Gateway (`IA_QUESTION_SUGGESTIONS_COOLDOWN_SECONDS` e `IA_QUESTION_SUGGESTIONS_MAX_PER_DAY`). Quando o provedor responde "muitas requisições" (429), o pedido tenta de novo sozinho algumas vezes antes de falhar.
 
 ---
 

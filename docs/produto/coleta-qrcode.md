@@ -35,10 +35,11 @@ ou o item e a marca do canal na URL (canal=qr | link | nfc)
         ↓
 Frontend chama o API Gateway (GET /api/public/enterprise/:id)
         ↓
-API confirma que a empresa existe e resolve o ponto de coleta ATIVO do escopo
-(no caso de um item, o item do catálogo também precisa estar ativo)
+API confirma que a empresa existe e devolve o ponto de coleta ATIVO do escopo
+(no caso de um item, o item do catálogo também precisa estar ativo),
+ou nenhum ponto de coleta
         ↓
-Sem ponto de coleta ativo → tela de erro (coleta desativada)
+Sem ponto de coleta ativo → o frontend mostra a tela de erro (coleta desativada)
         ↓
 Formulário é exibido com as perguntas do escopo e o campo de comentário dele
         ↓
@@ -107,7 +108,7 @@ Sem comentário, o feedback não vai para a IA nem conta como "aguardando análi
 ## Detalhes Técnicos
 
 - O endereço do formulário leva `enterprise`, e opcionalmente `collection_point` e `item`, mais a marca `canal`. Na etiqueta NFC o `item` fica de fora, para o endereço caber na memória da etiqueta
-- Antes de exibir o formulário, o backend confirma que a empresa existe (view `enterprise_public`) e resolve o ponto de coleta do tipo `QR_CODE` (o nome técnico vale para os três canais) com status `ACTIVE` e, no caso de um item, com o item do catálogo `ACTIVE`: tirar o item do catálogo ou desativar o tipo faz o formulário dele parar de abrir e de aceitar respostas, mesmo com o ponto de coleta ainda `ACTIVE` (RNE-009). Sem ponto de coleta, o formulário não é exibido — o cliente vê uma tela de erro explicativa:
+- Antes de exibir o formulário, o backend confirma que a empresa existe (view `enterprise_public`) e resolve o ponto de coleta do tipo `QR_CODE` (o nome técnico vale para os três canais) com status `ACTIVE` e, no caso de um item, com o item do catálogo `ACTIVE`: tirar o item do catálogo ou desativar o tipo faz o formulário dele parar de abrir e de aceitar respostas, mesmo com o ponto de coleta ainda `ACTIVE` (RNE-009). Sem ponto de coleta ativo, a API não recusa a abertura: responde `200` com `collection_point_id` nulo, e é o frontend que deixa de exibir o formulário. Com a empresa inexistente, a API responde `404`. Nos dois casos o cliente vê uma tela de erro explicativa:
     - sem ponto de coleta ativo (ou com o item fora do catálogo): "Este formulário está desativado ou o endereço é inválido. Peça um novo QR Code ou link ao estabelecimento." É a mesma frase do envio recusado, para quem chegou por QR Code, link ou NFC
     - empresa inexistente: "Empresa não encontrada. Verifique se o QR Code é válido."
 - O envio também exige o ponto de coleta ativo (senão `404 collection_point_not_found`) e respostas que batam exatamente com as perguntas ativas do escopo (senão `400 invalid_payload`). Com o `404` (ou `enterprise_not_found`), a tela diz a mesma frase da abertura: "Este formulário está desativado ou o endereço é inválido. Peça um novo QR Code ou link ao estabelecimento."

@@ -61,7 +61,7 @@ No painel, o escopo Empresa aparece como **"Geral"** no seletor de escopo e como
 Cada item pode ter **perguntas customizadas com subperguntas**:
 
 - A empresa define a pergunta principal (ex: "Como foi a qualidade do produto?"), com 20 a 150 caracteres
-- Cada pergunta pode ter até 3 subperguntas que detalham o aspecto avaliado
+- Cada pergunta pode ter até 3 subperguntas que detalham o aspecto avaliado, no mesmo limite de 20 a 150 caracteres
 - Perguntas e subperguntas usam a mesma escala estruturada: `PESSIMO → RUIM → MEDIANA → BOA → OTIMA` (notas 1 a 5)
 - Todas as subperguntas ativas aparecem logo abaixo da pergunta e precisam ser respondidas para o envio passar
 
