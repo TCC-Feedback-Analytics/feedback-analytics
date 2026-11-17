@@ -276,7 +276,7 @@ Para não passar uma falsa sensação de precisão, a interface comunica **quão
 - A Web não manda limite: cada execução analisa todos os comentários pendentes do escopo (a API aceita `limit` opcional, de no máximo 100), em lotes de até 20 feedbacks por chamada à IA (configurável via `IA_MAX_FEEDBACKS_PER_BATCH`)
 - Falhas passageiras do provedor ou da conexão têm até 3 tentativas, com espera de `min(60, 5·2^falhas)` segundos. Sem cota no momento, o job fica em `waiting_budget` e retoma sozinho
 - Resposta cortada pelo limite de saída do modelo encerra o job com `truncated_ai_response`. Lote sem todas as análises encerra com `incomplete_ai_response`. Resumo vazio da IA encerra com `insights_not_generated`
-- A síntese final usa a rota `/internal/ia-analyze/synthesize-insights` do IA Analyze
+- A síntese final usa a rota `/internal/ia-analyze/synthesize-insights` do IA Analyze. Acima de 100 resumos parciais (mais de 2.000 feedbacks com o lote padrão de 20), ela anda em rodadas, porque o IA Analyze aceita até 100 parciais e 100 kB por chamada
 - A análise grava com `INSERT … ON CONFLICT (feedback_id) DO NOTHING`: uma retomada não duplica nem sobrescreve a análise de um feedback
 
 ---

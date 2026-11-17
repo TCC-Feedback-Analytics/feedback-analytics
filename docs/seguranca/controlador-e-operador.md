@@ -35,7 +35,7 @@ Consequência prática: num incidente com feedbacks, **avisamos o negócio**, e 
 | **Brevo** | Envia os e-mails da conta | E-mail do gestor e os links de confirmação, de troca de e-mail e de nova senha | Fora do Brasil (União Europeia) | DPA aceito |
 | **Google** | Login com Google | O pedido de login, que devolve nome, e-mail e foto do perfil | Fora do Brasil | Configuração do OAuth publicada |
 
-Na `developer` da Web (PR #152), as fontes saem da própria Web. Até a `main` receber a mudança, o Google Fonts ainda recebe o IP e o navegador de quem abre as páginas em produção.
+Desde a PR #152 da Web, as fontes saem da própria Web, e o Google Fonts não recebe mais o IP nem o navegador de quem abre as páginas.
 
 **Transferência internacional:** Vercel, OpenRouter, Brevo e Google ficam fora do Brasil. A Política de Privacidade já avisa e cita o art. 33 da LGPD. Os acordos de tratamento de dados (DPA) dos fornecedores são o instrumento que cobre essa transferência.
 
@@ -56,8 +56,8 @@ A ANPD dispensa os agentes de pequeno porte, como startups, de indicar um encarr
 
 ## Divergências encontradas entre a Política e o sistema
 
-Pontos encontrados em 02/11/2026 e em 16/11/2026. Os três já foram corrigidos na Web. O 2 está na `developer` e ainda não na `main`:
+Pontos encontrados em 02/11/2026 e em 16/11/2026. Os três já foram corrigidos na Web:
 
 1. **E-mail: corrigido.** A Política dizia que os e-mails saíam pelo **SendGrid**; hoje ela cita o **Brevo**, que é quem envia em produção (gateway, configuração SMTP).
-2. **Limpeza de registros: corrigido na `developer` da Web (PR #152).** A Política dizia que os registros de sessão e de controle de envios "são apagados quando deixam de ser necessários". O texto novo diz que a sessão é apagada quando a pessoa sai da conta e que o IP, o navegador e o identificador do aparelho ficam enquanto a conta do negócio existir ([inventário](inventario-de-dados.md#por-quanto-tempo-fica)).
+2. **Limpeza de registros: corrigido na Web (PR #152).** A Política dizia que os registros de sessão e de controle de envios "são apagados quando deixam de ser necessários". O texto novo diz que a sessão é apagada quando a pessoa sai da conta e que o IP, o navegador e o identificador do aparelho ficam enquanto a conta do negócio existir ([inventário](inventario-de-dados.md#por-quanto-tempo-fica)).
 3. **Exclusão da conta: corrigido.** A exclusão dependia de um pedido por e-mail. Desde 02/11/2026, o botão "Excluir minha conta", no Perfil, apaga a conta, a empresa e todos os feedbacks, e os Termos citam o botão.

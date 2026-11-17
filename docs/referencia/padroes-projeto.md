@@ -77,7 +77,7 @@ Fluxos sem regra de negócio própria podem ir direto do Controller ao Repositor
 ## Contratos Compartilhados
 
 !!! note "Regra de Ouro"
-    Nunca duplique tipos entre serviços. Todo tipo que transita entre `api-gateway` e `ia-analyze` deve viver no pacote [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts), em `interfaces/contracts/ia-analyze/`. Cada serviço fixa a versão do pacote por tag do Git (hoje, `v1.9.0` na Web, `v1.8.0` no Gateway e `v1.7.0` no IA-Analyze). Exceção a corrigir: os tipos da síntese dos insights (`IaInsightsSynthesisRequest` e `IaInsightsSynthesisResponse`) ainda estão copiados em `types/insightsSynthesis.types.ts` nos dois serviços.
+    Nunca duplique tipos entre serviços. Todo tipo que transita entre `api-gateway` e `ia-analyze` deve viver no pacote [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts), em `interfaces/contracts/ia-analyze/`. Cada serviço fixa a versão do pacote por tag do Git (hoje, `v1.9.0` na Web e `v1.10.0` no Gateway e no IA-Analyze). Os tipos da síntese dos insights entraram no pacote na `v1.10.0`, e a cópia local saiu dos dois serviços.
 
 ---
 

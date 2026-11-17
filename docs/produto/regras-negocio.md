@@ -149,8 +149,8 @@ O `UPSERT` de insights usa **exclusivamente** a unicidade composta `(enterprise_
 1. Com `analyze_pending: true`, o job analisa primeiro os pendentes do escopo.
 2. Sem `force`, se cada lote já tem relatório mais novo que a última análise, o job conclui sem chamar a IA (cache). A tela manda `force` quando o resumo já está atualizado.
 3. **"generating":** um lote por passo, com até `IA_MAX_FEEDBACKS_PER_BATCH` feedbacks; cada lote devolve insights parciais.
-4. **"synthesizing":** uma síntese por relatório, em `/internal/ia-analyze/synthesize-insights`, junta os insights parciais.
-5. Upsert dos relatórios. O total do job é N lotes + 1 síntese por relatório.
+4. **"synthesizing":** a síntese de cada relatório, em `/internal/ia-analyze/synthesize-insights`, junta os insights parciais. Até 100 parciais (e 90 kB por chamada), é uma chamada só. Acima disso, anda em rodadas: blocos de tamanho parecido viram parciais da rodada seguinte, até sobrar a chamada final.
+5. Upsert dos relatórios. O total do job é N lotes + as chamadas de síntese de cada relatório.
 
 ---
 

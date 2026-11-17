@@ -44,7 +44,7 @@
 | Situação | O que o sistema faz |
 |---|---|
 | Contexto de negócio incompleto (qualquer um dos 3 campos em branco) | Botões de análise ficam desabilitados; mensagem com o link "Configurar agora", que abre o Perfil (`/user/profile#contexto-da-ia`). Se a análise for disparada mesmo assim, o toast "Configuração necessária" pede para preencher as informações da empresa |
-| IA da empresa não configurada | O job falha com `ia_config_required`, e a tela mostra "Configure sua chave OpenRouter em Editar > Configuração de IA antes de iniciar uma análise." |
+| IA da empresa não configurada | O job falha com `ia_config_required`, e a tela mostra "Configure sua chave OpenRouter em Configuração da coleta > Configuração de IA antes de iniciar uma análise." |
 | Escopo não-Empresa selecionado sem escolher item de catálogo | Botões ficam desabilitados até o item ser selecionado ("Selecione um item do catálogo no topo da página para este escopo.") |
 | Menos de 10 feedbacks no escopo | "Apenas Analisar" fica desabilitado ("Mínimo de 10 feedbacks"); se o job chegar ao gateway, a tela mostra "Há poucos feedbacks neste contexto para uma análise relevante. É necessário no mínimo 10 feedbacks." |
 | Nenhum feedback novo para analisar | "Apenas Analisar" fica desabilitado ("Nenhum feedback novo"); "Apenas gerar o resumo" exige ao menos uma análise anterior |

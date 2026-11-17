@@ -51,7 +51,7 @@ Primeiro parar o vazamento; investigar a fundo vem depois. O que fazer para cada
 | Token do worker (`WORKER_TICK_TOKEN`) | Trocar na Vercel do gateway e no secret `WORKER_TICK_TOKEN` do GitHub | O tick de 5 em 5 minutos falha até a troca. Os pedidos novos seguem andando |
 | Segredo dos limites de tentativa (`RESEND_RATE_LIMIT_SECRET`) | Trocar na Vercel do gateway e fazer um novo deploy | As contagens do login, do cadastro, da nova senha e do reenvio zeram |
 | Token da Vercel (`VERCEL_TOKEN`, secret do GitHub usado nos três deploys) | Revogar o token na Vercel, criar outro e atualizar o secret do GitHub | Os deploys param até a troca. Quem tinha o token podia publicar código em produção, e esse código lê todas as variáveis |
-| Sessão ou senha de um gestor | Apagar as sessões da pessoa (`DELETE FROM session WHERE user_id = '...'`) e pedir que troque a senha | A pessoa entra de novo. Na `developer`, redefinir a senha já encerra todas as sessões da pessoa (`revokeSessionsOnPasswordReset`). Na `main`, as sessões abertas continuam até o `DELETE` |
+| Sessão ou senha de um gestor | Apagar as sessões da pessoa (`DELETE FROM session WHERE user_id = '...'`) e pedir que troque a senha | A pessoa entra de novo. Redefinir a senha também encerra todas as sessões da pessoa (`revokeSessionsOnPasswordReset`) |
 | Falha que deixa ver dados de outra empresa | Tirar a rota do ar (reverter o deploy na Vercel), corrigir e só então subir de novo | A funcionalidade fica fora do ar |
 
 **Preserve as provas antes de apagar qualquer coisa:** exporte os registros da Vercel do período e anote as linhas afetadas no banco.

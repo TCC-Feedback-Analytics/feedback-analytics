@@ -2,12 +2,10 @@
 
 > **Última atualização:** 16 de novembro de 2026
 
-Esta página reproduz o texto da Web na `developer`, em `/privacidade` (`pages/public/privacy.tsx` e a data em `src/lib/constants/legal.ts`, no repositório da Web). Quem se cadastra aceita esse texto, na versão `v1` dos termos. Quando ele mudar na Web, esta página muda junto.
+Esta página reproduz o texto da Web, em `/privacidade` (`pages/public/privacy.tsx` e a data em `src/lib/constants/legal.ts`, no repositório da Web). Quem se cadastra aceita esse texto, na versão `v1` dos termos. Quando ele mudar na Web, esta página muda junto.
 
 !!! note "Situação (conferido em 16/11/2026)"
-    O texto abaixo é o da `developer` da Web (PR #152), de 16/11/2026. Os seis pontos em que o texto anterior não batia com o sistema foram corrigidos. O login com senha passou a gravar o IP e o navegador da sessão (PR #110 do Gateway), e as fontes passaram a sair da própria Web, sem o Google Fonts. Os outros quatro pontos foram corrigidos no próprio texto: os canais além do QR Code, os ajustes guardados no navegador, o prazo dos registros e quem avisa num incidente com feedbacks.
-
-    Enquanto a `main` não recebe essas PRs, a `/privacidade` em produção mostra o texto de 2/11/2026, e as páginas da Web ainda carregam o Google Fonts.
+    O texto abaixo é o da Web (PR #152), de 16/11/2026. Os seis pontos em que o texto anterior não batia com o sistema foram corrigidos. O login com senha passou a gravar o IP e o navegador da sessão (PR #110 do Gateway), e as fontes passaram a sair da própria Web, sem o Google Fonts. Os outros quatro pontos foram corrigidos no próprio texto: os canais além do QR Code, os ajustes guardados no navegador, o prazo dos registros e quem avisa num incidente com feedbacks.
 
     Resta uma diferença pequena: a seção 5 não cita tudo o que vai para a IA. O [inventário](inventario-de-dados.md) lista também a pergunta própria do comentário, a data do feedback e o nome do ponto de coleta.
 

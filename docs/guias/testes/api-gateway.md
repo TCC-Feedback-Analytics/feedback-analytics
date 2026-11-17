@@ -3,7 +3,7 @@
 Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço **API Gateway**. Os testes cobrem as rotas, os controladores (*controllers*), os serviços, os repositórios (o SQL que o Drizzle monta), a fila e o worker da IA, isolando o banco de dados e as chamadas externas por meio de mocks. As suítes que exigiam um **banco/ambiente real** (integração e e2e de *cutover*) foram removidas do CI e passaram a ser um [runbook manual](./manuais-api-gateway.md).
 
 !!! info "Conferido em 16/11/2026"
-    Inventário refeito contra o repositório: **53 arquivos** em `src/tests/*.test.ts`. A tabela antiga, de 8 arquivos e 77 testes, citava suítes que não existem mais (`auth.test.ts`) e um mock do Supabase que saiu com a migração para Better Auth e Drizzle. O número de testes muda a cada PR; o total atual sai no fim do `npm test` (484 em 16/11/2026, 2 deles pulados: a suíte contra Postgres real).
+    Inventário refeito contra o repositório: **53 arquivos** em `src/tests/*.test.ts`. A tabela antiga, de 8 arquivos e 77 testes, citava suítes que não existem mais (`auth.test.ts`) e um mock do Supabase que saiu com a migração para Better Auth e Drizzle. O número de testes muda a cada PR; o total atual sai no fim do `npm test` (491 em 16/11/2026, 2 deles pulados: a suíte contra Postgres real).
 
 ---
 

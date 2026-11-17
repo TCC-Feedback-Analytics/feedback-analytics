@@ -26,7 +26,7 @@ git clone https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gatew
 git clone https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze.git
 ```
 
-> Os serviços consomem o pacote público [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts) por **tag git** declarada no `package.json` de cada repo — hoje `v1.9.0` na Web, `v1.8.0` no Gateway e `v1.7.0` no IA Analyze. O `npm install` já o baixa e compila; não há token envolvido.
+> Os serviços consomem o pacote público [`@feedback/lib-shared`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts) por **tag git** declarada no `package.json` de cada repo — hoje `v1.9.0` na Web e `v1.10.0` no Gateway e no IA Analyze. O `npm install` já o baixa e compila; não há token envolvido.
 
 ---
 

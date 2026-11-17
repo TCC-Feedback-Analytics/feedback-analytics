@@ -32,7 +32,7 @@ Cada serviço vive em seu **próprio repositório**, com escopo, responsabilidad
 | `feedback-analytics-ia-analyze` | Serviço serverless | Processamento de IA com escopo e volume próprios |
 | `feedback-analytics` (este) | Documentação | Concepção, produto, decisões e requisitos (o schema do banco vive no gateway, em `drizzle/`) |
 
-O pacote de contratos resolve a sincronização de tipos: quando o formato de comunicação entre Gateway e IA-Analyze muda, uma nova versão do `@feedback/lib-shared` propaga o contrato e o TypeScript avisa imediatamente se algum lado quebrou. Cada serviço fixa a versão por **tag do Git**: hoje a Web está na `v1.9.0`, o Gateway na `v1.8.0` e o IA-Analyze na `v1.7.0`.
+O pacote de contratos resolve a sincronização de tipos: quando o formato de comunicação entre Gateway e IA-Analyze muda, uma nova versão do `@feedback/lib-shared` propaga o contrato e o TypeScript avisa imediatamente se algum lado quebrou. Cada serviço fixa a versão por **tag do Git**: hoje a Web está na `v1.9.0`, e o Gateway e o IA-Analyze estão na `v1.10.0`.
 
 A partir daqui, cada serviço tem sua própria arquitetura interna — veja os links em **Veja Também**.
 
@@ -98,7 +98,7 @@ Todo trabalho de IA passa pela fila `ia_analysis_job`, que é ao mesmo tempo a f
 
 5. **Persistência Incremental e Conclusão:**
    - O Worker salva as análises de cada lote em `feedback_analysis` (uma por feedback) e grava o progresso (`done`/`total`) e o checkpoint no próprio job (`options.checkpoint`), para retomar de onde parou.
-   - No relatório (*"Gerar insights"*), o Worker anda em etapas: analisa os pendentes, se pedido; gera um insight parcial por lote do escopo (sem corte em 100); e faz uma síntese por relatório em `/internal/ia-analyze/synthesize-insights`. O resumo e as recomendações vão para `feedback_insights_report`.
+   - No relatório (*"Gerar insights"*), o Worker anda em etapas: analisa os pendentes, se pedido; gera um insight parcial por lote do escopo (sem corte em 100); e faz a síntese do relatório em `/internal/ia-analyze/synthesize-insights`. Acima de 100 parciais, ou de 90 kB por chamada, a síntese anda em rodadas: blocos de tamanho parecido viram parciais da rodada seguinte, até sobrar uma chamada final (PR #115 do Gateway). O resumo e as recomendações vão para `feedback_insights_report`.
    - O diagnóstico do escopo vai para `scope_diagnosis`, e as perguntas geradas pela IA substituem as padrão em `questions_of_feedbacks` enquanto a empresa não as editou.
    - Ao finalizar, o job passa para `completed` (ou `failed`, depois das retentativas), e a interface do frontend exibe os dados atualizados.
 
@@ -117,8 +117,7 @@ Os tipos TypeScript que transitam entre Gateway e IA Analyze **não são duplica
 | `analysis.contract.ts` | Estruturas de saída: itens analisados, insights, contexto |
 | `scope-diagnosis.contract.ts` | Pedido e resposta do diagnóstico do escopo |
 | `company-question-suggestions.contract.ts` | Pedido e resposta da geração das perguntas da empresa |
-
-Exceção hoje: o pedido e a resposta da síntese dos insights (`/internal/ia-analyze/synthesize-insights`) ainda não estão no pacote. Os tipos `IaInsightsSynthesisRequest` e `IaInsightsSynthesisResponse` vivem copiados em `types/insightsSynthesis.types.ts`, no Gateway e no IA Analyze.
+| `insights-synthesis.contract.ts` | Pedido e resposta da síntese dos insights (`IaInsightsSynthesisRequest` e `IaInsightsSynthesisResponse`), desde a `v1.10.0` |
 
 ---
 

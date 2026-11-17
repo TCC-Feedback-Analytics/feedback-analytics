@@ -1,7 +1,7 @@
 # Testes — Visão Geral
 
 !!! info "Conferido em 16/11/2026"
-    Inventário refeito contra a branch `developer` dos três repositórios de código. As contagens são de **arquivos** de teste. O número de testes muda a cada PR: em 16/11/2026, o CI contou 713 na Web, 484 no API Gateway (2 pulados) e 148 no IA Analyze.
+    Inventário refeito contra a branch `main` dos três repositórios de código. As contagens são de **arquivos** de teste. O número de testes muda a cada PR: em 16/11/2026, o CI contou 713 na Web, 491 no API Gateway (2 pulados) e 148 no IA Analyze.
 
 ## Cobertura por Domínio
 

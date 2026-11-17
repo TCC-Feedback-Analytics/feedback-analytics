@@ -65,7 +65,7 @@ Todas as consultas filtram pelo enterprise_id resolvido no servidor
 | Dado | Cookie de sessão | Banco |
 |---|---|---|
 | Token da sessão | ✅ Só ele, assinado | ✅ `session.token` |
-| IP e navegador de onde a sessão foi aberta | ❌ | ✅ `session.ip_address`, `session.user_agent`. Desde o PR #110 (na `developer`), o login com e-mail e senha passa os headers ao Better Auth. Na `main`, os dois ainda ficam vazios nesse login |
+| IP e navegador de onde a sessão foi aberta | ❌ | ✅ `session.ip_address`, `session.user_agent`. Desde o PR #110, o login com e-mail e senha também passa os headers ao Better Auth |
 | ID do usuário | ❌ | ✅ `user.id` (`enterprise.auth_user_id` liga a empresa) |
 | Nome | ❌ | ✅ `user.name` |
 | E-mail | ❌ | ✅ `user.email` |
@@ -75,7 +75,7 @@ Todas as consultas filtram pelo enterprise_id resolvido no servidor
 | Termos de aceite | ❌ | ✅ `enterprise.terms_version`, `enterprise.terms_accepted_at` |
 | CPF / CNPJ | ❌ | ❌ Não é mais guardado |
 
-No login com Google, o Better Auth usa os tokens que o Google devolve (`access_token`, `refresh_token` e `id_token`, este um JWT com o e-mail, o nome e a foto da pessoa) para ler o perfil, mas o gateway **não os grava**: os ganchos de criação e de atualização da conta (`discardOAuthTokens`, em `src/auth/auth.ts`) gravam os três vazios. O sistema não chama o Google depois do login. Cifrar com o `encryptOAuthTokens` não bastaria: no Better Auth 1.7.18 ele cifra só o access e o refresh token, e o `id_token` continuaria legível. As contas Google que tinham tokens gravados antes dessa regra perdem os tokens na migration `0015_apagar_tokens_google.sql` (PR #110, na `developer`), que zera os três e mantém as colunas.
+No login com Google, o Better Auth usa os tokens que o Google devolve (`access_token`, `refresh_token` e `id_token`, este um JWT com o e-mail, o nome e a foto da pessoa) para ler o perfil, mas o gateway **não os grava**: os ganchos de criação e de atualização da conta (`discardOAuthTokens`, em `src/auth/auth.ts`) gravam os três vazios. O sistema não chama o Google depois do login. Cifrar com o `encryptOAuthTokens` não bastaria: no Better Auth 1.7.18 ele cifra só o access e o refresh token, e o `id_token` continuaria legível. As contas Google que tinham tokens gravados antes dessa regra perdem os tokens na migration `0015_apagar_tokens_google.sql` (PR #110), que zera os três e mantém as colunas.
 
 A Web lê o telefone e o e-mail do gestor só pelo `GET /api/protected/user/auth_user`, a partir da sessão. O Better Auth também expõe as rotas dele em `/api/auth/*`; pelo comportamento padrão da biblioteca, o `GET /api/auth/get-session` devolve o mesmo usuário (com o telefone) ao próprio gestor logado. Isso não foi executado nesta conferência.
 
