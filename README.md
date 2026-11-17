@@ -1,6 +1,6 @@
 # Feedback Analytics — Documentação
 
-Repositório **central de documentação** do Feedback Analytics, projeto que é ao mesmo tempo o nosso Projeto Integrador e o nosso TCC, desenvolvido na disciplina PFC (Projeto Final de Curso). Aqui vive a **descoberta e a decisão** do produto — concepção, requisitos, arquitetura, decisões e a referência do banco. O **código** de cada serviço mora em repositórios próprios (veja abaixo).
+Repositório **central de documentação** do Feedback Analytics, projeto que é ao mesmo tempo o nosso Projeto Integrador e o nosso TCC, desenvolvido na disciplina PFC (Projeto Final de Curso). Aqui vive a documentação do sistema inteiro: o produto, a concepção e os requisitos, a arquitetura e as decisões, a segurança e a LGPD, a referência do banco e os guias de instalação, deploy e testes. O **código** de cada serviço mora em repositórios próprios (veja abaixo).
 
 📖 **Site da documentação:** <https://tcc-feedback-analytics.github.io/feedback-analytics/>
 
@@ -25,7 +25,7 @@ O projeto adota metodologias ágeis, engenharia de software rigorosa e uma arqui
 | **[feedback-analytics-ia-analyze](https://github.com/TCC-Feedback-Analytics/feedback-analytics-ia-analyze)** | Público | Serviço isolado de IA (análise, síntese, diagnóstico do escopo e geração das perguntas), chamado só pelo Gateway |
 | **[feedback-analytics-contracts](https://github.com/TCC-Feedback-Analytics/feedback-analytics-contracts)** | Público | Pacote `@feedback/lib-shared` — tipos e contratos compartilhados |
 
-A **referência técnica** de cada serviço (arquitetura interna, endpoints, testes) vive no `docs/` do respectivo repositório de código. Este repositório concentra concepção, decisões arquiteturais, requisitos e a referência do banco. A fonte única do schema são as migrations Drizzle do [API Gateway](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle); o `database/sql/` é um dump antigo, mantido só como histórico.
+A **referência técnica** de cada serviço (arquitetura interna e endpoints) vive no `docs/` do respectivo repositório de código. Os testes dos três serviços estão documentados aqui, nos guias. A fonte única do schema são as migrations Drizzle do [API Gateway](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/drizzle); o `database/sql/` é um dump antigo, mantido só como histórico.
 
 O roadmap e o acompanhamento dos próximos passos do TCC2 ficam fora deste repositório, que
 mantém só a documentação do sistema.
