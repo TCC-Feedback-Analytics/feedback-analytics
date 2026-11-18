@@ -154,7 +154,7 @@ O detalhamento técnico de como cada regra é implementada está em [regras-nego
 
 ### São necessários pelo menos 10 feedbacks para rodar a análise
 
-**Decisão:** a análise de IA exige um mínimo de 10 feedbacks não analisados. Com menos do que isso, o sistema não executa.
+**Decisão:** a análise de IA exige um mínimo de 10 feedbacks com comentário no escopo. Com menos do que isso, o sistema não executa.
 
 **Por quê:** análises com pouquíssimos feedbacks produzem conclusões estatisticamente frágeis — uma única resposta negativa pode parecer um padrão quando não é. Dez feedbacks é o piso mínimo para que os padrões identificados tenham algum significado.
 

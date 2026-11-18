@@ -310,7 +310,7 @@ Duas métricas vêm do `GET /feedbacks/stats` e seguem o escopo e o período:
 - **Por onde chegaram:** com um canal só, a seção vira uma linha. O "Testar o formulário" não aparece.
 - **Quem escreve comentário:**
   - Com 10 avaliações ou mais e menos de 30% de comentários, a tela avisa que o tom fala de uma parte pequena dos clientes.
-  - Com 20 avaliações ou mais, a tela sugere mudar o campo de comentário do escopo quando menos de 15% comentam, ou quando, com 10 comentários ou mais, 60% deles são curtos (menos de 20 caracteres). A mesma regra vai para o diagnóstico da IA. Com o campo oculto em todo o recorte, não há sugestão.
+  - Com 20 avaliações ou mais, a tela sugere mudar o campo de comentário do escopo quando menos de 15% comentam, ou quando, com 10 comentários ou mais, 60% deles são curtos (até 20 caracteres). A mesma regra vai para o diagnóstico da IA. Com o campo oculto em todo o recorte, não há sugestão.
   - A comparação das notas usa a mesma regra de "Diferença incerta" da comparação de períodos.
 
 ---
