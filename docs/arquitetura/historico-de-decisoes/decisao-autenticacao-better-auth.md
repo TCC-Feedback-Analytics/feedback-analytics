@@ -37,7 +37,7 @@ O **app web não mudou o jeito de chamar auth**: ele já chamava os endpoints do
 |---|---|
 | `DATABASE_URL` | Conexão do Postgres (o mesmo do Supabase, pooler); em produção, com o papel `feedback_app` |
 | `BETTER_AUTH_SECRET` | Segredo aleatório (`openssl rand -base64 32`). **Sem ele o app não sobe.** |
-| `BETTER_AUTH_URL` | URL pública do Gateway (local: `http://localhost:3000`) |
+| `BETTER_AUTH_URL` | URL pública por onde se chega ao Better Auth: em produção, a URL da Web, que repassa `/api/*` ao Gateway; no local, `http://localhost:3000` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Entrada com o Google (opcional; a Web só mostra o botão com `VITE_GOOGLE_AUTH_ENABLED=true`). |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | Envio de e-mail. Prod: Brevo (`smtp-relay.brevo.com:587`, `SMTP_SECURE=false`, login e chave SMTP da Brevo). Local: Mailpit (`127.0.0.1:1025`). |
 | `IA_CONFIG_ENCRYPTION_KEY` | Chave mestra (`openssl rand -base64 32`) usada para cifrar chaves de IA (BYO-key) com AES-256-GCM em repouso no Postgres. |

@@ -78,7 +78,7 @@ O sistema tem uma topologia **hub-and-spoke**: o API Gateway é o hub central. O
 Todo trabalho de IA passa pela fila `ia_analysis_job`, que é ao mesmo tempo a fila e o status de progresso. São quatro tipos de job: `analyze_raw` (analisar os pendentes), `regenerate_insights` (relatório de insights, que também pode analisar os pendentes antes), `generate_scope_diagnosis` (diagnóstico do escopo) e `generate_company_questions` (as perguntas da empresa, geradas sozinhas quando o contexto e a IA ficam configurados).
 
 1. **Enfileiramento imediato (POST -> 202 Accepted):**
-   - O gestor clica em *"Analisar feedbacks"* ou *"Gerar insights"* no painel.
+   - O gestor clica em *"Analisar comentários com IA"* e escolhe *"Processar e analisar comentários com IA"*, *"Apenas Analisar"* ou *"Apenas gerar o resumo"*.
    - O Gateway cria um registro na tabela `ia_analysis_job` com status `queued` e retorna instantaneamente status HTTP `202 Accepted` acompanhado do `jobId`. Um índice parcial único impede dois jobs ativos iguais (duplo clique).
    - O frontend libera a interface, exibe barra global de progresso e inicia polling resiliente de status, permitindo ao usuário navegar ou recarregar a tela sem cancelar a operação.
 
@@ -98,7 +98,7 @@ Todo trabalho de IA passa pela fila `ia_analysis_job`, que é ao mesmo tempo a f
 
 5. **Persistência Incremental e Conclusão:**
    - O Worker salva as análises de cada lote em `feedback_analysis` (uma por feedback) e grava o progresso (`done`/`total`) e o checkpoint no próprio job (`options.checkpoint`), para retomar de onde parou.
-   - No relatório (*"Gerar insights"*), o Worker anda em etapas: analisa os pendentes, se pedido; gera um insight parcial por lote do escopo (sem corte em 100); e faz a síntese do relatório em `/internal/ia-analyze/synthesize-insights`. Acima de 100 parciais, ou de 90 kB por chamada, a síntese anda em rodadas: blocos de tamanho parecido viram parciais da rodada seguinte, até sobrar uma chamada final (PR #115 do Gateway). O resumo e as recomendações vão para `feedback_insights_report`.
+   - No resumo dos comentários (*"Apenas gerar o resumo"* ou o botão principal), o Worker anda em etapas: analisa os pendentes, se pedido; gera um insight parcial por lote do escopo (sem corte em 100); e faz a síntese do relatório em `/internal/ia-analyze/synthesize-insights`. Acima de 100 parciais, ou de 90 kB por chamada, a síntese anda em rodadas: blocos de tamanho parecido viram parciais da rodada seguinte, até sobrar uma chamada final (PR #115 do Gateway). O resumo e as recomendações vão para `feedback_insights_report`.
    - O diagnóstico do escopo vai para `scope_diagnosis`, e as perguntas geradas pela IA substituem as padrão em `questions_of_feedbacks` enquanto a empresa não as editou.
    - Ao finalizar, o job passa para `completed` (ou `failed`, depois das retentativas), e a interface do frontend exibe os dados atualizados.
 
