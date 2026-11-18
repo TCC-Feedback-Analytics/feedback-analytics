@@ -20,8 +20,10 @@
 |---|---|---|
 | Login — credenciais inválidas | `POST /api/public/auth/login` | `401 invalid_credentials` com a mensagem "E-mail ou senha inválidos."; a Web mostra "E-mail ou senha incorretos." |
 | Login — e-mail não confirmado | `POST /api/public/auth/login` | **Mesma** resposta `401 invalid_credentials`. O erro `EMAIL_NOT_VERIFIED` do Better Auth é remapeado por `mapLoginError` (`src/auth/errorMap.ts`) para não revelar que a conta existe porém está pendente. |
+| Login — muitas tentativas | `POST /api/public/auth/login` | Depois de 10 senhas erradas para o mesmo e-mail ou 100 erros do mesmo IP, a cada 15 min, responde `429 rate_limited`, exista o e-mail ou não. Só as tentativas que falham contam. |
 | Cadastro — e-mail já existente | `POST /api/public/auth/register` | `200 { ok: true, message: 'confirmation_required' }` — segue para a tela de sucesso sem indicar duplicidade. |
-| Recuperação de senha | `POST /api/public/auth/forgot-password` | `200` com "Se este e-mail estiver cadastrado, você receberá as instruções em breve." — independente de o e-mail existir. Acima do limite (5 pedidos por e-mail por hora ou 20 por IP a cada 15 min), responde `429 rate_limited` para qualquer e-mail. |
+| Cadastro — muitas tentativas | `POST /api/public/auth/register` | Acima de 5 pedidos por e-mail por hora ou 20 por IP a cada 15 min, responde `429 rate_limited`. |
+| Recuperação de senha | `POST /api/public/auth/forgot-password` | `200` com "Se este e-mail estiver cadastrado, você receberá as instruções em breve." — independente de o e-mail existir. Acima do limite (5 pedidos por e-mail por hora ou 20 por IP a cada 15 min), responde `429 rate_limited` para qualquer e-mail. Com o controle de pedidos fora do ar, responde `503 service_unavailable`. |
 | Recuperação de senha — link vencido ou já usado | `GET /api/public/auth/callback?type=recovery` | Com `error` ou sem token, o gateway redireciona para `/forgot-password?error=<código>` sem gravar o cookie `ba_reset`. A Web mostra "O link de redefinição expirou ou já foi usado. Peça um novo abaixo." Não revela se o e-mail existe. |
 
 > **Escopo:** a regra cobre apenas o identificador **e-mail**. A validação de telefone no cadastro permanece explícita (`409 phone_taken`) por ser uma decisão de UX de cadastro fora do escopo desta regra. O documento (CPF/CNPJ) não é mais pedido no cadastro, então o antigo `409 document_taken` deixou de existir.
@@ -65,7 +67,7 @@ A coluna `account_type` aceitava só `'CPF'` ou `'CNPJ'` (constraint `enterprise
 
 O Gateway é responsável por validar, filtrar e agrupar os dados antes de chamar o IA Analyze, e por persistir os resultados retornados. As regras internas do serviço (sentimentos, keywords, normalização) estão na seção [IA Analyze](#ia-analyze) abaixo.
 
-Todo trabalho de IA é **assíncrono**: `POST /ia-analyze/analyze-raw` e `/regenerate-insights` só enfileiram um job e respondem `202`. Um worker processa a fila em passos (um lote por vez) e grava o progresso; a Web acompanha por `GET /ia-analyze/jobs/:id`. Erros de validação e da IA chegam no `errorCode` do job, não como resposta do POST. Os erros tratados como temporários (`failed_remote_ia_analyze_request`, `ia_provider_unavailable`, `ia_provider_rate_limited` e `ia_provider_error`) voltam para a fila com espera; os demais terminam o job como `failed`. Cada job tenta no máximo 3 vezes; a espera é `min(60, 5·2^falhas)` segundos. Com `IA_RPM_LIMIT`/`IA_RPD_LIMIT` definidos, o job fica em `waiting_budget` até a janela virar.
+Todo trabalho de IA é **assíncrono**: `POST /ia-analyze/analyze-raw` e `/regenerate-insights` só enfileiram um job e respondem `202`. Um worker processa a fila em passos (um lote por vez) e grava o progresso; a Web acompanha por `GET /ia-analyze/jobs/:id`. Erros de validação e da IA chegam no `errorCode` do job, não como resposta do POST. Os erros tratados como temporários (`failed_remote_ia_analyze_request`, `ia_provider_unavailable`, `ia_provider_rate_limited` e `ia_provider_error`) voltam para a fila com espera; os demais terminam o job como `failed`. Cada lote tem no máximo 3 tentativas (o contador de falhas zera quando um lote conclui); a espera é `min(60, 5·2^falhas)` segundos. Com `IA_RPM_LIMIT`/`IA_RPD_LIMIT` definidos, o job fica em `waiting_budget` até a janela virar.
 
 #### Requisitos para Executar
 
@@ -403,14 +405,14 @@ Antes de qualquer comparação, textos passam por `normalizeForComparison`:
 
 1. Converte para minúsculas
 2. Remove acentos (NFD + regex)
-3. Remove pontuação e caracteres especiais
+3. Troca pontuação e caracteres especiais por espaço, mantendo o hífen
 4. Colapsa espaços múltiplos
 
 A comparação usa `isGroundedInMessage`, que opera em dois níveis:
 1. Verifica se o termo normalizado está contido diretamente na mensagem normalizada (`includes()`)
 2. Se não estiver, tokeniza tanto o termo quanto a mensagem e verifica se **pelo menos um token** do termo aparece na mensagem — tolerando categorias multipalavra parcialmente presentes no texto
 
-Isso garante que termos como "tempo de espera" sejam aceitos mesmo que a mensagem diga "demorou muito", desde que "espera" ou outro token relevante esteja presente.
+Os tokens são as palavras de 4 letras ou mais, fora as muito comuns e os rótulos de resposta. Assim, "tempo de espera" é aceito numa mensagem como "a espera foi longa", que tem "espera". Em "demorou muito", que não tem "tempo" nem "espera", o termo é descartado: a comparação é por palavra igual, não por sentido.
 
 ---
 
