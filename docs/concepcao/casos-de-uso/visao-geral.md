@@ -10,8 +10,8 @@ Cada arquivo desta pasta documenta um caso de uso do sistema — uma intenção 
 >
 > **Estado atual da cobertura:**
 > - A suíte **Playwright (e2e)** foi **removida** — a pasta `feedback-analytics-web/e2e/` não existe mais.
-> - O [runbook de testes manuais do Web](../../guias/testes/manuais-web.md) reproduz manualmente os cenários de **11 dos 12 UCs** (UC-01, 02, 04, 05, 06, 07, 08, 09, 10, 11, 12).
-> - **UC-03 fica fora do runbook do Web** (depende de e-mail real) — permanece coberto por unidade/manual pontual.
+> - O [runbook de testes manuais do Web](../../guias/testes/manuais-web.md) reproduz manualmente os cenários dos **12 UCs**.
+> - **UC-03** entrou no runbook do Web em 16/11/2026: no ambiente local, o e-mail com o link chega no Mailpit. O link vencido continua conferido por testes de unidade.
 > - **UC-06 e UC-10** têm apenas **smoke de carregamento de página** no runbook — os fluxos de ação documentados não são exercitados nesses cenários. UC-05 e UC-07 têm o smoke e também cenários de ação.
 
 ---

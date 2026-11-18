@@ -44,7 +44,7 @@
 
 ## Base para Teste E2E
 
-> **Este UC não possui cobertura E2E automatizada.** A suíte Playwright (e2e) foi **removida** e, mesmo antes disso, este fluxo nunca teve spec próprio — depende de recebimento de e-mail em tempo real, inviável em testes automatizados. Os cenários abaixo descrevem o comportamento esperado e a estratégia de cobertura por outros meios (unidade/manual): a verificação manual dos demais fluxos de interface do Web está no [runbook de testes manuais do Web](../../guias/testes/manuais-web.md), e a classificação de cada cenário está mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
+> **Este UC não possui cobertura E2E automatizada.** A suíte Playwright (e2e) foi **removida** e, mesmo antes disso, este fluxo nunca teve spec próprio — depende de recebimento de e-mail em tempo real, inviável em testes automatizados. Os cenários abaixo descrevem o comportamento esperado e a estratégia de cobertura por outros meios (unidade/manual): desde 16/11/2026, o [runbook de testes manuais do Web](../../guias/testes/manuais-web.md) tem a seção deste UC, com o e-mail recebido pelo Mailpit no ambiente local, e a classificação de cada cenário está mapeada no [Plano de Teste Estratégico](../../guias/testes/plano-estrategico.md).
 
 **Cenários a cobrir:**
 

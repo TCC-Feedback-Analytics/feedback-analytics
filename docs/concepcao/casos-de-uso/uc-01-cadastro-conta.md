@@ -42,7 +42,7 @@ Disponível só quando a Web está com `VITE_GOOGLE_AUTH_ENABLED=true` (as crede
 | Senha com menos de 10 caracteres ou fácil de adivinhar | Bloqueia o cadastro e explica o motivo: a senha precisa de nota 4 no zxcvbn, e nome do negócio, e-mail e telefone dentro dela derrubam a nota |
 | Senha e confirmação diferentes | Bloqueia o envio com "As senhas não conferem" |
 | Termos de uso não aceitos | Impede o envio do formulário |
-| Muitas tentativas, cadastro indisponível ou sem conexão | Exibe toast com a orientação correspondente ("Muitas tentativas em pouco tempo", "Cadastro temporariamente indisponivel" ou "Falha de conexao") |
+| Muitas tentativas, cadastro indisponível ou sem conexão | Exibe toast com a orientação correspondente ("Muitas tentativas em pouco tempo", "Cadastro temporariamente indisponível" ou "Falha de conexão") |
 | E-mail de confirmação não chegou | O gestor pode pedir o reenvio na tela "Confirme seu e-mail", em `/resend-confirmation` (pelo "Problemas para entrar?" do login) ou na tela de link expirado. A resposta é sempre genérica, e o botão espera o tempo devolvido pelo gateway ("Solicitar novamente em mm:ss"): 60 s entre reenvios do mesmo e-mail, até 5 por hora por e-mail e 20 a cada 15 min por IP |
 | Link de confirmação expirado ou inválido | O sistema leva a `/auth/link-expired`, que pede o e-mail e oferece um novo envio |
 | Falha ao entrar com o Google | Uma falha depois da autorização volta para `/login?error=google`, e o botão do login mostra "Não deu para entrar com o Google. Tente de novo ou use e-mail e senha." Na tela de cadastro, a mesma mensagem só aparece quando o pedido do endereço do Google falha |
