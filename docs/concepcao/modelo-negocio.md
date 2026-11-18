@@ -5,7 +5,7 @@ Este documento descreve como o Feedback Analytics funciona como negócio: para q
 Entender o modelo de negócio é tão importante quanto entender o código. Ele responde a pergunta mais fundamental do projeto: **por que este produto existe e como ele se sustenta.**
 
 !!! note "Material de concepção (jun–jul/2026)"
-    Este documento registra o modelo de negócio pensado na concepção e não foi reescrito. Em 03/11/2026, só as afirmações técnicas foram conferidas contra o código. O que o sistema faz hoje está em [Requisitos e Funcionalidades](./requisitos-e-funcionalidades.md).
+    Este documento registra o modelo de negócio pensado na concepção e não foi reescrito. Em 03/11/2026 e de novo em 16/11/2026, só as afirmações técnicas foram conferidas contra o código. O que o sistema faz hoje está em [Requisitos e Funcionalidades](./requisitos-e-funcionalidades.md).
 
 ---
 

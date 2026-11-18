@@ -55,7 +55,7 @@
 
 #### Mapa de Empatia
 
-<img src="../assets/mapaLucas.png" alt="Mapa de Empatia - Ana Rocha" width="600" />
+<img src="../assets/mapaLucas.png" alt="Mapa de Empatia - Lucas Silva" width="600" />
 
 ---
 
@@ -83,7 +83,7 @@
 
 #### Mapa de Empatia
 
-<img src="../assets/mapaCarlos.png" alt="Mapa de Empatia - Ana Rocha" width="600" />
+<img src="../assets/mapaCarlos.png" alt="Mapa de Empatia - Carlos Mendes" width="600" />
 
 ---
 

@@ -5,7 +5,7 @@
 Este documento mapeia quem são os stakeholders do Feedback Analytics, o que cada um espera do sistema e como seus interesses moldam decisões de produto, arquitetura e experiência.
 
 !!! note "Material de concepção (jun–jul/2026)"
-    O mapa de stakeholders é da concepção e não foi reescrito. Em 03/11/2026, só as afirmações técnicas foram conferidas contra o código.
+    O mapa de stakeholders é da concepção e não foi reescrito. Em 03/11/2026 e de novo em 16/11/2026, só as afirmações técnicas foram conferidas contra o código.
 
 ---
 
