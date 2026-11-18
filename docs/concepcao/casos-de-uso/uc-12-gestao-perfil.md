@@ -25,7 +25,7 @@ O **logout** e o **Guia do Sistema** ficam no **menu de conta no topo do layout*
 
 **Atualizar nome:**
 
-1. O gestor clica em "Editar" no campo "Nome completo" e altera o valor.
+1. O gestor clica em "Editar" no campo "Nome do negócio" e altera o valor.
 2. Confirma a alteração.
 3. O sistema valida o nome (de 2 a 120 caracteres) e salva.
 4. O sistema confirma com o toast "Nome atualizado!" e o nome atualizado aparece no perfil.
@@ -74,7 +74,7 @@ O **logout** e o **Guia do Sistema** ficam no **menu de conta no topo do layout*
 
 **Cenários a cobrir:**
 
-- **[CT-UC12-01]** ✅ *Coberto manual (runbook)* - Carregamento: em `/user/profile`, aparecem as seções "Dados pessoais e acesso" (com "Nome completo" e "Email"), "Dados e configurações da empresa", o card "Contexto e LLM da empresa" e, no fim, "Excluir minha conta".
+- **[CT-UC12-01]** ✅ *Coberto manual (runbook)* - Carregamento: em `/user/profile`, aparecem as seções "Dados pessoais e acesso" (com "Nome do negócio" e "Email"), "Dados e configurações da empresa", o card "Contexto e LLM da empresa" e, no fim, "Excluir minha conta".
 - **[CT-UC12-02]** ✅ *Coberto manual (runbook)* - E-mail exibido: o e-mail da conta logada aparece no perfil.
 - **[CT-UC12-03]** ✅ *Coberto manual (runbook)* - Endereço antigo do QR Code: o Perfil não tem mais link de QR Code. Abrir direto `/user/qrcode/enterprise` leva a `/user/edit/feedback-general`, com a seção "Canais de coleta".
 - **[CT-UC12-04]** ✅ *Coberto manual (runbook)* - Catálogo acessível fora do perfil: o catálogo fica em "Configuração da coleta" › "Catálogo", não no Perfil. Abrir `/user/edit/types-feedback` mostra a tela do catálogo.

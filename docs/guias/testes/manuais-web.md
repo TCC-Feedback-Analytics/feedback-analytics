@@ -478,7 +478,7 @@ Rotas: `/user/profile`, `/user/qrcode/enterprise`, `/user/edit/types-feedback`, 
 
 - **Passos:**
   1. Navegue para `/user/profile` e aguarde o conteúdo principal.
-- **Resultado esperado:** a URL corresponde a `/user/profile` e aparecem as seções **"Dados pessoais e acesso"** (com **"Nome completo"** e **"Email"**), **"Dados e configurações da empresa"**, o cartão **"Contexto e LLM da empresa"** e, no fim, **"Excluir minha conta"**.
+- **Resultado esperado:** a URL corresponde a `/user/profile` e aparecem as seções **"Dados pessoais e acesso"** (com **"Nome do negócio"** e **"Email"**), **"Dados e configurações da empresa"**, o cartão **"Contexto e LLM da empresa"** e, no fim, **"Excluir minha conta"**.
 
 ### CT-UC12-02 — E-mail do usuário autenticado é exibido no perfil
 
