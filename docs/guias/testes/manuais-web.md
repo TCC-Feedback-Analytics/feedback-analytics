@@ -466,7 +466,7 @@ Rotas: `/user/insights/overview` (Resumo, título "Análise dos comentários") e
   1. Navegue para `/user/insights/overview`.
   2. Clique em **"Analisar comentários com IA"**, na barra abaixo do cabeçalho.
   3. Na janela, localize **"Apenas gerar o resumo"** e, se estiver habilitado, clique nele.
-- **Resultado esperado:** aparece indicação de progresso — **"Processando IA..."** / "Escrevendo o resumo (N de M)..." / "Escrevendo o resumo dos comentários em segundo plano" — ou a confirmação **"Análise atualizada!"**.
+- **Resultado esperado:** aparece indicação de progresso — **"Processando IA..."** / "Escrevendo o resumo (N de M)..." / "Escrevendo o resumo dos comentários em segundo plano" — e, quando o resumo termina, a etapa dele na janela passa a **"Atualizado"**.
 
 ---
 
