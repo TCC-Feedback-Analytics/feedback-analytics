@@ -95,7 +95,7 @@ Stack técnica: React 19 SPA com React Router v7, API Gateway Node.js (Express, 
 
 - **Teste de Integração:** Verificação de que as camadas loader → service → API Gateway retornam dados com o contrato esperado; que as actions processam FormData e acionam os serviços corretos; e que o fluxo de autenticação Better Auth + cookie httpOnly funciona de ponta a ponta. Responsável: Engenharia/QA.
 
-- **Teste de Sistema (E2E):** Navegação pelos casos de uso documentados, simulando o comportamento real dos três atores. A cobertura E2E abrange 11 dos 12 UCs (UC-01, UC-02, UC-04 a UC-12) — o UC-03 (recuperação de senha) fica **fora do roteiro E2E** por depender de e-mail real e do rate limit de e-mail do provedor de autenticação, ficando coberto por testes de unidade/integração e validação manual. Responsável: QA. Execução: **manual**, seguindo o runbook [Testes manuais — Web](./manuais-web.md) (a antiga automação Playwright foi removida).
+- **Teste de Sistema (E2E):** Navegação pelos casos de uso documentados, simulando o comportamento real dos três atores. A cobertura E2E abrange os 12 UCs. O UC-03 (recuperação de senha) entrou no roteiro em 16/11/2026: no ambiente local, o e-mail com o link chega no Mailpit, e o link vencido segue conferido por testes de unidade. Responsável: QA. Execução: **manual**, seguindo o runbook [Testes manuais — Web](./manuais-web.md) (a antiga automação Playwright foi removida).
 
 - **Teste de Aceitação (UAT):** Realizado por gestores reais em **produção** (não há mais ambiente de homologação — deploy main-only), validando se os fluxos de configuração → coleta → análise refletem as necessidades reais do negócio.
 
@@ -142,7 +142,7 @@ A execução manual do E2E aponta preferencialmente para **produção** (URL dep
 
 **Critérios de Saída:**
 
-- 100% dos cenários de caminho feliz (11 dos 12 UCs; UC-03 coberto por testes de unidade/integração) executados manualmente com sucesso.
+- 100% dos cenários de caminho feliz dos 12 UCs executados manualmente com sucesso (o do UC-03 no ambiente local, com o Mailpit).
 - Zero bugs de bloqueio nos fluxos de autenticação e coleta de feedback (UC-01, UC-02, UC-04, UC-05).
 - Cobertura de código ≥ 80% nas funções de validação (testes de unidade).
 - Todos os bugs críticos identificados registrados e com responsável atribuído.
