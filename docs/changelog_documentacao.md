@@ -1,7 +1,7 @@
 # Changelog da Documentação
 
 Categoria: Gestão de Projeto
-Versão global atual: v4.36
+Versão global atual: v4.37
 Última edição: 19 de novembro de 2026
 
 ---
@@ -54,6 +54,7 @@ Registra todas as alterações significativas feitas nas páginas de documentaç
 
 | Versão Global | Data | O que Mudou | Páginas afetadas |
 | --- | --- | --- | --- |
+| v4.37 | 19/11/2026 | **Modelo de negócio:** gráfico do custo da infraestrutura por empresa (R$ 26,43 com 10 empresas, R$ 5,29 com 50, R$ 2,64 com 100, R$ 3,61 com 200 nos planos médios e R$ 1,45 com 500) na seção Como o preço foi definido. | `concepcao/modelo-negocio.md`, `assets/grafico-custo-por-empresa.png` |
 | v4.36 | 19/11/2026 | **Modelo de negócio:** nova seção **Como o preço foi definido**, que confere os R$ 79,90 com o custo dos planos pagos de produção (Vercel Pro, Supabase Pro, Brevo e domínio: R$ 264,33 por mês nos planos básicos e R$ 722,53 nos médios), a taxa da cobrança no Asaas (cada assinatura deixa R$ 77,02), o ponto de equilíbrio (4 e 10 empresas pagantes), os preços de entrada dos concorrentes e o preço psicológico. Dois gráficos novos em `assets/`. Preços lidos nas páginas oficiais em 19/11/2026, dólar a R$ 5,80. | `concepcao/modelo-negocio.md`, `assets/grafico-equilibrio-preco.png`, `assets/grafico-precos-concorrentes.png` |
 | v4.35 | 19/11/2026 | **Modelo de negócio:** diagrama de estados da cobrança na seção Cobrança e pagamento, com os status da empresa (`TRIAL`, `ACTIVE`, `EXPIRED` e `CANCELED`) e o que leva de um ao outro. | `concepcao/modelo-negocio.md` |
 | v4.34 | 19/11/2026 | **Modelo de negócio:** o preço passa a R$ 79,90 por mês, e entra a seção **Cobrança e pagamento**, definida para implementar depois da apresentação à banca: cadastro sem cartão, assinatura ao fim do teste por Pix Automático ou cartão de crédito por um intermediador brasileiro, avisos antes do fim, modo leitura e coleta pausada sem pagamento, cancelamento pelo Perfil sem multa e o consumo da IA pago pela empresa direto na conta OpenRouter dela. | `concepcao/modelo-negocio.md` |

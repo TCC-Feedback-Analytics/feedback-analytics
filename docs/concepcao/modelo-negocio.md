@@ -139,6 +139,10 @@ Quatro empresas pagantes cobrem os planos básicos, e dez cobrem os médios.
 
 ![Receita líquida por número de empresas pagantes contra o custo dos planos básicos e médios](../assets/grafico-equilibrio-preco.png)
 
+Com mais clientes, o custo da infraestrutura dividido por empresa cai. Com 50 empresas pagantes ele fica em R$ 5,29 por mês, menos de 7% da assinatura, e com 500 cai para R$ 1,45. A pequena alta em 200 empresas vem da troca para os planos médios.
+
+![Custo mensal da infraestrutura por empresa, de 10 a 500 empresas pagantes](../assets/grafico-custo-por-empresa.png)
+
 **4. Preço dos concorrentes.** O plano de entrada do Feedback Analytics fica abaixo de todos os concorrentes que publicam preço, e já inclui a análise por IA. Typeform e Survicate só trazem a análise dos comentários por IA em planos de US$ 379 e US$ 349 por mês. Qualtrics, Medallia e AskNicely não publicam preço. Fontes: [Typeform](https://www.typeform.com/pricing/), [Survicate](https://survicate.com/pricing/), [Canny](https://canny.io/pricing) e [Zendesk](https://www.zendesk.com.br/pricing/).
 
 ![Preço mensal do plano pago de entrada do Feedback Analytics e dos concorrentes](../assets/grafico-precos-concorrentes.png)
