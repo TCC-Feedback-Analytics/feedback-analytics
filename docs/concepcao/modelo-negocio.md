@@ -88,17 +88,15 @@ O diagrama mostra o mesmo fluxo pelos status que a empresa já tem no banco (`su
 
 ```mermaid
 stateDiagram-v2
-    direction LR
-    state "Teste (4 meses, acesso completo)" as TRIAL
-    state "Ativa (acesso completo)" as ACTIVE
-    state "Expirada (só leitura, coleta pausada)" as EXPIRED
-    state "Cancelada (acesso até o fim do mês pago)" as CANCELED
+    state "Teste: 4 meses, acesso completo" as TRIAL
+    state "Ativa: renova todo mês, R$ 79,90" as ACTIVE
+    state "Expirada: só leitura, coleta pausada" as EXPIRED
+    state "Cancelada: acesso até o fim do mês pago" as CANCELED
     [*] --> TRIAL: cadastro sem cartão
-    TRIAL --> ACTIVE: assinou por Pix Automático ou cartão
-    TRIAL --> EXPIRED: fim do teste sem pagamento
-    ACTIVE --> ACTIVE: renovação mensal de R$ 79,90
-    ACTIVE --> EXPIRED: renovação sem pagamento
-    ACTIVE --> CANCELED: cancelou pelo Perfil
+    TRIAL --> ACTIVE: assinou (Pix ou cartão)
+    TRIAL --> EXPIRED: não assinou
+    ACTIVE --> EXPIRED: não pagou a renovação
+    ACTIVE --> CANCELED: cancelou
     EXPIRED --> ACTIVE: assinou depois
     CANCELED --> ACTIVE: assinou de novo
     EXPIRED --> [*]: excluiu a conta
