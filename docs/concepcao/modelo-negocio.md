@@ -5,7 +5,7 @@ Este documento descreve como o Feedback Analytics funciona como negócio: para q
 Entender o modelo de negócio é tão importante quanto entender o código. Ele responde a pergunta mais fundamental do projeto: **por que este produto existe e como ele se sustenta.**
 
 !!! note "Material de concepção (jun–jul/2026)"
-    Este documento registra o modelo de negócio pensado na concepção e não foi reescrito. Em 03/11/2026 e de novo em 16/11/2026, só as afirmações técnicas foram conferidas contra o código. O que o sistema faz hoje está em [Requisitos e Funcionalidades](./requisitos-e-funcionalidades.md).
+    Este documento registra o modelo de negócio pensado na concepção e não foi reescrito. Em 19/11/2026 entraram o preço de R$ 79,90 e a seção Cobrança e pagamento. Em 03/11/2026 e de novo em 16/11/2026, só as afirmações técnicas foram conferidas contra o código. O que o sistema faz hoje está em [Requisitos e Funcionalidades](./requisitos-e-funcionalidades.md).
 
 ---
 
@@ -63,11 +63,28 @@ Esse período existe por uma razão estratégica: feedback analytics é um produ
 
 | Item | Detalhe |
 |---|---|
-| **Preço** | ~R$ 80,00 / mês |
+| **Preço** | R$ 79,90 / mês |
+| **Análise por IA** | Vem no plano, sem upgrade. O consumo do modelo é pago pela empresa direto ao provedor, na conta OpenRouter que ela conecta, e por isso fica fora dos R$ 79,90 |
 | **O que inclui** | Canais de coleta (QR Code, link e NFC) com todos os tipos de feedback: Empresa (Geral), Produtos, Serviços e Departamentos |
 | **Restrição** | Nenhuma além do plano — acesso completo ao produto |
 
 **Por que isso importa para o projeto:** No começo para mostrar o valor do produto um único plano simplifica o produto e a experiência. Não há lógica de feature flag ou bloqueio por tier para manter no código. Todo usuário autenticado tem acesso a tudo — o esforço de desenvolvimento vai para o produto em si, não para gerenciar limites de plano.
+
+### Cobrança e pagamento
+
+!!! info "Definido em 19/11/2026, para implementar depois da apresentação à banca"
+    A cobrança ainda não existe no código: hoje toda conta fica no período de teste, sem bloqueio no fim. A tabela abaixo é como ela vai funcionar.
+
+| Momento | Como funciona |
+|---|---|
+| **Cadastro** | Sem cartão e sem pagamento. A conta nasce no período de teste de 4 meses (`TRIAL`), como já acontece hoje. Pedir cartão logo no cadastro afastaria justamente o pequeno negócio que ainda não viu o valor do produto. |
+| **Fim do teste** | Avisos 7 dias e 1 dia antes do fim. A empresa assina pelo Perfil, por **Pix Automático** (o Pix recorrente do Banco Central) ou **cartão de crédito**, por um intermediador de pagamento brasileiro, como Mercado Pago ou Asaas. Com o pagamento confirmado, o status vira `ACTIVE`. |
+| **Renovação** | Cobrança mensal recorrente de R$ 79,90, no mesmo meio de pagamento. |
+| **Sem pagamento** | O status vira `EXPIRED`. O painel fica só para leitura e a coleta é pausada em todos os canais, com a mesma pausa que o gestor já usa hoje. Os dados continuam guardados até o gestor excluir a conta e voltam a valer se a empresa assinar. O prazo de guarda das contas expiradas entra no [inventário de dados pessoais](../seguranca/inventario-de-dados.md) junto com a cobrança. |
+| **Cancelamento** | Pelo Perfil, a qualquer momento e sem multa. O acesso continua até o fim do mês já pago, e o status vira `CANCELED`. A exclusão da conta, que já existe, apaga a empresa e todos os dados. |
+| **Uso da IA** | A análise por IA vem no plano, sem upgrade. O consumo do modelo é pago pela empresa direto ao provedor, na conta OpenRouter que ela conecta, porque cada empresa escolhe o próprio modelo e paga só o que usa. |
+
+**Por que isso importa para o projeto:** a cobrança mexe no status da empresa, que já existe no banco (`subscription_status` e `trial_ends_at`) e já aparece no badge do menu e do Perfil. O que falta é o intermediador avisar o pagamento ao gateway e o gateway aplicar o modo leitura e a pausa da coleta quando o status for `EXPIRED`.
 
 ---
 
@@ -125,7 +142,7 @@ Grupos de WhatsApp, Telegram e comunidades online de empreendedores brasileiros 
 
 ### Indicação (Referral)
 
-Clientes satisfeitos recomendam para outros negócios da sua rede. Para um produto com ticket de R$80/mês, um programa de indicação com desconto ou mês grátis tem ROI alto.
+Clientes satisfeitos recomendam para outros negócios da sua rede. Para um produto com ticket de R$ 79,90/mês, um programa de indicação com desconto ou mês grátis tem ROI alto.
 
 ---
 
@@ -147,7 +164,7 @@ Métricas são o GPS do produto. Sem elas, as decisões de onde investir tempo e
 
 ### MRR — Receita Mensal Recorrente
 
-**O que é:** soma de todas as assinaturas ativas no mês. `MRR = clientes pagantes × R$ 80`.
+**O que é:** soma de todas as assinaturas ativas no mês. `MRR = clientes pagantes × R$ 79,90`.
 
 **Por que importa:** é o número que mostra a saúde financeira real do negócio. Crescimento consistente de MRR indica produto e aquisição funcionando juntos.
 
@@ -157,7 +174,7 @@ Métricas são o GPS do produto. Sem elas, as decisões de onde investir tempo e
 
 **O que é:** percentual de clientes pagantes que cancelam por mês.
 
-**Por que importa:** churn alto destrói o MRR mesmo com boa aquisição. Para um produto de R$80/mês, perder 1 cliente exige ganhar 1 novo só para ficar no mesmo lugar.
+**Por que importa:** churn alto destrói o MRR mesmo com boa aquisição. Para um produto de R$ 79,90/mês, perder 1 cliente exige ganhar 1 novo só para ficar no mesmo lugar.
 
 **Meta de referência:** churn abaixo de 3% ao mês é considerado saudável para micro-SaaS voltado para negócios.
 
@@ -166,10 +183,10 @@ Métricas são o GPS do produto. Sem elas, as decisões de onde investir tempo e
 ### LTV / CAC
 
 **O que é:**
-- **LTV (Lifetime Value):** quanto um cliente gera de receita ao longo de toda a relação. `LTV = R$80 / churn_rate`
+- **LTV (Lifetime Value):** quanto um cliente gera de receita ao longo de toda a relação. `LTV = R$ 79,90 / churn_rate`
 - **CAC (Customer Acquisition Cost):** quanto custa adquirir um cliente (anúncios, tempo, etc.)
 
-**Por que importa:** a relação LTV/CAC mostra se o negócio é sustentável. Se custa R$400 adquirir um cliente que paga R$80/mês e cancela em 3 meses, o negócio perde dinheiro em cada venda.
+**Por que importa:** a relação LTV/CAC mostra se o negócio é sustentável. Se custa R$400 adquirir um cliente que paga R$ 79,90/mês e cancela em 3 meses, o negócio perde dinheiro em cada venda.
 
 **Meta de referência:** LTV deve ser pelo menos 3× o CAC para o modelo ser viável.
 
@@ -194,7 +211,7 @@ Métricas são o GPS do produto. Sem elas, as decisões de onde investir tempo e
 ## Resumo Visual
 
 ```
-CLIENTE DESCOBRE          →   Trial 4 meses    →   Converte (R$80/mês)
+CLIENTE DESCOBRE          →   Trial 4 meses    →   Converte (R$ 79,90/mês)
 (PLG, SEO, LinkedIn)           (ativa a coleta,       (renova enquanto
                                 coleta feedbacks,       vê valor nos insights)
                                 vê insights)
