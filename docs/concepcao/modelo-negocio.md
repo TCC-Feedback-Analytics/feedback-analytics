@@ -41,6 +41,8 @@ O cliente do Feedback Analytics é a **empresa** (o gestor), não o consumidor f
 
 **Foco principal:** pequenas e médias empresas (PMEs) que não têm orçamento para ferramentas de pesquisa complexas ou consultorias de dados, mas precisam de informação estruturada para tomar decisões melhores.
 
+**Tamanho do mercado:** o Brasil tem quase 24 milhões de pequenos negócios ativos, e 54,8% deles estão nos serviços e 28,1% no comércio, os setores em que fica a maior parte do atendimento presencial (dados de dezembro de 2025, [Agência Sebrae de Notícias](https://agenciasebrae.com.br/dados/brasil-tem-recorde-de-cnpj-ativos-de-pequenos-negocios/), acesso em 19/11/2026).
+
 **Por que isso importa para o projeto:** conhecer o segmento guia decisões de UX. O formulário público precisa ser extremamente simples porque o cliente final não foi treinado para usá-lo. O dashboard precisa ser claro porque o gestor não é analista de dados.
 
 ---
@@ -149,8 +151,19 @@ Com mais clientes, o custo da infraestrutura dividido por empresa cai. Com 50 em
 
 **5. Por que R$ 79,90.** O final ",90" segue a prática do preço psicológico: o valor é lido como "na casa dos 70", e não dos 80 ([Sebrae/PR](https://sebraepr.com.br/comunidade/artigo/como-utilizar-psicologia-em-sua-precificacao)).
 
+**6. Quanto a empresa gasta de IA.** A análise usa a conta OpenRouter da própria empresa, então esse custo fica fora dos R$ 79,90. Para estimar, foi montado o pedido real que o IA Analyze envia para um lote de 20 comentários (`buildIaPromptByScope`): cerca de 17,8 mil caracteres de entrada e 8,1 mil de resposta, por volta de 5,1 mil e 2,3 mil tokens. O cálculo soma 20% de folga e a taxa de 5,5% que a OpenRouter cobra na compra de créditos.
+
+| Modelo na OpenRouter | Preço por 1 milhão de tokens (entrada / saída) | 300 comentários por mês | 1.000 comentários por mês |
+|---|---|---|---|
+| GPT-4o mini | US$ 0,15 / US$ 0,60 | R$ 0,24 | R$ 0,79 |
+| Gemini 2.5 Flash-Lite | US$ 0,10 / US$ 0,40 | R$ 0,16 | R$ 0,53 |
+| GPT-5 nano | US$ 0,05 / US$ 0,40 | R$ 0,13 | R$ 0,43 |
+| Llama 3.1 8B | US$ 0,02 / US$ 0,04 | R$ 0,02 | R$ 0,07 |
+| Modelos gratuitos (`:free`) | sem custo | R$ 0 | R$ 0 |
+
+Com o GPT-4o mini, US$ 5 de créditos cobrem anos de análises de uma empresa com 300 comentários por mês. Os modelos gratuitos têm limite de 50 pedidos por dia, ou 1.000 depois de comprar US$ 10 em créditos, o que basta para os lotes de uma pequena empresa. Fontes: [modelos da OpenRouter](https://openrouter.ai/openai/gpt-4o-mini), [limites](https://openrouter.ai/docs/api/reference/limits) e [taxa de créditos](https://openrouter.ai/docs/faq), acesso em 19/11/2026.
 !!! warning "Limites do cálculo"
-    Os valores não incluem impostos, que dependem do regime tributário da empresa. As faixas de "até 100" e de "algumas centenas" de empresas são estimativas, porque o sistema ainda não tem clientes pagantes. O dólar varia, e a Vercel e o Supabase cobram o uso que passar do incluído no plano.
+    Os valores não incluem impostos, que dependem do regime tributário da empresa. Os tokens da IA são estimados pelo tamanho do texto (cerca de 3,5 caracteres por token). As faixas de "até 100" e de "algumas centenas" de empresas são estimativas, porque o sistema ainda não tem clientes pagantes. O dólar varia, e a Vercel e o Supabase cobram o uso que passar do incluído no plano.
 ---
 
 ## Diferenciais Competitivos
