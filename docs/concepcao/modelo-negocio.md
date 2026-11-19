@@ -104,6 +104,49 @@ stateDiagram-v2
 ```
 **Por que isso importa para o projeto:** a cobrança mexe no status da empresa, que já existe no banco (`subscription_status` e `trial_ends_at`) e já aparece no badge do menu e do Perfil. O que falta é o intermediador avisar o pagamento ao gateway e o gateway aplicar o modo leitura e a pausa da coleta quando o status for `EXPIRED`.
 
+### Como o preço foi definido
+
+O valor nasceu na concepção como uma referência de mercado, de cerca de R$ 80 por mês. Em 19/11/2026 ele foi conferido com três critérios: o custo de colocar o sistema em produção comercial, o preço dos concorrentes e a forma de apresentar o valor. Os preços foram lidos nas páginas oficiais em 19/11/2026, e os valores em dólar foram convertidos a R$ 5,80, perto da PTAX de venda do Banco Central em 18/11/2026 (R$ 5,81).
+
+**1. Os planos gratuitos não servem para vender.** O sistema roda hoje nos planos gratuitos, mas eles não valem para um produto pago:
+
+- o plano Hobby da Vercel é só para uso pessoal ou não comercial ([termos da Vercel](https://vercel.com/legal/terms)).
+- o plano gratuito do Supabase pausa o projeto depois de uma semana sem uso e tem banco de 500 MB ([preços do Supabase](https://supabase.com/pricing)).
+
+**2. Custo mensal da produção.** O cálculo usa os planos pagos básicos, que atendem até cerca de 100 empresas, e os médios, para algumas centenas.
+
+| Serviço | Planos básicos | Planos médios |
+|---|---|---|
+| Vercel (Web, Gateway e IA Analyze) | Pro com 1 assento, que publica pelo GitHub Actions (os outros membros entram como Viewer, que é gratuito): US$ 20 = R$ 116,00 | Pro com a faixa seguinte da CDN: US$ 40 = R$ 232,00 |
+| Supabase (banco) | Pro, com a instância Micro paga pelos créditos do plano: US$ 25 = R$ 145,00 | Pro com a instância Medium, de 4 GB: US$ 75 = R$ 435,00 |
+| Brevo (e-mails de confirmação e de senha) | Gratuito, até 300 e-mails por dia: R$ 0 | Starter, a partir de 5 mil e-mails por mês: US$ 9 = R$ 52,20 |
+| Domínio .com.br (Registro.br) | R$ 40 por ano = R$ 3,33 | R$ 3,33 |
+| **Total por mês** | **R$ 264,33** | **R$ 722,53** |
+
+A análise por IA fica fora da conta, porque cada empresa paga o consumo na própria conta OpenRouter. Fontes: [Vercel Pro](https://vercel.com/docs/plans/pro-plan), [CDN da Vercel](https://vercel.com/docs/pricing/flat-rate-cdn), [Supabase](https://supabase.com/pricing), [Brevo](https://www.brevo.com/pricing/) e [Registro.br](https://registro.br/ajuda/valores/).
+
+**3. O que sobra de cada assinatura.** No [Asaas](https://www.asaas.com/precos-e-taxas), o Pix custa R$ 1,59 por cobrança (o Pix Automático não tem custo extra), e o cartão de crédito custa R$ 0,49 + 2,99%. Pelo cartão, que é o caso mais caro, cada assinatura de R$ 79,90 deixa **R$ 77,02**.
+
+| Empresas pagantes | Receita líquida por mês | Infraestrutura por mês | Infraestrutura sobre a receita |
+|---|---|---|---|
+| 4 | R$ 308,08 | R$ 264,33 (planos básicos) | 86% |
+| 10 | R$ 770,20 | R$ 722,53 (planos médios) | 94% |
+| 50 | R$ 3.851,05 | R$ 264,33 | 6,9% |
+| 200 | R$ 15.404,20 | R$ 722,53 | 4,7% |
+| 500 | R$ 38.510,50 | R$ 722,53 | 1,9% |
+
+Quatro empresas pagantes cobrem os planos básicos, e dez cobrem os médios.
+
+![Receita líquida por número de empresas pagantes contra o custo dos planos básicos e médios](../assets/grafico-equilibrio-preco.png)
+
+**4. Preço dos concorrentes.** O plano de entrada do Feedback Analytics fica abaixo de todos os concorrentes que publicam preço, e já inclui a análise por IA. Typeform e Survicate só trazem a análise dos comentários por IA em planos de US$ 379 e US$ 349 por mês. Qualtrics, Medallia e AskNicely não publicam preço. Fontes: [Typeform](https://www.typeform.com/pricing/), [Survicate](https://survicate.com/pricing/), [Canny](https://canny.io/pricing) e [Zendesk](https://www.zendesk.com.br/pricing/).
+
+![Preço mensal do plano pago de entrada do Feedback Analytics e dos concorrentes](../assets/grafico-precos-concorrentes.png)
+
+**5. Por que R$ 79,90.** O final ",90" segue a prática do preço psicológico: o valor é lido como "na casa dos 70", e não dos 80 ([Sebrae/PR](https://sebraepr.com.br/comunidade/artigo/como-utilizar-psicologia-em-sua-precificacao)).
+
+!!! warning "Limites do cálculo"
+    Os valores não incluem impostos, que dependem do regime tributário da empresa. As faixas de "até 100" e de "algumas centenas" de empresas são estimativas, porque o sistema ainda não tem clientes pagantes. O dólar varia, e a Vercel e o Supabase cobram o uso que passar do incluído no plano.
 ---
 
 ## Diferenciais Competitivos
