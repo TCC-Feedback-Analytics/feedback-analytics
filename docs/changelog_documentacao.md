@@ -1,7 +1,7 @@
 # Changelog da Documentação
 
 Categoria: Gestão de Projeto
-Versão global atual: v4.40
+Versão global atual: v4.41
 Última edição: 19 de novembro de 2026
 
 ---
@@ -56,6 +56,7 @@ Registra todas as alterações significativas feitas nas páginas de documentaç
 | --- | --- | --- | --- |
 | v4.39 | 19/11/2026 | **Modelo de negócio:** nova seção **Riscos do negócio** (alta do dólar, dependência de fornecedores, uso da IA e reajuste dos planos), cada um com a resposta prevista. | `concepcao/modelo-negocio.md` |
 | v4.40 | 19/11/2026 | **Mapa de ameaças:** revisão de 19/11/2026 depois das correções do formulário público (limite de envios por rede e impressão digital do aparelho com HMAC-SHA-256), dos cabeçalhos de segurança na Web e no Gateway e da instrução da IA contra comandos escritos nos comentários. Nova seção **Resumo** com a matriz STRIDE: 31 ameaças, 22 protegidas, 9 protegidas em parte e nenhuma aberta. | `seguranca/mapa-de-ameacas.md`, `assets/matriz-stride.png` |
+| v4.41 | 19/11/2026 | **IA:** respostas fora do formato (`invalid_ai_response`, `invalid_ai_response_schema`, `truncated_ai_response` e `empty_ai_response`) passam a ter as mesmas 3 tentativas dos erros de conexão, porque o modelo gratuito costuma acertar o formato na chamada seguinte (api-gateway PR #129). | `produto/filtro-semantico-ia.md`, `produto/painel-insights-ia.md` |
 | v4.38 | 19/11/2026 | **Modelo de negócio:** tamanho do mercado no Segmento de Clientes (quase 24 milhões de pequenos negócios ativos, 54,8% nos serviços e 28,1% no comércio, Agência Sebrae de Notícias) e o item **Quanto a empresa gasta de IA** em Como o preço foi definido, com o custo por modelo a partir do pedido real do IA Analyze (R$ 0,02 a R$ 0,24 por 300 comentários por mês). | `concepcao/modelo-negocio.md` |
 | v4.37 | 19/11/2026 | **Modelo de negócio:** gráfico do custo da infraestrutura por empresa (R$ 26,43 com 10 empresas, R$ 5,29 com 50, R$ 2,64 com 100, R$ 3,61 com 200 nos planos médios e R$ 1,45 com 500) na seção Como o preço foi definido. | `concepcao/modelo-negocio.md`, `assets/grafico-custo-por-empresa.png` |
 | v4.36 | 19/11/2026 | **Modelo de negócio:** nova seção **Como o preço foi definido**, que confere os R$ 79,90 com o custo dos planos pagos de produção (Vercel Pro, Supabase Pro, Brevo e domínio: R$ 264,33 por mês nos planos básicos e R$ 722,53 nos médios), a taxa da cobrança no Asaas (cada assinatura deixa R$ 77,02), o ponto de equilíbrio (4 e 10 empresas pagantes), os preços de entrada dos concorrentes e o preço psicológico. Dois gráficos novos em `assets/`. Preços lidos nas páginas oficiais em 19/11/2026, dólar a R$ 5,80. | `concepcao/modelo-negocio.md`, `assets/grafico-equilibrio-preco.png`, `assets/grafico-precos-concorrentes.png` |
