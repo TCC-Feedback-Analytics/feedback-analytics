@@ -25,7 +25,7 @@
 ### Autenticação e Gestão de Acesso
 
 - Cadastro da conta com nome do negócio, e-mail, celular e senha. O CPF/CNPJ deixou de ser pedido (migration `0009` do gateway).
-- **Login com e-mail e senha ou com o Google.** Na primeira entrada com o Google, a tela "Complete seu cadastro" pede o nome do negócio, o celular e o aceite dos termos.
+- **Login com e-mail e senha ou com o Google.** Na primeira entrada com o Google, a tela "Complete seu cadastro" pede o nome do negócio, o celular e o aceite dos termos. Depois, pelo Perfil, quem entra com o Google pode criar uma senha para entrar também com e-mail e senha.
 - Logout.
 - Confirmação do e-mail pelo link do Better Auth (`/api/auth/verify-email`), que redireciona para a Web.
 - **Recuperação de senha (Esqueci minha senha)** com envio de e-mail e link seguro.
@@ -273,7 +273,7 @@ Status: **Implementado** (como pedido), **Implementado (mudou)** (existe, de out
 | **RF-023** | Campo de Comentário por Escopo: modos padrão, pergunta própria (10 a 150 caracteres) e oculto; com pergunta própria, ela é guardada com o comentário e vai para a IA; com o campo oculto, o texto enviado é descartado. | Implementado | — |
 | **RF-024** | Diagnóstico do Escopo com IA: pedido pela fila, usa os números do escopo calculados no gateway e uma amostra de até 20 comentários, cada um cortado em 500 caracteres; o histórico fica em Diagnósticos. Exige o contexto da empresa e a IA configurada. | Implementado | — |
 | **RF-025** | Geração Automática das Perguntas: quando a empresa tem os três campos de contexto, a IA configurada e ainda as perguntas padrão, um job gera 3 perguntas; se falhar, a Web avisa e oferece tentar de novo. | Implementado | — |
-| **RF-026** | Login com Google: entrada pelo Better Auth; na primeira entrada a empresa é criada e a tela "Complete seu cadastro" pede nome do negócio, celular e aceite dos termos. O mesmo e-mail com senha e com Google é a mesma conta. Só funciona com as credenciais do Google configuradas. | Implementado | — |
+| **RF-026** | Login com Google: entrada pelo Better Auth; na primeira entrada a empresa é criada e a tela "Complete seu cadastro" pede nome do negócio, celular e aceite dos termos. O mesmo e-mail com senha e com Google é a mesma conta. Pelo Perfil, quem só entra pelo Google pode criar uma senha ("Entrar também com senha"): vai um link para o e-mail da conta, pelo mesmo fluxo do "Esqueci minha senha", e o cadastro não pede senha. Só funciona com as credenciais do Google configuradas. | Implementado | — |
 | **RF-027** | Exclusão de Conta: "Excluir minha conta" no Perfil (`POST /api/auth/delete-user`), com a senha ou, para quem só entra pelo Google, uma sessão aberta nas últimas 24 horas. Apaga a empresa e tudo dela numa transação, e depois o usuário. Publicada em 02/11/2026. | Implementado | — |
 | **RF-028** | Configuração da IA por Empresa: chave do OpenRouter colada ou obtida por "Conectar com OpenRouter", guardada cifrada (AES-256-GCM), com o painel mostrando só o final; escolha do modelo. Sem chave, as análises falham com `ia_config_required`. | Implementado | — |
 | **RF-029** | Páginas do Produto e Documentos Legais: "Coleta" (`/produto/coleta`), "Análise" (`/produto/analise`) e "Resultados" (`/produto/resultados`), com a navegação ativa entre elas e animações; Termos de Uso (`/termos`) e Política de Privacidade (`/privacidade`), com links no rodapé da Landing Page. As páginas do produto entraram e os termos e a política foram reformulados em 06/11/2026; a navegação ativa e as animações, em 07/11/2026. | Implementado | — |
