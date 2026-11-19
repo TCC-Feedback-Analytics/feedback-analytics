@@ -104,7 +104,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 |---|---|---|---|
 | **T** | Um comentário com código (`<script>`) rodar no painel do gestor (XSS) | O React escreve o comentário como texto, nunca como HTML | ✅ |
 | **I** | Segredos no código da Web | A Web não tem chave nenhuma; tudo passa pelo gateway em `/api` | ✅ |
-| **T** | Embutir o painel num site falso (*clickjacking*) | `X-Frame-Options: SAMEORIGIN` e `frame-ancestors 'self'` na Content-Security-Policy do `vercel.json` (PR #160 da Web), que também limita scripts, estilos, fontes e chamadas ao próprio site e ao gateway. O gateway manda CSP fechada e `X-Frame-Options: DENY` (PR #123). No securityheaders.com, o site foi de D para A+ em 19/11/2026 | ✅ |
+| **T** | Embutir o painel num site falso (*clickjacking*) | `X-Frame-Options: SAMEORIGIN` e `frame-ancestors 'self'` na Content-Security-Policy do `vercel.json` (PR #160 da Web), que também limita scripts, estilos, fontes e chamadas ao próprio site e ao gateway. O gateway manda CSP fechada e `X-Frame-Options: DENY` (PR #123). No securityheaders.com, o site foi de D para A+ em 19/11/2026. O site também manda `Cross-Origin-Opener-Policy` e `Cross-Origin-Resource-Policy` com `same-origin` (PR #163 da Web) | ✅ |
 
 ## Lacunas, por prioridade
 
@@ -113,10 +113,11 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | 1 | Gateway entra no banco como superusuário | Uma senha vazada vira acesso total | Etapa 07, código, item 3. **Feito:** o app entra como `feedback_app` em produção (migration `0013`) |
 | 2 | Sem "Excluir minha conta" | Direito do titular (LGPD, art. 18) | Etapa 07, código, item 2. **Feito:** botão no Perfil, publicado em 02/11/2026 |
 | 3 | Nove tabelas sem RLS | Coerência com a decisão de RLS em todas | Etapa 07, código, item 3. **Feito:** RLS nas 24 tabelas (migration `0013`) |
-| 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | **Feito:** CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy` na Web (PR #160) e no gateway (PR #123 e #125). O gateway também não anuncia mais o Express (PR #110) |
+| 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | **Feito:** CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy` na Web (PR #160) e no gateway (PR #123 e #125), além de `Cross-Origin-Opener-Policy` e `Cross-Origin-Resource-Policy` na Web (PR #163). O gateway também não anuncia mais o Express (PR #110) |
 | 5 | Sem limite de tentativas de login | Ataque de senha, até de um só IP | **Feito (PR #110):** o login, o cadastro e a nova senha contam as tentativas no banco, como o reenvio. As rotas nativas de e-mail e senha do Better Auth foram desligadas (PR #113) |
 | 6 | Sem limite por IP no envio público | Encher o banco com respostas | **Feito (PR #123 do gateway):** 60 envios por IP a cada 15 minutos, e o aparelho passou a ser identificado por HMAC-SHA-256 |
 | 7 | IP do cliente sem prazo | Guardar além do necessário | Etapa 07, código, item 4 (opcional) |
 | 8 | Tokens do Google guardados sem uso | Dado sensível sem finalidade | Novo, pequeno. **Feito:** não são mais gravados (PR #109), e a migration `0015` apaga os antigos (PR #110) |
 | 9 | Comentário com dado pessoal ou instrução para a IA | Dado saindo do sistema; resumo enviesado | **Instrução para a IA: feito (PR #38 do ia-analyze).** Dado pessoal escrito no comentário segue em aberto |
 | 10 | Backups não confirmados | Recuperação depois de um incidente | [Roteiro de incidente](roteiro-de-incidente.md). O plano Supabase Pro, previsto no [custo de produção](../concepcao/modelo-negocio.md), traz backup diário guardado por 7 dias |
+| 11 | Dependência com falha conhecida ou chave no código | Um pacote vulnerável ou um segredo publicado abre o sistema por fora do código da equipe | **Feito (19/11/2026):** Dependabot ligado nos quatro repositórios, sem alertas abertos, e `npm audit` zerado nos três serviços (PR #127 do gateway, #40 do ia-analyze e #162 da Web). Varredura de segredos com *push protection* ligada, sem segredos encontrados, e canal privado de relato de falhas (*Report a vulnerability*), explicado no [SECURITY.md](https://github.com/TCC-Feedback-Analytics/.github/blob/main/SECURITY.md) da organização |

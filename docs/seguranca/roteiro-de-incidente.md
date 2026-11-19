@@ -28,7 +28,9 @@ Os acessos que o roteiro exige (painéis do Supabase, da Vercel, do Brevo, do Go
 Sinais de que algo aconteceu:
 
 - aviso de um fornecedor (Supabase, Vercel, Brevo, Google, OpenRouter);
-- alerta de segredo exposto do GitHub (*secret scanning*);
+- alerta de segredo exposto do GitHub (*secret scanning*, ligado com *push protection* nos quatro repositórios desde 19/11/2026);
+- alerta do Dependabot de dependência com falha conhecida;
+- relato privado de falha pelo GitHub (*Report a vulnerability*, na aba Security de cada repositório), como explica o [SECURITY.md](https://github.com/TCC-Feedback-Analytics/.github/blob/main/SECURITY.md) da organização;
 - erros ou acessos estranhos nos registros da Vercel;
 - um usuário avisando pelo e-mail de contato.
 
