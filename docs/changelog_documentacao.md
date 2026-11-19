@@ -1,7 +1,7 @@
 # Changelog da Documentação
 
 Categoria: Gestão de Projeto
-Versão global atual: v4.34
+Versão global atual: v4.35
 Última edição: 19 de novembro de 2026
 
 ---
@@ -54,6 +54,7 @@ Registra todas as alterações significativas feitas nas páginas de documentaç
 
 | Versão Global | Data | O que Mudou | Páginas afetadas |
 | --- | --- | --- | --- |
+| v4.35 | 19/11/2026 | **Modelo de negócio:** diagrama de estados da cobrança na seção Cobrança e pagamento, com os status da empresa (`TRIAL`, `ACTIVE`, `EXPIRED` e `CANCELED`) e o que leva de um ao outro. | `concepcao/modelo-negocio.md` |
 | v4.34 | 19/11/2026 | **Modelo de negócio:** o preço passa a R$ 79,90 por mês, e entra a seção **Cobrança e pagamento**, definida para implementar depois da apresentação à banca: cadastro sem cartão, assinatura ao fim do teste por Pix Automático ou cartão de crédito por um intermediador brasileiro, avisos antes do fim, modo leitura e coleta pausada sem pagamento, cancelamento pelo Perfil sem multa e o consumo da IA pago pela empresa direto na conta OpenRouter dela. | `concepcao/modelo-negocio.md` |
 | v4.33 | 19/11/2026 | Nova página **Testes de desempenho**, com as medições do PageSpeed Insights (Lighthouse 13.6.0) e do tempo de resposta da API feitas em 18/11/2026, os mesmos números da seção 24 do documento do PFC. Antes da otimização, a página inicial tirava 77 no celular. Depois das PRs #158 e #159 do `feedback-analytics-web` (imagens em WebP, área logada sob demanda e fontes só em latim), passou a 91 no celular e 100 no computador, com login e cadastro em 100. A API respondeu 30 de 30 requisições, com mediana de 0,099 s. A página traz o método e como repetir as medições. | `guias/testes/desempenho.md`, `guias/testes/visao-geral.md`, `mkdocs.yml` |
 | v4.32 | 17/11/2026 | Revisão do portal inteiro em 15 partes, conferida contra a `main` dos repositórios de código. **README:** o repositório reúne o portal todo, e os testes dos três serviços ficam documentados aqui, nos guias. **Produto:** subperguntas também de 20 a 150 caracteres; geração das perguntas com no máximo 5 pedidos nas últimas 24 horas; sem ponto de coleta ativo, a API responde 200 e a Web mostra a tela de erro; sem credencial, o IA Analyze responde 409; até 3 tentativas por lote; síntese em rodadas também acima de 90 kB; comentário curto é o de até 20 caracteres. **Regras de negócio:** limites do login e do cadastro e o 503 da recuperação na RNE-014, tentativas por lote, normalização que mantém o hífen e o exemplo da ancoragem corrigido. **Concepção:** RF02 com confirmação só do e-mail, "Escreveram comentário" no RF-032, amostra do diagnóstico sem o limite do IA Analyze, texto alternativo das personas, conferência de 16/11/2026 em Stakeholders e Modelo de negócio, e o mínimo da análise contado sobre os comentários do escopo. **Casos de uso:** acentos das mensagens do UC-01, UC-03 no roteiro manual (visão geral e UC-03), "Nome do negócio" no UC-12 e a mensagem real de contexto incompleto no UC-11. **Arquitetura:** contratos na `v1.10.0` no Gateway e no IA Analyze, `BETTER_AUTH_URL` como a URL da Web em produção e os nomes atuais dos botões da análise. **Testes:** UC-03 no Plano estratégico e o resumo concluído como "Atualizado" no roteiro da Web. | README, Produto (6), Regras de negócio, Concepção (5), Casos de uso (5), Arquitetura (3), Guias de testes (2), este changelog |

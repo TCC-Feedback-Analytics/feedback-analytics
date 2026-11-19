@@ -84,6 +84,26 @@ Esse período existe por uma razão estratégica: feedback analytics é um produ
 | **Cancelamento** | Pelo Perfil, a qualquer momento e sem multa. O acesso continua até o fim do mês já pago, e o status vira `CANCELED`. A exclusão da conta, que já existe, apaga a empresa e todos os dados. |
 | **Uso da IA** | A análise por IA vem no plano, sem upgrade. O consumo do modelo é pago pela empresa direto ao provedor, na conta OpenRouter que ela conecta, porque cada empresa escolhe o próprio modelo e paga só o que usa. |
 
+O diagrama mostra o mesmo fluxo pelos status que a empresa já tem no banco (`subscription_status`).
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "Teste (4 meses, acesso completo)" as TRIAL
+    state "Ativa (acesso completo)" as ACTIVE
+    state "Expirada (só leitura, coleta pausada)" as EXPIRED
+    state "Cancelada (acesso até o fim do mês pago)" as CANCELED
+    [*] --> TRIAL: cadastro sem cartão
+    TRIAL --> ACTIVE: assinou por Pix Automático ou cartão
+    TRIAL --> EXPIRED: fim do teste sem pagamento
+    ACTIVE --> ACTIVE: renovação mensal de R$ 79,90
+    ACTIVE --> EXPIRED: renovação sem pagamento
+    ACTIVE --> CANCELED: cancelou pelo Perfil
+    EXPIRED --> ACTIVE: assinou depois
+    CANCELED --> ACTIVE: assinou de novo
+    EXPIRED --> [*]: excluiu a conta
+    CANCELED --> [*]: excluiu a conta
+```
 **Por que isso importa para o projeto:** a cobrança mexe no status da empresa, que já existe no banco (`subscription_status` e `trial_ends_at`) e já aparece no badge do menu e do Perfil. O que falta é o intermediador avisar o pagamento ao gateway e o gateway aplicar o modo leitura e a pausa da coleta quando o status for `EXPIRED`.
 
 ---
