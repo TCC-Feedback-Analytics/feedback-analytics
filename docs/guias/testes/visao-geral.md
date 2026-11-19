@@ -62,3 +62,4 @@ A execução **ponta a ponta (E2E)** e os cenários de **integração dependente
 - [Backend — `feedback-analytics-api-gateway`](./api-gateway.md)
 - [Testes manuais — Web (UCs)](./manuais-web.md)
 - [Testes manuais — API Gateway](./manuais-api-gateway.md)
+- [Testes de desempenho (PageSpeed e API)](./desempenho.md)
