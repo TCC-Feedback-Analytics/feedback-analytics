@@ -2,7 +2,7 @@
 
 > **Em uma frase:** para cada parte do Feedback Analytics, o que um atacante (ou um erro nosso) poderia fazer, o que já protege no código e o que ainda está aberto.
 
-Parte do [inventário de dados pessoais](inventario-de-dados.md): ele diz **o que** proteger; este documento diz **contra o quê**. Levantado no código do gateway, da Web e do ia-analyze em 02/11/2026; a situação das mitigações foi revista em 03/11/2026 e em 16/11/2026.
+Parte do [inventário de dados pessoais](inventario-de-dados.md): ele diz **o que** proteger; este documento diz **contra o quê**. Levantado no código do gateway, da Web e do ia-analyze em 02/11/2026; a situação das mitigações foi revista em 03/11/2026, em 16/11/2026 e em 19/11/2026, depois das correções do formulário público, dos cabeçalhos e da IA.
 
 ## Como ler
 
@@ -18,6 +18,12 @@ Cada ameaça leva uma letra do **STRIDE**, um método da Microsoft para não esq
 | **E** | *Elevation of privilege* (elevação) | Alguém consegue fazer mais do que deveria poder? |
 
 A situação de cada uma: ✅ protegida · ⚠️ protegida em parte · ❌ aberta.
+
+## Resumo
+
+Depois da revisão de 19/11/2026, as 31 ameaças mapeadas ficaram assim: 22 protegidas, 9 protegidas em parte e nenhuma aberta. A matriz mostra cada parte do sistema contra cada letra do STRIDE.
+
+![Matriz do mapa de ameaças (STRIDE) por parte do sistema](../assets/matriz-stride.png)
 
 ## Visão geral do sistema
 
@@ -38,11 +44,11 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **S** | Uma pessoa envia várias respostas fingindo ser clientes diferentes | Uma resposta por aparelho, ponto de coleta e dia. O aparelho é identificado por um hash de navegador e IP (`qrcode.controller.ts`), e o dia vira à meia-noite de Brasília. Um aparelho pode ser bloqueado (`is_blocked`), mas só direto no banco: o painel não tem esse botão | ⚠️ Trocar de rede ou de navegador burla o limite, e um script burla só trocando o cabeçalho User-Agent. Aceitável para métrica de satisfação, não para votação |
+| **S** | Uma pessoa envia várias respostas fingindo ser clientes diferentes | Uma resposta por aparelho, ponto de coleta e dia. O aparelho é identificado por um HMAC-SHA-256 do navegador e do IP com segredo do servidor (`libs/deviceFingerprint.ts`, PR #123 do gateway), e o dia vira à meia-noite de Brasília. O script que troca o navegador a cada envio esbarra no limite por IP (linha **D** abaixo). Um aparelho pode ser bloqueado (`is_blocked`), mas só direto no banco: o painel não tem esse botão | ⚠️ Risco residual aceito: a mesma pessoa em outra rede e em outro navegador conta como outro aparelho. Aceitável para métrica de satisfação, não para votação |
 | **T** | Alterar a marca de canal ou o ponto de coleta na URL | O ponto de coleta precisa estar **ativo** e ser **da empresa** do pedido. A marca de canal serve só a métricas | ✅ |
 | **T** | Enviar dado malformado ou gigante | O schema do contrato (`publicFeedbackSchema`) valida tudo: nota de 1 a 5, comentário até 5.000 caracteres, nome até 120 | ✅ |
 | **I** | Ver respostas de outros clientes pelo formulário | O formulário só lê o nome da empresa e as perguntas; nenhuma rota pública devolve feedbacks | ✅ |
-| **D** | Disparar milhares de envios para encher o banco | O limite por aparelho e dia, mas sem limite por IP nem por tempo no endpoint | ⚠️ |
+| **D** | Disparar milhares de envios para encher o banco | O limite por aparelho e dia e um limite por IP de 60 envios a cada 15 minutos, contado no banco e configurável (`libs/publicFeedbackRateLimit.ts`, PR #123 do gateway). Passou do limite, responde `429` com `Retry-After` | ✅ |
 
 ## 2. Login e sessão (gestor)
 
@@ -81,7 +87,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
 | **I** | Dado pessoal do cliente sair para o provedor de IA | Só vão comentário, nota, respostas e contexto do negócio; nome, e-mail, gênero e IP do cliente nunca vão | ⚠️ O texto do comentário vai como foi escrito e pode conter um telefone ou e-mail |
-| **T** | Um cliente escrever no comentário uma instrução para a IA ("ignore as regras e…") | A resposta da IA é validada no formato antes de ser gravada (`ia-analyze/src/validations`) | ⚠️ Não há defesa específica: um comentário pode tentar enviesar o resumo |
+| **T** | Um cliente escrever no comentário uma instrução para a IA ("ignore as regras e…") | A instrução de sistema, enviada em toda chamada, manda tratar o texto de clientes e empresas como dado e não obedecer a pedidos escritos nele (`ptBrSystemInstruction.ts`, PR #38 do ia-analyze). A resposta da IA continua validada no formato antes de ser gravada (`ia-analyze/src/validations`) | ⚠️ Reduzida: nenhum modelo de linguagem garante obediência total, então a validação da resposta segue como segunda barreira |
 | **D** | Esgotar a cota de IA da empresa ou do sistema | Fila assíncrona com até 3 tentativas e um só pedido ativo por tipo e escopo. O orçamento por janela (`ia_rate_budget`) existe, mas só limita com `IA_RPM_LIMIT` e `IA_RPD_LIMIT` preenchidos | ⚠️ Cada empresa gasta a própria chave, e só o gestor dela pede análises |
 | **S** | Usar a chave de IA de outra empresa | A chave é escolhida pela empresa da sessão e decifrada só no gateway | ✅ |
 
@@ -98,7 +104,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 |---|---|---|---|
 | **T** | Um comentário com código (`<script>`) rodar no painel do gestor (XSS) | O React escreve o comentário como texto, nunca como HTML | ✅ |
 | **I** | Segredos no código da Web | A Web não tem chave nenhuma; tudo passa pelo gateway em `/api` | ✅ |
-| **T** | Embutir o painel num site falso (*clickjacking*) | — | ❌ Sem cabeçalhos de segurança (`X-Frame-Options`, `Content-Security-Policy`) na Vercel |
+| **T** | Embutir o painel num site falso (*clickjacking*) | `X-Frame-Options: SAMEORIGIN` e `frame-ancestors 'self'` na Content-Security-Policy do `vercel.json` (PR #160 da Web), que também limita scripts, estilos, fontes e chamadas ao próprio site e ao gateway. O gateway manda CSP fechada e `X-Frame-Options: DENY` (PR #123). No securityheaders.com, o site foi de D para A+ em 19/11/2026 | ✅ |
 
 ## Lacunas, por prioridade
 
@@ -107,10 +113,10 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | 1 | Gateway entra no banco como superusuário | Uma senha vazada vira acesso total | Etapa 07, código, item 3. **Feito:** o app entra como `feedback_app` em produção (migration `0013`) |
 | 2 | Sem "Excluir minha conta" | Direito do titular (LGPD, art. 18) | Etapa 07, código, item 2. **Feito:** botão no Perfil, publicado em 02/11/2026 |
 | 3 | Nove tabelas sem RLS | Coerência com a decisão de RLS em todas | Etapa 07, código, item 3. **Feito:** RLS nas 24 tabelas (migration `0013`) |
-| 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | Novo, pequeno. O gateway não anuncia mais o Express (`x-powered-by` desligado, PR #110). Faltam `X-Frame-Options` e `Content-Security-Policy` |
+| 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | **Feito:** CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy` na Web (PR #160) e no gateway (PR #123 e #125). O gateway também não anuncia mais o Express (PR #110) |
 | 5 | Sem limite de tentativas de login | Ataque de senha, até de um só IP | **Feito (PR #110):** o login, o cadastro e a nova senha contam as tentativas no banco, como o reenvio. As rotas nativas de e-mail e senha do Better Auth foram desligadas (PR #113) |
-| 6 | Sem limite por IP no envio público | Encher o banco com respostas | Novo, pequeno |
+| 6 | Sem limite por IP no envio público | Encher o banco com respostas | **Feito (PR #123 do gateway):** 60 envios por IP a cada 15 minutos, e o aparelho passou a ser identificado por HMAC-SHA-256 |
 | 7 | IP do cliente sem prazo | Guardar além do necessário | Etapa 07, código, item 4 (opcional) |
 | 8 | Tokens do Google guardados sem uso | Dado sensível sem finalidade | Novo, pequeno. **Feito:** não são mais gravados (PR #109), e a migration `0015` apaga os antigos (PR #110) |
-| 9 | Comentário com dado pessoal ou instrução para a IA | Dado saindo do sistema; resumo enviesado | Decisão em aberto |
-| 10 | Backups não confirmados | Recuperação depois de um incidente | [Roteiro de incidente](roteiro-de-incidente.md) |
+| 9 | Comentário com dado pessoal ou instrução para a IA | Dado saindo do sistema; resumo enviesado | **Instrução para a IA: feito (PR #38 do ia-analyze).** Dado pessoal escrito no comentário segue em aberto |
+| 10 | Backups não confirmados | Recuperação depois de um incidente | [Roteiro de incidente](roteiro-de-incidente.md). O plano Supabase Pro, previsto no [custo de produção](../concepcao/modelo-negocio.md), traz backup diário guardado por 7 dias |
