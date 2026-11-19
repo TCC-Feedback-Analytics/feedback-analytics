@@ -164,6 +164,14 @@ Com mais clientes, o custo da infraestrutura dividido por empresa cai. Com 50 em
 Com o GPT-4o mini, US$ 5 de créditos cobrem anos de análises de uma empresa com 300 comentários por mês. Os modelos gratuitos têm limite de 50 pedidos por dia, ou 1.000 depois de comprar US$ 10 em créditos, o que basta para os lotes de uma pequena empresa. Fontes: [modelos da OpenRouter](https://openrouter.ai/openai/gpt-4o-mini), [limites](https://openrouter.ai/docs/api/reference/limits) e [taxa de créditos](https://openrouter.ai/docs/faq), acesso em 19/11/2026.
 !!! warning "Limites do cálculo"
     Os valores não incluem impostos, que dependem do regime tributário da empresa. Os tokens da IA são estimados pelo tamanho do texto (cerca de 3,5 caracteres por token). As faixas de "até 100" e de "algumas centenas" de empresas são estimativas, porque o sistema ainda não tem clientes pagantes. O dólar varia, e a Vercel e o Supabase cobram o uso que passar do incluído no plano.
+### Riscos do negócio
+
+| Risco | Resposta prevista |
+|---|---|
+| **Alta do dólar** encarece a Vercel e o Supabase | A partir de 50 clientes a infraestrutura pesa menos de 7% da receita, e o preço pode ser revisto. |
+| **Dependência de fornecedores** | O banco é um PostgreSQL comum, acessado pelo Drizzle com `DATABASE_URL`. Os serviços são aplicações Node.js com Express, que podem ser publicadas em outro provedor. A IA passa pela OpenRouter, que permite trocar de modelo sem mudar o sistema. |
+| **Aumento do uso da IA** | O consumo é pago por cada empresa na própria conta OpenRouter, então mais análises não aumentam o custo do produto. |
+| **Mudança de preço dos planos** | Os planos médios custam R$ 722,53 por mês e são cobertos por 10 empresas. Há margem para absorver reajustes até o preço ser revisto. |
 ---
 
 ## Diferenciais Competitivos
