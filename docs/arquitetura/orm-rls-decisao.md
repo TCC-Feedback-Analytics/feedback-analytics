@@ -60,7 +60,7 @@ Um ORM conecta ao Postgres por uma **connection string com um único papel**, co
 
 ## 6. Conexão e introspecção (operacional)
 
-- **Runtime (app):** `src/db/client.ts` conecta lazy, com `prepare: false` (obrigatório no pooler do Supabase em modo transação, porta 6543) e pool pequeno (`max: 3`). A `DATABASE_URL` da Vercel usa o papel `feedback_app`.
+- **Runtime (app):** `src/db/client.ts` conecta lazy, com `prepare: false` (obrigatório no pooler do Supabase em modo transação, porta 6543) e pool pequeno (`max: 3`). Desde o PR #131 do gateway, cada conexão manda uma consulta por vez (`max_pipeline: 1`), porque o pooler do Supabase trava quando recebe várias consultas em fila na mesma conexão, e toda consulta tem tempo limite de 15 s (`query_timeout: 15`), para o pool reconectar em vez de ficar minutos esperando. A `DATABASE_URL` da Vercel usa o papel `feedback_app`.
 - **Migrations:** o workflow de deploy do gateway roda `npm run db:migrate` com o secret `DATABASE_URL` do GitHub, que segue com o `postgres`.
 - **drizzle-kit:** `drizzle.config.ts` com **`schemaFilter: ['public']`** — introspecção e migrations atuam **apenas no schema `public`**.
 - O schema é **mantido à mão** em `drizzle/schema/*.ts`, e cada mudança nasce como migration (`npm run db:generate`). O `npm run db:pull` regera tudo num arquivo só; serve só para diff e auditoria. O schema **não depende mais de `auth.users`**: os usuários vivem em `public.user` (Better Auth).
