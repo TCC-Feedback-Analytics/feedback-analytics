@@ -115,7 +115,7 @@ O valor nasceu na concepção como uma referência de mercado, de cerca de R$ 80
 - o plano Hobby da Vercel é só para uso pessoal ou não comercial ([termos da Vercel](https://vercel.com/legal/terms)).
 - o plano gratuito do Supabase pausa o projeto depois de uma semana sem uso e tem banco de 500 MB ([preços do Supabase](https://supabase.com/pricing)).
 
-**2. Custo mensal da produção.** O cálculo usa os planos pagos básicos, que atendem até cerca de 100 empresas, e os médios, para algumas centenas.
+**2. Custo mensal da produção.** O cálculo usa os planos pagos básicos, que atendem até cerca de 125 empresas, e os médios, que atendem até cerca de 1.280 (a conta está no item 4).
 
 | Serviço | Planos básicos | Planos médios |
 |---|---|---|
@@ -141,17 +141,36 @@ Quatro empresas pagantes cobrem os planos básicos, e dez cobrem os médios.
 
 ![Receita líquida por número de empresas pagantes contra o custo dos planos básicos e médios](../assets/grafico-equilibrio-preco.png)
 
-Com mais clientes, o custo da infraestrutura dividido por empresa cai. Com 50 empresas pagantes ele fica em R$ 5,29 por mês, menos de 7% da assinatura, e com 500 cai para R$ 1,45. A pequena alta em 200 empresas vem da troca para os planos médios.
+**4. Até quantas empresas cada conjunto de planos atende.** O uso foi medido em produção, na conta de demonstração, em 20/11/2026, contando as requisições que o navegador faz e as chamadas que passam pelo API Gateway.
+
+| Uso de uma empresa por mês | Requisições |
+|---|---|
+| 300 respostas no formulário, com 14 requisições cada (abrir a página, carregar a empresa e enviar) | 4.200 |
+| 22 visitas ao painel, uma por dia útil, com 116 requisições cada (a tela inicial e mais três telas) | 2.552 |
+| Uma análise dos 300 comentários pela IA, com a consulta de andamento a cada 2,5 segundos | cerca de 1.060 |
+| **Total** | **cerca de 7.800** |
+
+O primeiro limite a ser atingido é o de requisições da [CDN da Vercel](https://vercel.com/docs/pricing/flat-rate-cdn): 1 milhão por mês no Pro e 10 milhões na faixa seguinte. Descontadas as 8.640 chamadas mensais do cron da fila de IA (`ia-worker.yml`, a cada 5 minutos), os planos básicos atendem cerca de **125 empresas** e os médios cerca de **1.280**.
+
+![Número de empresas atendidas pelos planos básicos e médios](../assets/grafico-capacidade-planos.png)
+
+Os outros limites ficam distantes:
+
+- **Banco:** cada resposta ocupa 4,6 KB, somando as tabelas que crescem com ela (`feedback`, respostas às perguntas e às subperguntas, `feedback_analysis` e `tracked_devices`) com os índices. Os 8 GB de disco do Supabase Pro guardam um ano de respostas de cerca de 500 empresas, e o espaço extra custa US$ 0,125 por GB.
+- **Transferência:** o formulário aberto do zero baixa cerca de 1,2 MB, então 1 TB do Pro só se esgota com mais de 2.500 empresas.
+- **Funções:** o processamento de uma empresa custa menos de 1 centavo de dólar por mês e cabe no crédito de US$ 20 do Pro.
+
+Com mais clientes, o custo da infraestrutura dividido por empresa cai. Com 50 empresas pagantes ele fica em R$ 5,29 por mês, menos de 7% da assinatura, e com 500 cai para R$ 1,45. A pequena alta em 200 empresas vem da troca para os planos médios, necessária a partir de cerca de 125 empresas.
 
 ![Custo mensal da infraestrutura por empresa, de 10 a 500 empresas pagantes](../assets/grafico-custo-por-empresa.png)
 
-**4. Preço dos concorrentes.** O plano de entrada do Feedback Analytics fica abaixo de todos os concorrentes que publicam preço, e já inclui a análise por IA. Typeform e Survicate só trazem a análise dos comentários por IA em planos de US$ 379 e US$ 349 por mês. Qualtrics, Medallia e AskNicely não publicam preço. Fontes: [Typeform](https://www.typeform.com/pricing/), [Survicate](https://survicate.com/pricing/), [Canny](https://canny.io/pricing) e [Zendesk](https://www.zendesk.com.br/pricing/).
+**5. Preço dos concorrentes.** O plano de entrada do Feedback Analytics fica abaixo de todos os concorrentes que publicam preço, e já inclui a análise por IA. Typeform e Survicate só trazem a análise dos comentários por IA em planos de US$ 379 e US$ 349 por mês. Qualtrics, Medallia e AskNicely não publicam preço. Fontes: [Typeform](https://www.typeform.com/pricing/), [Survicate](https://survicate.com/pricing/), [Canny](https://canny.io/pricing) e [Zendesk](https://www.zendesk.com.br/pricing/).
 
 ![Preço mensal do plano pago de entrada do Feedback Analytics e dos concorrentes](../assets/grafico-precos-concorrentes.png)
 
-**5. Por que R$ 79,90.** O final ",90" segue a prática do preço psicológico: o valor é lido como "na casa dos 70", e não dos 80 ([Sebrae/PR](https://sebraepr.com.br/comunidade/artigo/como-utilizar-psicologia-em-sua-precificacao)).
+**6. Por que R$ 79,90.** O final ",90" segue a prática do preço psicológico: o valor é lido como "na casa dos 70", e não dos 80 ([Sebrae/PR](https://sebraepr.com.br/comunidade/artigo/como-utilizar-psicologia-em-sua-precificacao)).
 
-**6. Quanto a empresa gasta de IA.** A análise usa a conta OpenRouter da própria empresa, então esse custo fica fora dos R$ 79,90. Para estimar, foi montado o pedido real que o IA Analyze envia para um lote de 20 comentários (`buildIaPromptByScope`): cerca de 17,8 mil caracteres de entrada e 8,1 mil de resposta, por volta de 5,1 mil e 2,3 mil tokens. O cálculo soma 20% de folga e a taxa de 5,5% que a OpenRouter cobra na compra de créditos.
+**7. Quanto a empresa gasta de IA.** A análise usa a conta OpenRouter da própria empresa, então esse custo fica fora dos R$ 79,90. Para estimar, foi montado o pedido real que o IA Analyze envia para um lote de 20 comentários (`buildIaPromptByScope`): cerca de 17,8 mil caracteres de entrada e 8,1 mil de resposta, por volta de 5,1 mil e 2,3 mil tokens. O cálculo soma 20% de folga e a taxa de 5,5% que a OpenRouter cobra na compra de créditos.
 
 | Modelo na OpenRouter | Preço por 1 milhão de tokens (entrada / saída) | 300 comentários por mês | 1.000 comentários por mês |
 |---|---|---|---|
@@ -163,7 +182,7 @@ Com mais clientes, o custo da infraestrutura dividido por empresa cai. Com 50 em
 
 Com o GPT-4o mini, US$ 5 de créditos cobrem anos de análises de uma empresa com 300 comentários por mês. Os modelos gratuitos têm limite de 50 pedidos por dia, ou 1.000 depois de comprar US$ 10 em créditos, o que basta para os lotes de uma pequena empresa. Fontes: [modelos da OpenRouter](https://openrouter.ai/openai/gpt-4o-mini), [limites](https://openrouter.ai/docs/api/reference/limits) e [taxa de créditos](https://openrouter.ai/docs/faq), acesso em 19/11/2026.
 !!! warning "Limites do cálculo"
-    Os valores não incluem impostos, que dependem do regime tributário da empresa. Os tokens da IA são estimados pelo tamanho do texto (cerca de 3,5 caracteres por token). As faixas de "até 100" e de "algumas centenas" de empresas são estimativas, porque o sistema ainda não tem clientes pagantes. O dólar varia, e a Vercel e o Supabase cobram o uso que passar do incluído no plano.
+    Os valores não incluem impostos, que dependem do regime tributário da empresa. Os tokens da IA são estimados pelo tamanho do texto (cerca de 3,5 caracteres por token). A capacidade de cada conjunto de planos foi medida na conta de demonstração, mas o uso de uma empresa real (respostas por mês, visitas ao painel e análises) ainda é uma suposição, porque o sistema não tem clientes pagantes. O dólar varia, e a Vercel e o Supabase cobram o uso que passar do incluído no plano.
 ### Riscos do negócio
 
 | Risco | Resposta prevista |
