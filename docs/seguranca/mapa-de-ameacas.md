@@ -25,6 +25,10 @@ Depois da revisão de 19/11/2026, as 31 ameaças mapeadas ficaram assim: 22 prot
 
 ![Matriz do mapa de ameaças (STRIDE) por parte do sistema](../assets/matriz-stride.png)
 
+O mapa foi revisto duas vezes em novembro de 2026. Na primeira revisão, em 16/11, 2 das 28 ameaças estavam abertas, e as correções do mesmo dia deixaram 1 aberta, com o mapa já em 31 ameaças. A segunda revisão, em 19/11, fechou a última e levou as protegidas de 20 para 22. Os números vêm da coluna de situação deste documento em cada revisão.
+
+![Ameaças do mapa por situação em cada revisão: 15 protegidas, 11 em parte e 2 abertas antes das correções da 1ª revisão, 20, 10 e 1 depois delas e 22, 9 e nenhuma aberta depois da 2ª revisão](../assets/grafico-ameacas-revisoes.png)
+
 ## Visão geral do sistema
 
 ```mermaid
