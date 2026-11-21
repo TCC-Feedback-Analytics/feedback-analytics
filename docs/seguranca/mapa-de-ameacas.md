@@ -33,6 +33,10 @@ Em 21/11/2026, a troca de e-mail e a exclusão da conta passaram a pedir confirm
 
 ![Caminho da exclusão da conta: pedido com a senha e limite de 5 por hora, link de uso único no e-mail, confirmação no navegador logado, 15 dias de conta parada com a opção de desistir e a rotina diária que apaga tudo numa transação](../assets/fluxo-exclusao-conta.png)
 
+O segundo diagrama mostra o mesmo assunto do lado de quem roubou a sessão. Antes de 21/11/2026, o atacante trocava o e-mail da conta para o dele, pedia uma senha nova e ficava com a conta. Agora a troca precisa da aprovação no e-mail atual, a rota nativa `change-email` foi desligada, a exclusão só é agendada pelo link enviado ao dono e o chute de senha esbarra no limite de pedidos.
+
+![Ataque com a sessão roubada: antes de 21/11/2026, a troca de e-mail sem aprovação levava à conta tomada. Depois, a troca vai primeiro para o e-mail do dono, a rota nativa responde 404, a exclusão depende do link do dono e o chute de senha esbarra no limite de 5 pedidos por hora](../assets/ataque-sessao-roubada.png)
+
 ## Visão geral do sistema
 
 ```mermaid
