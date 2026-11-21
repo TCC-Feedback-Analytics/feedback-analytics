@@ -2,7 +2,7 @@
 
 > **Em uma frase:** para cada parte do Feedback Analytics, o que um atacante (ou um erro nosso) poderia fazer, o que já protege no código e o que ainda está aberto.
 
-Parte do [inventário de dados pessoais](inventario-de-dados.md): ele diz **o que** proteger; este documento diz **contra o quê**. Levantado no código do gateway, da Web e do ia-analyze em 02/11/2026; a situação das mitigações foi revista em 03/11/2026, em 16/11/2026 e em 19/11/2026, depois das correções do formulário público, dos cabeçalhos e da IA.
+Parte do [inventário de dados pessoais](inventario-de-dados.md): ele diz **o que** proteger, e este documento diz **contra o quê**. Levantado no código do gateway, da Web e do ia-analyze em 02/11/2026. A situação das mitigações foi revista em 03/11/2026, em 16/11/2026, em 19/11/2026, depois das correções do formulário público, dos cabeçalhos e da IA, e em 21/11/2026, depois que a troca de e-mail e a exclusão da conta passaram a pedir confirmação pelo e-mail.
 
 ## Como ler
 
@@ -28,6 +28,8 @@ Depois da revisão de 19/11/2026, as 31 ameaças mapeadas ficaram assim: 22 prot
 O mapa foi revisto duas vezes em novembro de 2026. Na primeira revisão, em 16/11, 2 das 28 ameaças estavam abertas, e as correções do mesmo dia deixaram 1 aberta, com o mapa já em 31 ameaças. A segunda revisão, em 19/11, fechou a última e levou as protegidas de 20 para 22. Os números vêm da coluna de situação deste documento em cada revisão.
 
 ![Ameaças do mapa por situação em cada revisão: 15 protegidas, 11 em parte e 2 abertas antes das correções da 1ª revisão, 20, 10 e 1 depois delas e 22, 9 e nenhuma aberta depois da 2ª revisão](../assets/grafico-ameacas-revisoes.png)
+
+Em 21/11/2026, a troca de e-mail e a exclusão da conta passaram a pedir confirmação pelo e-mail, o que limita o estrago de uma sessão roubada. A contagem não mudou.
 
 ## Visão geral do sistema
 
@@ -62,7 +64,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | **S** | Não conseguir trocar a senha pelo link estando logado | O `requireAuth` lê o cookie de recuperação antes da sessão, então quem abre o link no navegador em que já está logado troca a senha (PR #113, `requireAuthResetToken.test.ts`) | ✅ |
 | **S** | Continuar dentro da conta com a senha antiga depois da troca | A nova senha encerra todas as sessões da pessoa (`revokeSessionsOnPasswordReset`, `auth.ts`, PR #110) | ✅ |
 | **S** | Descobrir se um e-mail tem conta (enumeração) | Cadastro sem login automático e com confirmação obrigatória de e-mail, respondendo igual nos dois casos (`register.controller.ts`). O login responde "E-mail ou senha inválidos." também para conta não confirmada (`errorMap.ts`) | ⚠️ O cadastro avisa "Telefone já cadastrado.", o que revela se um telefone tem conta |
-| **S** | Roubar a sessão pelo navegador | Cookie `httpOnly` (o JavaScript da página não lê), `secure` em produção e `sameSite` | ✅ |
+| **S** | Roubar a sessão pelo navegador | Cookie `httpOnly` (o JavaScript da página não lê), `secure` em produção e `sameSite`. Mesmo com a sessão roubada, trocar o e-mail pede a aprovação no endereço atual, e excluir a conta pede a senha (ou uma entrada pelo Google nas últimas 24 horas), a confirmação por um link no e-mail e ainda deixa 15 dias para desistir (PR #133 do gateway e #169 da Web) | ✅ |
 | **D** | Usar o "reenviar confirmação" para mandar spam | Limite por IP e por e-mail, com contagem no banco e só o HMAC dos valores (`resendRateLimit.ts`) | ✅ |
 | **D** | Usar o cadastro ou a nova senha para mandar e-mails em massa | 5 pedidos por e-mail por hora e 20 por IP a cada 15 minutos, contados no banco (`authRateLimit.ts`). Na nova senha, o 429 vale para qualquer e-mail e não revela quem tem conta (PR #110) | ✅ |
 | **I** | Vazar os tokens do Google guardados | Não são mais gravados: o hook `discardOAuthTokens` apaga os tokens antes de gravar a conta (`auth.ts`). A migration `0015_apagar_tokens_google.sql` apaga os tokens das contas Google antigas no deploy (PR #109 e PR #110) | ✅ |
@@ -99,7 +101,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 
 | | Ameaça | O que já protege | Situação |
 |---|---|---|---|
-| **S** | Usar um link de confirmação ou de nova senha velho ou de outra pessoa | Links com prazo de 1 hora, validados pelo Better Auth. O de nova senha usa um token guardado na tabela `verification` e apagado no uso. O de confirmação e o de troca de e-mail são um token assinado com o `BETTER_AUTH_SECRET`, sem registro no banco | ✅ |
+| **S** | Usar um link de confirmação, de nova senha ou de exclusão da conta velho ou de outra pessoa | Links com prazo de 1 hora, validados pelo Better Auth. O de nova senha usa um token guardado na tabela `verification` e apagado no uso. O de confirmação e os dois da troca de e-mail são um token assinado com o `BETTER_AUTH_SECRET`, sem registro no banco. O de exclusão da conta é aleatório (32 bytes), vale 1 hora, é de uso único e só funciona na sessão do dono da conta. O banco guarda só o hash SHA-256 dele, na `verification` (PR #133 do gateway) | ✅ |
 | **I** | A credencial do Brevo vazar | Fica só nas variáveis da Vercel, fora do repositório | ✅ |
 
 ## 7. Web (navegador)
@@ -115,7 +117,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | # | Lacuna | Por que importa | Onde entra |
 |---|---|---|---|
 | 1 | Gateway entra no banco como superusuário | Uma senha vazada vira acesso total | Etapa 07, código, item 3. **Feito:** o app entra como `feedback_app` em produção (migration `0013`) |
-| 2 | Sem "Excluir minha conta" | Direito do titular (LGPD, art. 18) | Etapa 07, código, item 2. **Feito:** botão no Perfil, publicado em 02/11/2026 |
+| 2 | Sem "Excluir minha conta" | Direito do titular (LGPD, art. 18) | Etapa 07, código, item 2. **Feito:** botão no Perfil, publicado em 02/11/2026. Desde 21/11/2026, a exclusão pede confirmação pelo e-mail e tem 15 dias de carência |
 | 3 | Nove tabelas sem RLS | Coerência com a decisão de RLS em todas | Etapa 07, código, item 3. **Feito:** RLS nas 24 tabelas (migration `0013`) |
 | 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | **Feito:** CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy` na Web (PR #160) e no gateway (PR #123 e #125), além de `Cross-Origin-Opener-Policy` e `Cross-Origin-Resource-Policy` na Web (PR #163). O gateway também não anuncia mais o Express (PR #110) |
 | 5 | Sem limite de tentativas de login | Ataque de senha, até de um só IP | **Feito (PR #110):** o login, o cadastro e a nova senha contam as tentativas no banco, como o reenvio. As rotas nativas de e-mail e senha do Better Auth foram desligadas (PR #113) |
@@ -125,3 +127,4 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | 9 | Comentário com dado pessoal ou instrução para a IA | Dado saindo do sistema; resumo enviesado | **Instrução para a IA: feito (PR #38 do ia-analyze).** Dado pessoal escrito no comentário segue em aberto |
 | 10 | Backups não confirmados | Recuperação depois de um incidente | [Roteiro de incidente](roteiro-de-incidente.md). O plano Supabase Pro, previsto no [custo de produção](../concepcao/modelo-negocio.md), traz backup diário guardado por 7 dias |
 | 11 | Dependência com falha conhecida ou chave no código | Um pacote vulnerável ou um segredo publicado abre o sistema por fora do código da equipe | **Feito (19/11/2026):** Dependabot ligado nos quatro repositórios, sem alertas abertos, e `npm audit` zerado nos três serviços (PR #127 do gateway, #40 do ia-analyze e #162 da Web). Varredura de segredos com *push protection* ligada, sem segredos encontrados, e canal privado de relato de falhas (*Report a vulnerability*), explicado no [SECURITY.md](https://github.com/TCC-Feedback-Analytics/.github/blob/main/SECURITY.md) da organização |
+| 12 | Sessão roubada trocava o e-mail ou apagava a conta | Com o cookie, dava para tomar a conta pela troca de e-mail ou apagar tudo na hora | **Feito (21/11/2026):** a troca de e-mail pede antes a aprovação no endereço atual, e a rota nativa `change-email` foi desligada. A exclusão pede a senha (ou uma entrada pelo Google nas últimas 24 horas) e a confirmação por um link de uso único no e-mail, encerra as sessões e deixa a conta parada por 15 dias, com a opção de cancelar. A rota nativa `delete-user` foi desligada (PR #133 do gateway e #169 da Web) |

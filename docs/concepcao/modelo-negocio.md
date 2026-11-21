@@ -83,7 +83,7 @@ Esse período existe por uma razão estratégica: feedback analytics é um produ
 | **Fim do teste** | Avisos 7 dias e 1 dia antes do fim. A empresa assina pelo Perfil, por **Pix Automático** (o Pix recorrente do Banco Central) ou **cartão de crédito**, por um intermediador de pagamento brasileiro, como Mercado Pago ou Asaas. Com o pagamento confirmado, o status vira `ACTIVE`. |
 | **Renovação** | Cobrança mensal recorrente de R$ 79,90, no mesmo meio de pagamento. |
 | **Sem pagamento** | O status vira `EXPIRED`. O painel fica só para leitura e a coleta é pausada em todos os canais, com a mesma pausa que o gestor já usa hoje. Os dados continuam guardados até o gestor excluir a conta e voltam a valer se a empresa assinar. O prazo de guarda das contas expiradas entra no [inventário de dados pessoais](../seguranca/inventario-de-dados.md) junto com a cobrança. |
-| **Cancelamento** | Pelo Perfil, a qualquer momento e sem multa. O acesso continua até o fim do mês já pago, e o status vira `CANCELED`. A exclusão da conta, que já existe, apaga a empresa e todos os dados. |
+| **Cancelamento** | Pelo Perfil, a qualquer momento e sem multa. O acesso continua até o fim do mês já pago, e o status vira `CANCELED`. A exclusão da conta, que já existe, é confirmada pelo e-mail e, depois de 15 dias de carência, apaga a empresa e todos os dados. |
 | **Uso da IA** | A análise por IA vem no plano, sem upgrade. O consumo do modelo é pago pela empresa direto ao provedor, na conta OpenRouter que ela conecta, porque cada empresa escolhe o próprio modelo e paga só o que usa. |
 
 O diagrama mostra o mesmo fluxo pelos status que a empresa já tem no banco (`subscription_status`).

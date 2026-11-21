@@ -2,7 +2,7 @@
 
 > **Em uma frase:** a lista de cada dado pessoal que o Feedback Analytics guarda ou repassa: de quem é, onde fica, para que serve, para quem sai e por quanto tempo fica.
 
-É a base da etapa de segurança e LGPD. O [mapa de ameaças](mapa-de-ameacas.md), o registro de [controlador e operador](controlador-e-operador.md) e o [roteiro de incidente](roteiro-de-incidente.md) partem desta lista. Ela foi levantada no schema do banco (`drizzle/schema/` do gateway) e no código em 02/11/2026, e revista em 03/11/2026, depois da exclusão de conta pelo Perfil, e em 16/11/2026.
+É a base da etapa de segurança e LGPD. O [mapa de ameaças](mapa-de-ameacas.md), o registro de [controlador e operador](controlador-e-operador.md) e o [roteiro de incidente](roteiro-de-incidente.md) partem desta lista. Ela foi levantada no schema do banco (`drizzle/schema/` do gateway) e no código em 02/11/2026, e revista em 03/11/2026, depois da exclusão de conta pelo Perfil, em 16/11/2026 e em 21/11/2026, quando a exclusão passou a ter confirmação pelo e-mail e 15 dias de carência.
 
 ## De quem são os dados
 
@@ -22,17 +22,18 @@ Todos os dados abaixo ficam num único banco **PostgreSQL hospedado no Supabase*
 | Dado | Onde (tabela.coluna) | Para que serve | Sai para |
 |---|---|---|---|
 | Nome do negócio | `user.name` | Pedido no cadastro como "Nome do negócio" (no login com Google, o nome do Google vem como sugestão). Aparece no topo do painel e no formulário público, depois do envio | Provedor de IA, no contexto do negócio |
-| E-mail | `user.email` | Login, confirmação de conta e recuperação de senha | Brevo (e-mails); Google, no login com Google |
+| E-mail | `user.email` | Login, confirmação de conta, recuperação de senha, troca de e-mail e exclusão da conta | Brevo (e-mails) e Google, no login com Google |
 | E-mail confirmado | `user.email_verified` | Liberar o login só depois da confirmação | — |
 | Telefone | `user.phone` | Pedido no cadastro, ou no "Complete seu cadastro" de quem entra com o Google (`+55`), único por conta. Hoje nenhum fluxo usa o telefone: não há SMS nem contato automático | — |
 | Foto | `user.image` | Gravada pelo Better Auth no login com Google, mas não usada: o avatar do painel é uma letra fixa e a API não devolve a foto | — |
+| Exclusão agendada | `user.deletion_scheduled_for` | Data em que a conta será apagada, marcada quando o gestor confirma a exclusão pelo link do e-mail (nula = conta ativa). Enquanto está preenchida, a conta fica parada, e a rotina diária apaga a conta no fim dos 15 dias | — |
 | Senha | `account.password` | Login por e-mail e senha. Guardada só como **hash**, nunca em texto | — |
 | Tokens do Google | `account.access_token`, `account.refresh_token`, `account.id_token` | **Não são gravados** desde o PR #109 do gateway. A migration `0015_apagar_tokens_google.sql` (PR #110) apaga os das contas antigas. O Better Auth lê o perfil com eles no login com Google, e o gateway grava os três vazios (`discardOAuthTokens`); o sistema não chama o Google depois do login | — |
 | Sessão | `session.token`, `session.ip_address`, `session.user_agent`, `session.expires_at` | Manter o gestor logado. O IP e o navegador são gravados quando a sessão nasce: no login com Google, na entrada pelo link de confirmação e, desde o PR #110 do gateway, no login com e-mail e senha. Nada lê esses campos hoje | — |
-| Links de nova senha e login com Google | `verification` | Validar o link de nova senha (guarda o id do usuário, vale 1 hora) e o retorno do login com Google (vale 10 minutos). O link de confirmação e o de troca de e-mail não ficam no banco: são um token assinado, com o e-mail dentro, que vale 1 hora | — |
+| Links de nova senha, de exclusão da conta e login com Google | `verification` | Validar o link de nova senha (guarda o id do usuário, vale 1 hora) e o retorno do login com Google (vale 10 minutos). O link de exclusão da conta vale 1 hora e é de uso único: a linha guarda o id do usuário e só o hash SHA-256 do link (`identifier = account-deletion:<hash>`), nunca o link em si. O link de confirmação e o de troca de e-mail não ficam no banco: são um token assinado, com o e-mail dentro, que vale 1 hora | — |
 | Aceite dos termos | `enterprise.terms_version`, `enterprise.terms_accepted_at` | Provar qual versão dos Termos e da Política foi aceita, e quando | — |
 | Progresso do guia | `user_onboarding` | Não repetir o guia já feito | — |
-| Limites de tentativa | `auth_rate_limit.key` | Frear abuso no login, no cadastro, na nova senha e no "reenviar confirmação". Guarda só um **HMAC** do IP e do e-mail, não o valor | — |
+| Limites de tentativa | `auth_rate_limit.key` | Frear abuso no login, no cadastro, na nova senha, no "reenviar confirmação" e no pedido de exclusão da conta. Guarda só um **HMAC** do IP e do e-mail, não o valor | — |
 
 ## Empresa
 
@@ -75,7 +76,7 @@ O `GET /api/protected/user/feedbacks` (`feedbackList.repository.ts`) devolve ao 
 | **Supabase** | Tudo acima (hospeda o banco) | Hospedagem do PostgreSQL |
 | **Vercel** | As requisições da Web e da API, com IP e navegador nos registros de acesso. Nos registros do `ia-analyze`, o adaptador do OpenRouter grava só código, modelo, tarefa, contagens e status, sem chave, prompt nem comentário; o adaptador do Gemini grava só o status, o nome e o código do erro, sem a mensagem do SDK | Hospedagem da Web, do gateway e do `ia-analyze` |
 | **OpenRouter e o modelo escolhido pela empresa** | Comentários, notas, respostas, pergunta própria, data do feedback, nomes do ponto de coleta e do item, o nome do negócio e o contexto do negócio. **Nunca** nome, e-mail, gênero ou IP do cliente | Análise dos comentários, diagnóstico do escopo e geração das perguntas, com a chave da própria empresa |
-| **Brevo** | E-mail do gestor e os links de confirmação, de troca de e-mail e de nova senha | Envio dos e-mails da conta |
+| **Brevo** | E-mail do gestor e os links de confirmação, de troca de e-mail, de nova senha e de exclusão da conta | Envio dos e-mails da conta |
 | **Google** | O pedido de login com Google | Login social, quando o gestor escolhe |
 
 Desde a PR #152 da Web, as fontes saem da própria Web (`styles/fonts.css`), sem o Google Fonts.
@@ -84,13 +85,13 @@ Os papéis de cada fornecedor na LGPD ficam no registro de [controlador e operad
 
 ## Por quanto tempo fica
 
-Nenhuma rotina agendada apaga dados. Só há limpezas no caminho de outras ações:
+Desde 21/11/2026, uma rotina agendada apaga dados: a da exclusão da conta, uma vez por dia, só nas contas cujos 15 dias de carência venceram. As outras limpezas acontecem no caminho de outras ações:
 
 | Dado | Situação atual |
 |---|---|
-| Conta, empresa, feedbacks e análises | Ficam até o gestor excluir a conta. Desde 02/11/2026, o botão "Excluir minha conta", no Perfil, apaga numa transação a empresa e tudo dela (feedbacks, clientes, aparelhos, análises, configuração de IA) e depois o usuário, com sessões e contas de login (`src/auth/enterpriseOnDelete.ts`). A exclusão também pode ser pedida por e-mail, como dizem os Termos |
-| Sessões (`session`) | A sessão é apagada ao sair da conta, ao redefinir a senha (todas as sessões da pessoa, `revokeSessionsOnPasswordReset`) ou quando o navegador volta com o cookie vencido. Se o cookie não volta, a linha vencida fica no banco |
-| Links (`verification`) | O Better Auth apaga todos os vencidos a cada nova consulta de link (nova senha ou login com Google). O link de nova senha usado também sai |
+| Conta, empresa, feedbacks e análises | Ficam até o gestor excluir a conta. Desde 02/11/2026, o botão "Excluir minha conta" fica no Perfil. Desde 21/11/2026, o pedido é confirmado por um link no e-mail e a conta fica parada por 15 dias, para o gestor poder desistir. No fim do prazo, a rotina diária (`exclusao-de-contas.yml`) apaga numa transação a empresa e tudo dela (feedbacks, clientes, aparelhos, análises, configuração de IA), os links pendentes e o usuário, com sessões e contas de login (`src/repositories/accountDeletion.repository.ts`). A exclusão também pode ser pedida por e-mail, como dizem os Termos |
+| Sessões (`session`) | A sessão é apagada ao sair da conta, ao redefinir a senha (todas as sessões da pessoa, `revokeSessionsOnPasswordReset`), ao confirmar a exclusão da conta (todas as sessões) ou quando o navegador volta com o cookie vencido. Se o cookie não volta, a linha vencida fica no banco |
+| Links (`verification`) | O Better Auth apaga todos os vencidos a cada nova consulta de link (nova senha ou login com Google). O link de nova senha usado também sai, e o link de exclusão sai quando é usado |
 | IP e navegador do cliente (`tracked_devices`) | Sem prazo |
 | Limites de tentativa (`auth_rate_limit`) | A cada pedido de login, cadastro, nova senha ou reenvio, o gateway apaga até 100 linhas vencidas |
 
@@ -101,6 +102,6 @@ Pontos para o mapa de ameaças e para o plano da etapa. O 2, o 4 e o 6 foram res
 1. **IP e navegador do cliente sem prazo de guarda.** O anti-spam olha só o dia: 1 envio por aparelho, por ponto de coleta, até a meia-noite de Brasília. Ele compara só o identificador do aparelho, calculado a cada envio; o IP e o navegador gravados não são lidos depois. O identificador fica sem prazo de propósito, porque mantém o bloqueio entre dias e conta os "Clientes que voltam". Candidato: apagar o IP e o navegador depois de um prazo e manter só o identificador.
 2. **Tokens do Google: resolvido no gateway.** O gateway grava os três vazios (`discardOAuthTokens`, PR #109), e a migration `0015` apaga os tokens gravados antes (PR #110). Cifrar não bastaria, porque o `id_token` ficaria legível.
 3. **O comentário vai à IA como foi escrito.** O sistema não manda os dados de identificação do cliente, mas o próprio texto pode trazer um telefone ou e-mail.
-4. **Exclusão de conta pela tela: resolvido em 02/11/2026.** O direito de exclusão (LGPD, art. 18) dependia de um e-mail; hoje o gestor exclui a conta no Perfil.
+4. **Exclusão de conta pela tela: resolvido em 02/11/2026.** O direito de exclusão (LGPD, art. 18) dependia de um e-mail. Hoje o gestor exclui a conta no Perfil. Desde 21/11/2026, o pedido é confirmado por um link no e-mail e a conta só é apagada depois de 15 dias, prazo em que o gestor pode desistir.
 5. **Sessões vencidas podem ficar no banco.** Links e limites vencidos já são apagados no caminho, a cada consulta de link e a cada pedido de login, cadastro, nova senha ou reenvio. A sessão só some ao sair da conta, ao redefinir a senha ou quando o cookie vencido volta. O risco é baixo.
 6. **IP, navegador e identificador do aparelho chegavam ao gestor: resolvido em 05/11/2026.** Eles servem só ao anti-spam, e a lista de feedbacks deixou de devolvê-los ao painel.

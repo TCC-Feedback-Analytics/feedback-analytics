@@ -520,15 +520,17 @@ Rotas: `/user/profile`, `/user/qrcode/enterprise`, `/user/edit/types-feedback`, 
 
 ### CT-UC12-09 — Troca de e-mail
 
-- **Objetivo:** confirmar que a troca de e-mail só vale depois da confirmação pelo endereço novo.
-- **Pré-condições:** logado numa conta **descartável** e com acesso à caixa de um e-mail novo (no ambiente local, o Mailpit). A troca muda o e-mail de login da conta.
+- **Objetivo:** confirmar que a troca de e-mail pede primeiro a aprovação no endereço atual e só vale depois da confirmação pelo endereço novo.
+- **Pré-condições:** logado numa conta **descartável** e com acesso à caixa do e-mail atual e à de um e-mail novo (no ambiente local, o Mailpit). A troca muda o e-mail de login da conta.
 - **Passos:**
   1. Navegue para `/user/profile`, na seção **"Dados pessoais e acesso"**.
-  2. No campo **Email** (dica "Após alterar, confirme pelo link enviado ao novo e-mail"), clique em **"Editar"**, digite um e-mail novo e clique em **"Salvar"**.
+  2. No campo **Email** (dica "Primeiro aprove no e-mail atual, depois confirme no novo"), clique em **"Editar"**, digite um e-mail novo e clique em **"Salvar"**.
   3. Recarregue a página.
-  4. Na caixa do e-mail novo, abra **"Confirme seu novo e-mail"** e clique em **"Confirmar meu novo e-mail"**.
+  4. Na caixa do e-mail **atual**, abra **"Aprove a troca do e-mail da sua conta"** e clique em **"Aprovar a troca"**.
   5. Volte a `/user/profile`.
-- **Resultado esperado:** passo 2 → toast **"Confirme no novo e-mail!"**, e você continua no Perfil; passo 3 → o Perfil ainda mostra o e-mail **antigo**; passo 4 → o link abre `/auth/success`; passo 5 → o Perfil mostra o e-mail **novo**. Se o e-mail novo já for de outra conta, a tela mostra o mesmo toast, mas nenhum e-mail sai e a troca não acontece.
+  6. Na caixa do e-mail novo, abra **"Confirme seu novo e-mail"** e clique em **"Confirmar meu novo e-mail"**.
+  7. Volte a `/user/profile`.
+- **Resultado esperado:** passo 2 → toast **"Aprove a troca no seu e-mail atual!"**, você continua no Perfil e nada chega ainda ao e-mail novo. Passo 3 → o Perfil ainda mostra o e-mail **antigo**. Passo 4 → o link abre `/auth/success?tipo=troca-aprovada`, com **"Troca aprovada"**, e só então chega o e-mail no endereço novo. Passo 5 → o Perfil ainda mostra o e-mail **antigo**. Passo 6 → o link abre `/auth/success?tipo=email-trocado`, com **"E-mail trocado"**. Passo 7 → o Perfil mostra o e-mail **novo**. Se o e-mail novo já for de outra conta, a tela mostra o mesmo toast, mas nenhum e-mail sai e a troca não acontece.
 
 ### CT-UC12-10 — Troca de telefone
 
@@ -541,14 +543,19 @@ Rotas: `/user/profile`, `/user/qrcode/enterprise`, `/user/edit/types-feedback`, 
 
 ### CT-UC12-15 — Excluir minha conta
 
-- **Objetivo:** confirmar que a exclusão pede confirmação, recusa senha errada e apaga a conta.
-- **Pré-condições:** logado numa conta **descartável** com senha (ex.: uma criada só para este teste). **Nunca** use a conta de teste do time: a exclusão apaga a conta, a empresa e todos os feedbacks, sem volta.
+- **Objetivo:** confirmar que a exclusão pede a senha, só começa depois da confirmação pelo link do e-mail, deixa a conta parada por 15 dias e pode ser cancelada nesse prazo.
+- **Pré-condições:** logado numa conta **descartável** com senha (ex.: uma criada só para este teste) e com acesso à caixa do e-mail dela (no ambiente local, o Mailpit). Copie antes o link do formulário público da empresa, em **"Canais de coleta"**. **Nunca** use a conta de teste do time: se a exclusão não for cancelada, a rotina diária apaga a conta, a empresa e todos os feedbacks no fim dos 15 dias, sem volta.
 - **Passos:**
   1. Navegue para `/user/profile` e, no fim, clique em **"Excluir minha conta"**.
-  2. Na janela, digite uma senha errada em **"Sua senha"** e `EXCLUIR` no campo de confirmação; clique em **"Excluir para sempre"**.
-  3. Corrija a senha e clique em **"Excluir para sempre"** de novo.
-  4. Clique em **"Ir para o início"** e tente entrar com a conta excluída em `/login`.
-- **Resultado esperado:** passo 1 → a janela "Excluir minha conta" lista o que será apagado, e **"Excluir para sempre"** só habilita com a senha e a palavra `EXCLUIR`; passo 2 → "Senha incorreta. Confira e tente de novo." e nada é apagado; passo 3 → **"Sua conta foi excluída."** ("Apagamos a conta, a empresa e todos os dados dela."), sem fechar a janela; passo 4 → a página recarrega em `/` e o login responde "E-mail ou senha incorretos.". Numa conta que só entra pelo Google, a janela não pede senha, e com a entrada feita há mais de 24 h aparece "Por segurança, saia, entre de novo e volte aqui para excluir a conta.".
+  2. Na janela, digite uma senha errada em **"Sua senha"** e `EXCLUIR` no campo de confirmação. Clique em **"Enviar link de confirmação"**.
+  3. Corrija a senha e clique em **"Enviar link de confirmação"** de novo.
+  4. Na caixa do e-mail da conta, abra **"Confirme a exclusão da sua conta"** e clique em **"Confirmar a exclusão"**, no mesmo navegador em que você está logado.
+  5. Na página `/conta/excluir`, clique em **"Confirmar a exclusão"**.
+  6. Abra o link do formulário público copiado antes.
+  7. Entre de novo com a conta em `/login`.
+  8. Clique em **"Cancelar exclusão"**.
+  9. Abra de novo o link do passo 4 e clique em **"Confirmar a exclusão"**.
+- **Resultado esperado:** passo 1 → a janela "Excluir minha conta" lista o que será apagado, e **"Enviar link de confirmação"** só habilita com a senha e a palavra `EXCLUIR`. Passo 2 → "Senha incorreta. Confira e tente de novo." e nada é enviado. Passo 3 → **"Confira o seu e-mail."** e nada é apagado ainda. Passo 4 → a página `/conta/excluir` abre com **"Confirmar a exclusão da conta"**, e abrir o link sozinho não confirma nada. Passo 5 → **"Exclusão agendada"**, com a data de daqui a 15 dias. A sessão é encerrada em todos os aparelhos e chega o e-mail **"Sua conta será excluída em dd/mm/aaaa"**. Passo 6 → o formulário não abre. Passo 7 → o login leva a `/conta/exclusao-agendada` ("Sua conta será excluída"), com a data e os botões **"Cancelar exclusão"** e **"Sair"**, e o painel não abre. Passo 8 → você vai para o Dashboard, o formulário público volta a abrir e chega o e-mail **"A exclusão da sua conta foi cancelada"**. Passo 9 → "Este link já foi usado ou venceu. Peça a exclusão de novo no Perfil.". Numa conta que só entra pelo Google, a janela não pede senha, e com a entrada feita há mais de 24 h aparece "Por segurança, saia, entre de novo e volte aqui para excluir a conta.". Sem cancelar, a rotina diária apaga a conta no fim do prazo e manda o e-mail **"Sua conta foi excluída"**.
 
 ### CT-UC12-16 — Rotas antigas redirecionam
 

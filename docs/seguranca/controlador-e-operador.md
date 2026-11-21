@@ -32,7 +32,7 @@ Consequência prática: num incidente com feedbacks, **avisamos o negócio**, e 
 | **Supabase** | Hospeda o PostgreSQL | Todos os dados do banco | No Brasil (São Paulo, `sa-east-1`), pelo endereço do banco de produção; confirmar no painel | Acordo de tratamento de dados (DPA) aceito; plano de backup |
 | **Vercel** | Hospeda a Web, o gateway e o `ia-analyze` | Todas as requisições, com IP e navegador nos registros de acesso | Fora do Brasil | DPA aceito; por quanto tempo guarda os registros |
 | **OpenRouter** e o **provedor do modelo** escolhido pelo negócio | Roda a análise dos comentários, o diagnóstico e a geração das perguntas | Comentários, notas, respostas, pergunta própria, nomes do ponto e do item, o nome e o contexto do negócio. Nunca nome, e-mail, gênero ou IP do cliente | Fora do Brasil | Política de retenção do OpenRouter e do provedor escolhido. A chamada usa a **chave do próprio negócio**, então o negócio também tem um contrato direto com o OpenRouter |
-| **Brevo** | Envia os e-mails da conta | E-mail do gestor e os links de confirmação, de troca de e-mail e de nova senha | Fora do Brasil (União Europeia) | DPA aceito |
+| **Brevo** | Envia os e-mails da conta | E-mail do gestor e os links de confirmação, de troca de e-mail, de nova senha e de exclusão da conta | Fora do Brasil (União Europeia) | DPA aceito |
 | **Google** | Login com Google | O pedido de login, que devolve nome, e-mail e foto do perfil | Fora do Brasil | Configuração do OAuth publicada |
 
 Desde a PR #152 da Web, as fontes saem da própria Web, e o Google Fonts não recebe mais o IP nem o navegador de quem abre as páginas.
@@ -60,4 +60,4 @@ Pontos encontrados em 02/11/2026 e em 16/11/2026. Os três já foram corrigidos 
 
 1. **E-mail: corrigido.** A Política dizia que os e-mails saíam pelo **SendGrid**; hoje ela cita o **Brevo**, que é quem envia em produção (gateway, configuração SMTP).
 2. **Limpeza de registros: corrigido na Web (PR #152).** A Política dizia que os registros de sessão e de controle de envios "são apagados quando deixam de ser necessários". O texto novo diz que a sessão é apagada quando a pessoa sai da conta e que o IP, o navegador e o identificador do aparelho ficam enquanto a conta do negócio existir ([inventário](inventario-de-dados.md#por-quanto-tempo-fica)).
-3. **Exclusão da conta: corrigido.** A exclusão dependia de um pedido por e-mail. Desde 02/11/2026, o botão "Excluir minha conta", no Perfil, apaga a conta, a empresa e todos os feedbacks, e os Termos citam o botão.
+3. **Exclusão da conta: corrigido.** A exclusão dependia de um pedido por e-mail. Desde 02/11/2026, o botão "Excluir minha conta", no Perfil, apaga a conta, a empresa e todos os feedbacks, e os Termos citam o botão. Desde 21/11/2026, o pedido é confirmado por um link no e-mail da conta, que fica parada por 15 dias antes de ser apagada, e a Política e os Termos dizem isso (PR #169 da Web).

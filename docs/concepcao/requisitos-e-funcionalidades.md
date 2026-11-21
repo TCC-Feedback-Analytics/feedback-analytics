@@ -31,7 +31,7 @@
 - **Recuperação de senha (Esqueci minha senha)** com envio de e-mail e link seguro.
 - **Reenvio de e-mail de confirmação** caso o usuário não tenha recebido, com limite por e-mail e por IP.
 - Proteção de rotas privadas por autenticação.
-- **Exclusão da conta** pelo Perfil ("Excluir minha conta"), que apaga a empresa e todos os dados dela.
+- **Exclusão da conta** pelo Perfil ("Excluir minha conta"), confirmada por um link no e-mail. A conta fica parada por 15 dias, para o gestor poder desistir, e depois a empresa e todos os dados dela são apagados.
 
 ### Área do Usuário Gestor (Dashboard)
 
@@ -46,7 +46,7 @@
   - O sino do cabeçalho mostra, em todas as telas logadas, quantos feedbacks do escopo aguardam a análise da IA.
 - **Perfil do Usuário:**
   - Atualiza o nome.
-  - Troca o e-mail pelo `changeEmail` do Better Auth: o link vai para o endereço novo, e a troca só vale depois do clique.
+  - Troca o e-mail pelo `changeEmail` do Better Auth, em dois passos: o endereço atual aprova a troca, depois o link vai para o endereço novo, e a troca só vale depois desse clique.
   - Atualiza o telefone, salvo direto, sem verificação por SMS.
 - **Gestão Institucional da Empresa:**
   - Visualizar o cadastro da empresa (data de criação e status da conta), no Perfil.
@@ -146,7 +146,7 @@
 | **RF24** | Diagnóstico do Escopo com IA | Gerar, sob demanda, um diagnóstico do escopo que interpreta os números do período (e do anterior) e uma amostra de comentários, com histórico dos diagnósticos gerados. |
 | **RF25** | Geração Automática das Perguntas | Com o contexto da empresa e a IA configurados, gerar com a IA as 3 perguntas do feedback geral no lugar das perguntas padrão. |
 | **RF26** | Login com Google | Permitir cadastro e login com a conta Google, completando na primeira entrada o nome do negócio, o celular e o aceite dos termos. |
-| **RF27** | Exclusão de Conta | Permitir que o gestor exclua a própria conta pelo Perfil, apagando a empresa e todos os dados dela. |
+| **RF27** | Exclusão de Conta | Permitir que o gestor peça a exclusão da própria conta pelo Perfil, com confirmação pelo e-mail e 15 dias para desistir, e depois apagar a empresa e todos os dados dela. |
 | **RF28** | Configuração da IA por Empresa (OpenRouter) | Cada empresa deve usar a própria chave do OpenRouter, guardada cifrada, e escolher o modelo das análises. |
 | **RF29** | Páginas do Produto e Documentos Legais | Possuir páginas públicas que detalham a coleta, a análise e os resultados, além dos Termos de Uso e da Política de Privacidade. |
 | **RF30** | Detalhe da Nota | Mostrar, para o escopo e o período escolhidos, a média, as positivas, neutras e críticas, a distribuição de 1 a 5★ e o movimento das avaliações no tempo. |
@@ -249,7 +249,7 @@ Status: **Implementado** (como pedido), **Implementado (mudou)** (existe, de out
 | ID | Descrição | Status | Prioridade |
 |---|---|---|---|
 | **RF-001** | Autenticação de Usuário: cadastro, login, logout e confirmação de e-mail pelo **Better Auth** no gateway (não pelo Supabase), com sessão em cookie httpOnly. O cadastro pede nome do negócio, e-mail, celular e senha, sem CPF/CNPJ. | Implementado (mudou) | Alta |
-| **RF-002** | Gestão de Perfil: o nome é atualizado; o e-mail é trocado pelo `changeEmail` do Better Auth, depois da confirmação pelo link enviado ao endereço novo; e o telefone é salvo direto, sem verificação por SMS (a Web não chama mais o `/phone/verify`). | Implementado (mudou) | Alta |
+| **RF-002** | Gestão de Perfil: o nome é atualizado. O e-mail é trocado pelo `changeEmail` do Better Auth em dois passos: o endereço atual aprova a troca, e ela só vale depois da confirmação pelo link enviado ao endereço novo. O telefone é salvo direto, sem verificação por SMS (a Web não chama mais o `/phone/verify`). | Implementado (mudou) | Alta |
 | **RF-003** | Gestão de Empresa: o Perfil mostra o cadastro da empresa (data de criação e status da conta) e edita o contexto para a IA; o `PATCH /enterprise` só atualiza a versão e o aceite dos termos. | Parcial | Alta |
 | **RF-004** | Coleta de Dados de Contexto: injeção de regras de negócio da empresa para refino dos prompts da IA. Salvar o contexto também dispara a geração automática das perguntas (RF-025). | Implementado | Alta |
 | **RF-005** | Geração e Gestão de QR Codes: QR da empresa e de cada item do catálogo, com até 3 perguntas por escopo e até 3 subperguntas cada, e ativação/desativação de cada ponto de coleta. | Implementado | Alta |
@@ -274,7 +274,7 @@ Status: **Implementado** (como pedido), **Implementado (mudou)** (existe, de out
 | **RF-024** | Diagnóstico do Escopo com IA: pedido pela fila, usa os números do escopo calculados no gateway e uma amostra de até 20 comentários, cada um cortado em 500 caracteres; o histórico fica em Diagnósticos. Exige o contexto da empresa e a IA configurada. | Implementado | — |
 | **RF-025** | Geração Automática das Perguntas: quando a empresa tem os três campos de contexto, a IA configurada e ainda as perguntas padrão, um job gera 3 perguntas; se falhar, a Web avisa e oferece tentar de novo. | Implementado | — |
 | **RF-026** | Login com Google: entrada pelo Better Auth; na primeira entrada a empresa é criada e a tela "Complete seu cadastro" pede nome do negócio, celular e aceite dos termos. O mesmo e-mail com senha e com Google é a mesma conta. Pelo Perfil, quem só entra pelo Google pode criar uma senha ("Entrar também com senha"): vai um link para o e-mail da conta, pelo mesmo fluxo do "Esqueci minha senha", e o cadastro não pede senha. Só funciona com as credenciais do Google configuradas. | Implementado | — |
-| **RF-027** | Exclusão de Conta: "Excluir minha conta" no Perfil (`POST /api/auth/delete-user`), com a senha ou, para quem só entra pelo Google, uma sessão aberta nas últimas 24 horas. Apaga a empresa e tudo dela numa transação, e depois o usuário. Publicada em 02/11/2026. | Implementado | — |
+| **RF-027** | Exclusão de Conta: "Excluir minha conta" no Perfil (`POST /api/protected/user/account-deletion`), com a senha ou, para quem só entra pelo Google, uma entrada nas últimas 24 horas, mais a palavra EXCLUIR. O pedido manda ao e-mail da conta um link de uso único, que vale 1 hora. O clique em "Confirmar a exclusão" encerra as sessões e deixa a conta parada por 15 dias, e nesse prazo o gestor pode cancelar. No fim do prazo, uma rotina diária apaga a empresa, tudo dela e o usuário numa transação. Publicada em 02/11/2026 e refeita com a carência em 21/11/2026. | Implementado (mudou) | — |
 | **RF-028** | Configuração da IA por Empresa: chave do OpenRouter colada ou obtida por "Conectar com OpenRouter", guardada cifrada (AES-256-GCM), com o painel mostrando só o final; escolha do modelo. Sem chave, as análises falham com `ia_config_required`. | Implementado | — |
 | **RF-029** | Páginas do Produto e Documentos Legais: "Coleta" (`/produto/coleta`), "Análise" (`/produto/analise`) e "Resultados" (`/produto/resultados`), com a navegação ativa entre elas e animações; Termos de Uso (`/termos`) e Política de Privacidade (`/privacidade`), com links no rodapé da Landing Page. As páginas do produto entraram e os termos e a política foram reformulados em 06/11/2026; a navegação ativa e as animações, em 07/11/2026. | Implementado | — |
 | **RF-030** | Detalhe da Nota: página "Nota" (`/user/ratings`), pelo escopo e período do cabeçalho: média, positivas, neutras e críticas, "Distribuição das avaliações" de 1 a 5★ e "Movimento das avaliações". Publicada em 12/11/2026. | Implementado | — |

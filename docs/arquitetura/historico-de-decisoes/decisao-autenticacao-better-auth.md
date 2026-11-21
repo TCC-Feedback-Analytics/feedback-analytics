@@ -6,6 +6,8 @@
 !!! info "Situação em nov/2026"
     A decisão segue valendo. Depois dela, entraram a **entrada com o Google** (pelo handler nativo do Better Auth, em `/api/auth/*`) e a **exclusão da conta**; os e-mails de produção passaram do SendGrid para a **Brevo**; e o app passou a entrar no banco com o papel **`feedback_app`**, de menor privilégio, com a RLS ligada em todas as tabelas (migration `0013`). A sessão é conferida no banco a cada requisição, sem JWT nem `cookieCache`. Em produção, o `BETTER_AUTH_URL` é a URL da Web, que repassa `/api/*` ao Gateway. Na entrada com o Google, os tokens do Google não são gravados na tabela `account` (hook `discardOAuthTokens`), e a migration `0015` apaga os tokens das contas antigas. O login, o cadastro e a nova senha também ganharam limite de tentativas contado no banco, e a nova senha encerra as sessões (PR #110).
 
+    Em 21/11/2026, a troca de e-mail passou a pedir a aprovação no endereço atual antes de mandar o link ao novo (`changeEmail.sendChangeEmailConfirmation`). A exclusão da conta saiu do `deleteUser` do Better Auth, que apagava na hora: agora é pedida no Perfil, confirmada por um link no e-mail e só acontece depois de 15 dias (`src/services/accountDeletion.service.ts`). As rotas nativas `POST /api/auth/change-email` e `POST /api/auth/delete-user` estão desligadas (PR #133 do Gateway).
+
 ## Em uma frase
 
 Login, cadastro, sessão e e-mails de autenticação passaram a ser responsabilidade do **api-gateway** (via **Better Auth**), em vez do Supabase Auth. O banco de dados não mudou.

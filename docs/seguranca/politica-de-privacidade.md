@@ -1,6 +1,6 @@
 # Política de Privacidade
 
-> **Última atualização:** 16 de novembro de 2026
+> **Última atualização:** 21 de novembro de 2026
 
 Esta página reproduz o texto da Web, em `/privacidade` (`pages/public/privacy.tsx` e a data em `src/lib/constants/legal.ts`, no repositório da Web). Quem se cadastra aceita esse texto, na versão `v1` dos termos. Quando ele mudar na Web, esta página muda junto.
 
@@ -8,6 +8,8 @@ Esta página reproduz o texto da Web, em `/privacidade` (`pages/public/privacy.t
     O texto abaixo é o da Web (PR #152), de 16/11/2026. Os seis pontos em que o texto anterior não batia com o sistema foram corrigidos. O login com senha passou a gravar o IP e o navegador da sessão (PR #110 do Gateway), e as fontes passaram a sair da própria Web, sem o Google Fonts. Os outros quatro pontos foram corrigidos no próprio texto: os canais além do QR Code, os ajustes guardados no navegador, o prazo dos registros e quem avisa num incidente com feedbacks.
 
     Resta uma diferença pequena: a seção 5 não cita tudo o que vai para a IA. O [inventário](inventario-de-dados.md) lista também a pergunta própria do comentário, a data do feedback e o nome do ponto de coleta.
+
+    Em 21/11/2026, a seção 7 passou a dizer que o pedido de exclusão é confirmado por um link no e-mail e que a conta fica parada por 15 dias antes de ser apagada (PR #169 da Web). Os Termos de Uso mudaram junto.
 
     Os detalhes estão no [Inventário de dados pessoais](inventario-de-dados.md) e em [Controlador e operador](controlador-e-operador.md).
 
@@ -74,7 +76,7 @@ Não usamos cookies de publicidade nem de rastreamento.
 
 ## 7. Por quanto tempo guardamos
 
-Os dados ficam guardados enquanto a conta do negócio existir. Quando a conta é excluída, os dados da conta e os feedbacks dela são apagados, salvo o que a lei obrigar a manter.
+Os dados ficam guardados enquanto a conta do negócio existir. O pedido de exclusão é confirmado por um link enviado ao e-mail da conta. Depois disso, a conta fica parada por 15 dias, para que o negócio possa desistir, e então os dados da conta e os feedbacks dela são apagados, salvo o que a lei obrigar a manter.
 
 A sessão é apagada quando a pessoa sai da conta. O IP, o navegador e o identificador do aparelho de quem envia feedback ficam guardados enquanto a conta do negócio existir.
 

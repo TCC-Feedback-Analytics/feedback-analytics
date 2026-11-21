@@ -89,9 +89,11 @@ A Web lê o telefone e o e-mail do gestor só pelo `GET /api/protected/user/auth
 
 O gestor pode apagar a conta e todos os dados da empresa pelo **Perfil**, na seção "Excluir minha conta" (LGPD, art. 18).
 
-- A Web pede a senha a quem tem uma e a palavra EXCLUIR para liberar o botão. Quem só entra pelo Google precisa ter entrado nas últimas 24 horas.
-- O gateway apaga, numa transação, a empresa e tudo dela (feedbacks, análises, catálogo, perguntas, pontos de coleta, aparelhos, clientes, contexto da empresa, configuração de IA, jobs e diagnósticos). Depois o Better Auth apaga o usuário, as sessões e as credenciais.
-- Não há volta.
+- A Web pede a senha a quem tem uma e a palavra EXCLUIR para liberar o botão. Quem só entra pelo Google precisa ter entrado nas últimas 24 horas. São no máximo 5 pedidos por conta por hora.
+- O pedido manda ao e-mail da conta o link "Confirme a exclusão da sua conta", que vale 1 hora, só funciona no navegador logado e só pode ser usado uma vez. O banco guarda só o hash do link. Nada é apagado nesse passo.
+- O clique em "Confirmar a exclusão", na página do link, marca a data da exclusão para dali a 15 dias e encerra todas as sessões. Nesse prazo, a conta fica parada: o painel fecha e o formulário público não abre nem grava respostas. O gestor pode entrar de novo e cancelar.
+- No fim do prazo, uma rotina diária apaga, numa transação, a empresa e tudo dela (feedbacks, análises, catálogo, perguntas, pontos de coleta, aparelhos, clientes, contexto da empresa, configuração de IA, jobs e diagnósticos) e o usuário, com as sessões e as credenciais.
+- Depois disso, não há volta.
 
 ---
 
@@ -144,7 +146,7 @@ O teste **não cobre**: o IP e o navegador em `tracked_devices`, os dados do cli
 - A configuração da sessão fica em `src/auth/auth.ts` do gateway: cookie `httpOnly`, `SameSite=Lax` (ou `None` com `Secure` quando Web e API estão em domínios diferentes) e `Secure` em produção
 - O middleware `requireAuth` chama `getAuth().api.getSession()` e resolve a empresa com `SELECT id FROM enterprise WHERE auth_user_id = <usuário>`. Não há header `Authorization: Bearer`
 - A empresa é criada por `provisionEnterpriseForUser` (`src/auth/enterpriseOnSignup.ts`), chamado pelo cadastro com senha, pelo "Complete seu cadastro" e na primeira entrada com o Google (esta sem os termos). Ela substitui o antigo trigger do Supabase
-- A exclusão de conta é o `POST /api/auth/delete-user` do Better Auth, com `deleteEnterpriseOfUser` (`src/auth/enterpriseOnDelete.ts`) rodando antes de apagar o usuário
+- A exclusão de conta fica em `src/services/accountDeletion.service.ts` e `src/repositories/accountDeletion.repository.ts` do gateway: o pedido (`POST /api/protected/user/account-deletion`), a confirmação (`/confirm`), a desistência (`/cancel`) e a rotina diária `exclusao-de-contas.yml`, que chama `POST /api/internal/account-deletions/purge`. A data marcada fica em `user.deletion_scheduled_for` (migration `0016`). O `POST /api/auth/delete-user` do Better Auth está desligado
 - O envio do formulário público é tratado em `src/controllers/public/qrcode.controller.ts`; a lista de feedbacks do painel, em `src/repositories/feedbackList.repository.ts`
 - Para a lista completa de dados pessoais, prazos de guarda e operadores, veja o [inventário de dados](../seguranca/inventario-de-dados.md) e [controlador e operador](../seguranca/controlador-e-operador.md)
 

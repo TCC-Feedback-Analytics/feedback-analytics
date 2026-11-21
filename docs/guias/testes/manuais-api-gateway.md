@@ -64,7 +64,7 @@ curl -i -c cookies-a.txt -X POST "$BASE/public/auth/login" \
 
 Nas chamadas protegidas, reenvie o cookie com `-b cookies-a.txt`. Sufixo ` | jq` é opcional (formata o JSON).
 
-As rotas nativas do Better Auth (`/api/auth/...`, como a exclusão de conta) conferem a origem quando a requisição leva cookie: sem o header `Origin` de uma origem confiável, respondem **403**. No `curl`, acrescente `-H 'Origin: http://localhost:5173'`.
+As rotas nativas do Better Auth (`/api/auth/...`) conferem a origem quando a requisição leva cookie: sem o header `Origin` de uma origem confiável, respondem **403**. No `curl`, acrescente `-H 'Origin: http://localhost:5173'`.
 
 Os erros da API vêm como JSON com o código em `error` (muitas vezes acompanhado de `message`). Onde o roteiro diz "**400** `invalid_payload`", confira o `error` do corpo.
 
@@ -170,14 +170,17 @@ Todos sob `$BASE/public/auth`. Valores de erro são os que o teste verifica.
 
 ### Troca de e-mail
 
-**Objetivo:** a troca de e-mail só vale depois da confirmação pelo endereço novo.
+**Objetivo:** a troca de e-mail pede primeiro a aprovação no endereço atual e só vale depois da confirmação pelo endereço novo.
 **Passos:**
 1. `curl -i -b cookies-a.txt -X PATCH "$BASE/protected/user/email" -H 'Content-Type: application/json' -d '{"email":"novo-a@x.local"}'`.
 2. `GET $BASE/protected/user/auth_user` com o cookie A.
-3. No Mailpit, abra **"Confirme seu novo e-mail"** (enviado para `novo-a@x.local`) e clique no link.
+3. No Mailpit, abra **"Aprove a troca do e-mail da sua conta"** (enviado para `a@x.local`, o endereço atual) e clique em **"Aprovar a troca"**.
 4. Repita o passo 2.
+5. No Mailpit, abra **"Confirme seu novo e-mail"** (enviado para `novo-a@x.local`) e clique no link.
+6. Repita o passo 2.
+7. `curl -i -b cookies-a.txt -X POST "http://localhost:3000/api/auth/change-email" -H 'Origin: http://localhost:5173' -H 'Content-Type: application/json' -d '{"newEmail":"outro-a@x.local"}'`.
 
-**Resultado esperado:** passo 1 → **200** com `{"user":{"id":…,"email":"a@x.local"},"pending_email":"novo-a@x.local"}`; passo 2 → ainda `a@x.local`; passo 3 → o link passa por `/api/auth/verify-email` e volta para `<web>/auth/success`; passo 4 → `novo-a@x.local`. Com `{"email":"nao-eh-email"}` → **400** `invalid_payload`. Com um e-mail que já é de outra conta → **200**, mas nenhum e-mail sai e a conta não muda (o Better Auth não revela que o endereço existe).
+**Resultado esperado:** passo 1 → **200** com `{"user":{"id":…,"email":"a@x.local"},"pending_email":"novo-a@x.local"}`, e nenhum e-mail vai para `novo-a@x.local` ainda. Passo 2 → ainda `a@x.local`. Passo 3 → o link passa por `/api/auth/verify-email` e volta para `<web>/auth/success?tipo=troca-aprovada`, e só então sai o e-mail para `novo-a@x.local`. Passo 4 → ainda `a@x.local`. Passo 5 → o link volta para `<web>/auth/success?tipo=email-trocado`. Passo 6 → `novo-a@x.local`. Passo 7 → **404**: a rota nativa está desligada, e a troca só passa pelo `PATCH`. Com `{"email":"nao-eh-email"}` → **400** `invalid_payload`. Com um e-mail que já é de outra conta → **200**, mas nenhum e-mail sai e a conta não muda (o Better Auth não revela que o endereço existe).
 
 ### Guia do sistema (onboarding)
 
@@ -204,23 +207,28 @@ Todos sob `$BASE/public/auth`. Valores de erro são os que o teste verifica.
 
 **Resultado esperado:** passo 1 → a conta nova volta para `/auth/complete-signup`; passo 4 → **200** `{"ok":true}` e o `auth_user` passa a ter o telefone; passo 5 → **409** `phone_taken` e **400** `invalid_payload`. O mesmo e-mail com senha e com Google é a **mesma** conta.
 
-### Excluir a conta (`POST /api/auth/delete-user`)
+### Excluir a conta (`POST /api/protected/user/account-deletion`)
 
-**Objetivo:** "Excluir minha conta" apaga o usuário, a empresa e tudo dela, sem volta.
+**Objetivo:** "Excluir minha conta" só começa depois da confirmação pelo link do e-mail, deixa a conta parada por 15 dias e pode ser cancelada nesse prazo. Só a rotina diária apaga a conta, no fim do prazo.
 **Pré-condições:** uma conta descartável — registre e confirme uma terceira (ex.: `c@x.local`, phone `+5511900000004`) e salve o cookie em `cookies-c.txt`. Não use a fixture E2E nem as contas A/B das outras seções.
 **Passos:**
-1. `curl -i -b cookies-c.txt -X POST "http://localhost:3000/api/auth/delete-user" -H 'Origin: http://localhost:5173' -H 'Content-Type: application/json' -d '{"password":"senha-errada-123"}'`.
-2. A mesma chamada com a senha certa.
-3. `GET $BASE/protected/user/enterprise` com `cookies-c.txt`.
-4. `POST $BASE/public/auth/login` com `c@x.local` e a senha antiga.
+1. `curl -i -b cookies-c.txt -X POST "$BASE/protected/user/account-deletion" -H 'Content-Type: application/json' -d '{"password":"senha-errada-123"}'`.
+2. A mesma chamada sem `password` e, depois, com a senha certa.
+3. No Mailpit, abra **"Confirme a exclusão da sua conta"** (enviado para `c@x.local`) e copie o `token` do link `<web>/conta/excluir?token=…`.
+4. `curl -i -b cookies-c.txt -X POST "$BASE/protected/user/account-deletion/confirm" -H 'Content-Type: application/json' -d '{"token":"<token>"}'`.
+5. `GET $BASE/protected/user/enterprise` com `cookies-c.txt`.
+6. Entre de novo (`POST $BASE/public/auth/login` com `c@x.local`, salvando o cookie em `cookies-c.txt`) e chame `GET $BASE/protected/user/auth_user` e `GET $BASE/protected/user/enterprise`.
+7. `curl -i -b cookies-c.txt -X POST "$BASE/protected/user/account-deletion/cancel"` e repita o `GET $BASE/protected/user/enterprise`.
+8. Repita o passo 7.
+9. Repita o passo 4 com o mesmo token e o cookie novo.
+10. `curl -i -X POST "$BASE/internal/account-deletions/purge" -H "x-worker-token: $WORKER_TICK_TOKEN"` e, à parte, sem o header.
 
-**Resultado esperado:** passo 1 → **400** com `code` = `INVALID_PASSWORD` (nada é apagado); passo 2 → **200** `{"success":true,"message":"User deleted"}` e o cookie de sessão é limpo; passo 3 → **401** `unauthorized`; passo 4 → **401** `invalid_credentials`. Sem o header `Origin`, o passo 1 já responde **403**.
+**Resultado esperado:** passo 1 → **400** `invalid_password`, e nada é enviado. Passo 2 → sem senha, **400** `password_required`. Com a senha certa, **202** `{"status":"email_sent"}`, e nada é apagado. Passo 4 → **200** `{"deletion_scheduled_for":"…"}`, com a data de daqui a 15 dias, e sai o e-mail **"Sua conta será excluída em dd/mm/aaaa"**. Passo 5 → **401** `unauthorized`: a confirmação apagou todas as sessões da conta. Passo 6 → o login funciona, o `auth_user` traz `deletion_scheduled_for` preenchido e a rota da empresa responde **403** `account_deletion_pending`. Passo 7 → **200** `{"ok":true}`, sai o e-mail **"A exclusão da sua conta foi cancelada"** e a rota da empresa volta a responder **200**. Passo 8 → **409** `no_deletion_scheduled`. Passo 9 → **400** `invalid_deletion_link`: o link é de uso único. Passo 10 → **200** `{"deleted":0,"failed":0}`, porque nenhuma conta venceu o prazo, e sem o header **401** `unauthorized_worker_request`. Um 6º pedido de exclusão na mesma hora responde **429** `rate_limited`, com `Retry-After`. A rota nativa `POST /api/auth/delete-user` está desligada.
 
 **Verificação opcional (SQL, leitura):**
 ```sql
-SELECT count(*) FROM public."user" WHERE email = 'c@x.local';            -- 0
-SELECT count(*) FROM public.enterprise e
-  LEFT JOIN public."user" u ON u.id = e.auth_user_id WHERE u.id IS NULL;  -- 0 (nenhuma empresa órfã)
+SELECT deletion_scheduled_for FROM public."user" WHERE email = 'c@x.local';  -- preenchida depois do passo 4, nula depois do passo 7
+SELECT identifier FROM public.verification WHERE identifier LIKE 'account-deletion:%';  -- entre os passos 2 e 4: só o hash do link, nunca o token
 ```
 
 ---

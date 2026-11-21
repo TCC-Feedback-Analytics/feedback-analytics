@@ -46,9 +46,9 @@ erDiagram
     FEEDBACK_QUESTION_SUBQUESTIONS ||--o{ FEEDBACK_SUBQUESTION_ANSWERS : "subquestion_id"
 ```
 
-> **Fora do diagrama, por não terem FK:** `verification` (tokens do Better Auth), `auth_rate_limit` (limites de tentativa do login, do cadastro, da nova senha e do reenvio, por chave) e `ia_rate_budget` (orçamento de chamadas à IA, cujo `scope` guarda o id da empresa em texto).
+> **Fora do diagrama, por não terem FK:** `verification` (tokens do Better Auth e o link de exclusão da conta), `auth_rate_limit` (limites de tentativa do login, do cadastro, da nova senha, do reenvio e do pedido de exclusão da conta, por chave) e `ia_rate_budget` (orçamento de chamadas à IA, cujo `scope` guarda o id da empresa em texto).
 
-> **Isolamento:** os dados de negócio carregam `enterprise_id`, e é por ele que a aplicação filtra cada query (o isolamento entre empresas fica no gateway). As exceções são as tabelas filhas (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`), que chegam à empresa pela tabela pai, e as tabelas por usuário ou por chave (`user`, `session`, `account`, `verification`, `user_onboarding`, `auth_rate_limit`, `ia_rate_budget`). Ao excluir a conta, o gateway apaga também o que não tem FK em cascata (`customer`, `collecting_data_enterprise`, `ia_rate_budget` e os links de nova senha em `verification`) antes de apagar a empresa.
+> **Isolamento:** os dados de negócio carregam `enterprise_id`, e é por ele que a aplicação filtra cada query (o isolamento entre empresas fica no gateway). As exceções são as tabelas filhas (`feedback_question_subquestions`, `feedback_question_answers`, `feedback_subquestion_answers` e `feedback_analysis`), que chegam à empresa pela tabela pai, e as tabelas por usuário ou por chave (`user`, `session`, `account`, `verification`, `user_onboarding`, `auth_rate_limit`, `ia_rate_budget`). Ao excluir a conta, no fim dos 15 dias de carência, o gateway apaga também o que não tem FK em cascata (`customer`, `collecting_data_enterprise`, `ia_rate_budget` e os links do usuário em `verification`) antes de apagar a empresa e o usuário, na mesma transação.
 
 > **View `enterprise_public` (não é entidade física, por isso fora do `erDiagram`):** expõe apenas `id` e `name`, onde `name` deriva de `public.user.name` (a tabela `enterprise` não tem coluna `name`). O gateway a lê no formulário público, para mostrar o nome da empresa, e ao montar o contexto da empresa enviado à IA.
 
@@ -69,6 +69,7 @@ Gerenciado pelo Better Auth no schema `public`. Registra a conta do empresário/
 | `email_verified` | boolean | Status de confirmação do e-mail |
 | `phone` | text | Telefone de contato (único) |
 | `image` | text | Imagem/Avatar do perfil (opcional) |
+| `deletion_scheduled_for` | timestamptz | Data em que a conta será apagada, depois de confirmada a exclusão (nula = conta ativa). Índice parcial `user_deletion_scheduled_for_idx` onde não é nula (migration `0016`) |
 
 > A empresa nasce em `provisionEnterpriseForUser` (`src/auth/enterpriseOnSignup.ts`). No cadastro com senha, o controller de cadastro a chama logo depois de criar o usuário. Na primeira entrada com o Google, quem chama é o gancho `account.create` do Better Auth. Ela cria a `enterprise` vinculada com trial de 4 meses (`subscription_status = 'TRIAL'`) e semeia as 3 perguntas padrão (`COMPANY`). O banco não obriga todo usuário a ter empresa (a FK e o UNIQUE ficam só em `enterprise`); a regra de "uma empresa por usuário" é da aplicação.
 > 
@@ -125,11 +126,11 @@ Guia do sistema (tour da Web): registra, por usuário, os tours concluídos ou p
 ---
 
 #### `auth_rate_limit`
-Contador durável dos limites de tentativa do login, do cadastro, da nova senha e do reenvio, compartilhado entre as instâncias serverless.
+Contador durável dos limites de tentativa do login, do cadastro, da nova senha, do reenvio e do pedido de exclusão da conta, compartilhado entre as instâncias serverless.
 
 | Campo | Tipo | Descrição |
 |---|---|---|
-| `key` | text | Chave primária. No reenvio, `ip`, `email` ou `cooldown` mais o HMAC. No login, no cadastro e na nova senha, `login`, `register` ou `forgot-password` mais `ip` ou `email` e o HMAC. Nunca o valor em claro |
+| `key` | text | Chave primária. No reenvio, `ip`, `email` ou `cooldown` mais o HMAC. No login, no cadastro e na nova senha, `login`, `register` ou `forgot-password` mais `ip` ou `email` e o HMAC. No pedido de exclusão da conta, `account-deletion:email` e o HMAC. Nunca o valor em claro |
 | `used` | int | Tentativas usadas na janela |
 | `expires_at` | timestamptz | Fim da janela |
 

@@ -6,7 +6,7 @@ Repositório **central de documentação** do Feedback Analytics, projeto que é
 
 O projeto adota metodologias ágeis, engenharia de software rigorosa e uma arquitetura moderna orientada a serviços independentes.
 
-**O que o produto faz hoje:** coleta de feedback por QR Code, link ou etiqueta NFC, com campo de comentário configurável por escopo (empresa ou item do catálogo); métricas por escopo, período e canal de coleta, com a nota e o movimento dela, os canais, os horários de pico e os clientes que voltam; análise dos comentários e diagnóstico do escopo por IA; geração automática das perguntas do formulário; login por e-mail e senha ou Google; exclusão da conta com todos os dados da empresa; e um site público com as páginas do produto, os termos de uso e a política de privacidade.
+**O que o produto faz hoje:** coleta de feedback por QR Code, link ou etiqueta NFC, com campo de comentário configurável por escopo (empresa ou item do catálogo); métricas por escopo, período e canal de coleta, com a nota e o movimento dela, os canais, os horários de pico e os clientes que voltam; análise dos comentários e diagnóstico do escopo por IA; geração automática das perguntas do formulário; login por e-mail e senha ou Google; exclusão da conta confirmada pelo e-mail, com 15 dias para desistir antes de apagar todos os dados da empresa; e um site público com as páginas do produto, os termos de uso e a política de privacidade.
 
 ### Diferenciais Técnicos
 * **Arquitetura distribuída (multi-repo serverless):** cada serviço (frontend, API Gateway, IA) é um repositório e um deploy independente, com tipos compartilhados por um pacote versionado. Evoluiu de um monorepo — veja [a decisão](https://tcc-feedback-analytics.github.io/feedback-analytics/arquitetura/historico-de-decisoes/decisao-monorepo-vs-monolito/).
@@ -39,7 +39,7 @@ mantém só a documentação do sistema.
 * **Autenticação:** Better Auth — e-mail e senha ou Google, com sessão em cookie httpOnly
 * **Banco de Dados:** PostgreSQL hospedado no Supabase (só hospedagem: sem Supabase Auth nem Data API)
 * **IA/Analytics:** provedor LLM externo — OpenRouter, com chave e modelo configurados por empresa (BYO-key)
-* **E-mail:** SMTP Brevo (confirmação de cadastro, recuperação de senha e troca de e-mail)
+* **E-mail:** SMTP Brevo (confirmação de cadastro, recuperação de senha, troca de e-mail e exclusão da conta)
 * **CI/CD & Infra:** GitHub Actions (CI a cada push e pull request em `main` e `developer`; deploy manual na Vercel) e Vercel Serverless Functions
 
 ---
