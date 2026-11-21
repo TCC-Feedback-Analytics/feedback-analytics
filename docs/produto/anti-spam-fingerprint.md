@@ -45,6 +45,10 @@ HTTP 200 { ok: true }
 
 Na tela, o `409` vira o aviso de que aquele aparelho já respondeu hoje.
 
+O diagrama mostra o mesmo caminho e o que fica guardado. O navegador e o IP servem só para calcular o identificador, com uma chave secreta que fica no servidor, e não são gravados (migration `0017`, PR #135 do gateway). Sem a chave, ninguém chega ao IP ou ao navegador a partir do identificador.
+
+![Identificação do aparelho sem guardar IP nem navegador: o Gateway calcula o HMAC-SHA-256 do navegador e do IP com a chave secreta, descarta os dois, procura o aparelho pelo identificador, recusa o bloqueado (403) e o segundo envio do dia no mesmo ponto (409) e grava a avaliação ligada ao identificador](../assets/fingerprint-aparelho.png)
+
 ---
 
 ## A Regra Inteligente: Por Ponto de Coleta
