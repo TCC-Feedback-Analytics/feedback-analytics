@@ -137,7 +137,7 @@ O teste **não cobre**: o IP e o navegador em `tracked_devices`, os dados do cli
 | **Apoio à conformidade LGPD** | Dado pessoal não trafega em token legível; o que não é usado não é coletado |
 | **Princípio da minimização** | O cookie carrega só o token; o CPF/CNPJ saiu do sistema; do cliente, só nome, e-mail e gênero, e se ele quiser |
 | **Sessão protegida no navegador** | Cookie `httpOnly`: um script na página não consegue ler a sessão |
-| **Dados técnicos no servidor** | IP, navegador e fingerprint do cliente não chegam ao painel nem à IA |
+| **Dados técnicos no servidor** | O IP e o navegador do cliente nem são guardados, e o identificador do aparelho não chega ao painel nem à IA |
 | **Isolamento multi-tenant** | A empresa vem da sessão e filtra todas as consultas |
 | **Direito de exclusão** | O próprio gestor apaga a conta e os dados da empresa |
 

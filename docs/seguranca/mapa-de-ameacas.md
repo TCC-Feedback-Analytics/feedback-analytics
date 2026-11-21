@@ -92,7 +92,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | **E** | Uma credencial do app vazar e dar acesso total | Em produção, o gateway entra no banco como `feedback_app`, que só lê e escreve dados ([banco com o mínimo de privilégio](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/blob/main/docs/banco-menor-privilegio.md)). As migrations rodam como `postgres`, com a senha só no secret do GitHub | ⚠️ Com a senha do app vazada, ainda dá para ler, alterar e apagar os dados de todas as empresas, mas não apagar tabelas, desligar a RLS nem criar papéis |
 | **I** | Ler a chave de IA de uma empresa no banco | Chave cifrada com AES-256-GCM (`utils/crypto.ts`), com a chave mestra fora do banco, nas variáveis da Vercel | ✅ |
 | **T** | Perder dados por erro ou ataque | Backups do Supabase | ⚠️ A confirmar no plano contratado; a restauração está no [roteiro de incidente](roteiro-de-incidente.md) |
-| **I** | Guardar dado além do necessário | Sem CPF/CNPJ (migration `0009`) | ⚠️ IP do cliente sem prazo de guarda |
+| **I** | Guardar dado além do necessário | Sem CPF/CNPJ (migration `0009`). O IP e o navegador de quem responde ao formulário não são gravados, só o identificador do aparelho (migration `0017`, PR #135 do gateway) | ⚠️ O IP e o navegador da sessão do gestor ficam gravados sem uso |
 
 ## 5. Análise por IA
 
@@ -128,7 +128,7 @@ Qualquer pessoa com o QR, o link ou a etiqueta abre e envia, sem login.
 | 4 | Sem cabeçalhos de segurança na Web e no gateway | *Clickjacking* e defesa extra contra XSS | **Feito:** CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy` na Web (PR #160) e no gateway (PR #123 e #125), além de `Cross-Origin-Opener-Policy` e `Cross-Origin-Resource-Policy` na Web (PR #163). O gateway também não anuncia mais o Express (PR #110) |
 | 5 | Sem limite de tentativas de login | Ataque de senha, até de um só IP | **Feito (PR #110):** o login, o cadastro e a nova senha contam as tentativas no banco, como o reenvio. As rotas nativas de e-mail e senha do Better Auth foram desligadas (PR #113) |
 | 6 | Sem limite por IP no envio público | Encher o banco com respostas | **Feito (PR #123 do gateway):** 60 envios por IP a cada 15 minutos, e o aparelho passou a ser identificado por HMAC-SHA-256 |
-| 7 | IP do cliente sem prazo | Guardar além do necessário | Etapa 07, código, item 4 (opcional) |
+| 7 | IP do cliente sem prazo | Guardar além do necessário | **Feito (21/11/2026):** o IP e o navegador de quem responde deixaram de ser gravados, e a migration `0017` apagou os que existiam (PR #135 do gateway) |
 | 8 | Tokens do Google guardados sem uso | Dado sensível sem finalidade | Novo, pequeno. **Feito:** não são mais gravados (PR #109), e a migration `0015` apaga os antigos (PR #110) |
 | 9 | Comentário com dado pessoal ou instrução para a IA | Dado saindo do sistema; resumo enviesado | **Instrução para a IA: feito (PR #38 do ia-analyze).** Dado pessoal escrito no comentário segue em aberto |
 | 10 | Backups não confirmados | Recuperação depois de um incidente | [Roteiro de incidente](roteiro-de-incidente.md). O plano Supabase Pro, previsto no [custo de produção](../concepcao/modelo-negocio.md), traz backup diário guardado por 7 dias |

@@ -36,7 +36,7 @@ Dos clientes que deixam feedback pelo QR Code, pelo link ou pela etiqueta NFC:
 
 - a nota, o comentário (opcional) e as respostas às perguntas do formulário;
 - nome, e-mail e gênero, só se a pessoa quiser informar;
-- endereço IP, navegador e um identificador do aparelho, para evitar envios repetidos e spam. O identificador do aparelho também serve para contar os clientes que voltam a avaliar.
+- um identificador do aparelho, calculado a partir do IP e do navegador sem guardar os dois, para evitar envios repetidos e spam. Ele também serve para contar os clientes que voltam a avaliar.
 
 Não pedimos CPF, CNPJ nem dados sensíveis (como saúde, religião ou opinião política).
 
@@ -78,7 +78,7 @@ Não usamos cookies de publicidade nem de rastreamento.
 
 Os dados ficam guardados enquanto a conta do negócio existir. O pedido de exclusão é confirmado por um link enviado ao e-mail da conta. Depois disso, a conta fica parada por 15 dias, para que o negócio possa desistir, e então os dados da conta e os feedbacks dela são apagados, salvo o que a lei obrigar a manter.
 
-A sessão é apagada quando a pessoa sai da conta. O IP, o navegador e o identificador do aparelho de quem envia feedback ficam guardados enquanto a conta do negócio existir.
+A sessão é apagada quando a pessoa sai da conta. O identificador do aparelho de quem envia feedback fica guardado enquanto a conta do negócio existir. O IP e o navegador de quem envia não são guardados.
 
 ## 8. Seus direitos
 

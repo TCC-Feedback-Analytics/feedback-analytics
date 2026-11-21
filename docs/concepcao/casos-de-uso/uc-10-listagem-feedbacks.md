@@ -23,7 +23,7 @@
    - **Mensagem completa** do cliente (sem truncamento), ou "Sem comentário". Com pergunta própria no escopo, a pergunta que o cliente viu aparece acima do comentário (também no card da lista). Feedback de teste traz o aviso de que foi enviado pelo "Testar o formulário" e não entra nas métricas nem na análise da IA.
    - **Ponto de Coleta:** canal (QR Code, link, etiqueta NFC ou teste), tipo, identificador, categoria (Empresa/Produto/Serviço/Departamento) e nome do item.
    - **Perguntas Dinâmicas:** até 3 respostas com o texto da pergunta e o label da resposta.
-   - **Dispositivo:** total de feedbacks enviados pelo dispositivo e status de bloqueio ("Bloqueado"). IP, navegador e fingerprint ficam só no servidor (LGPD).
+   - **Dispositivo:** total de feedbacks enviados pelo dispositivo e status de bloqueio ("Bloqueado"). O identificador do aparelho fica só no servidor, e o IP e o navegador nem são guardados (LGPD).
    - **Cliente:** nome, e-mail e gênero (quando o cliente forneceu dados pessoais).
 6. O gestor fecha o modal e continua navegando pela lista.
 

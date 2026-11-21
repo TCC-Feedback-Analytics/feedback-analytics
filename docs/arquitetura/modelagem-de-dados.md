@@ -178,9 +178,7 @@ Rastreia cada dispositivo que acessa o formulário público via fingerprint (MD5
 | `id` | uuid | Chave primária |
 | `enterprise_id` | uuid | FK → `enterprise.id` |
 | `customer_id` | uuid | Cliente associado (opcional — só preenchido se o cliente se identificar; sem FK) |
-| `device_fingerprint` | text | Hash MD5 (user-agent + IP) |
-| `user_agent` | text | User-agent do navegador |
-| `ip_address` | inet | IP de origem |
+| `device_fingerprint` | text | HMAC-SHA-256 do navegador e do IP, com um segredo do servidor. O navegador e o IP não são gravados (migration `0017`) |
 | `feedback_count` | int | Total de feedbacks enviados por este dispositivo |
 | `last_feedback_at` | timestamptz | Data do último envio |
 | `is_blocked` | bool | `true` = dispositivo bloqueado (o envio volta 403). O gateway só lê: grava `false` ao criar e nenhuma rota bloqueia |

@@ -27,7 +27,8 @@ API Gateway valida o payload, a empresa, o ponto de coleta ativo
 e as respostas (precisam bater com as perguntas ativas do escopo)
         ↓
 Calcula o fingerprint do aparelho:
-  MD5(User-Agent | IP do cliente)
+  HMAC-SHA-256(User-Agent | IP do cliente), com segredo do servidor
+  (o navegador e o IP não são gravados, só o resultado)
         ↓
 Procura o aparelho em tracked_devices (empresa + fingerprint)
         ↓

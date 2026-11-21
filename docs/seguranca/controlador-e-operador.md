@@ -47,7 +47,7 @@ As mesmas da Política de Privacidade:
 |---|---|
 | Criar e manter a conta, login e e-mails da conta | Execução de contrato (V) |
 | Receber os feedbacks e gerar as métricas e as análises | Execução de contrato com o negócio (V) |
-| Anti-spam e a métrica "Clientes que voltam": IP, navegador e identificador do aparelho | Legítimo interesse (IX) |
+| Anti-spam e a métrica "Clientes que voltam": identificador do aparelho, calculado a partir do IP e do navegador, que não são guardados | Legítimo interesse (IX) |
 | Nome, e-mail e gênero que o cliente escolhe informar | Consentimento (I) |
 
 ## Encarregado e canal do titular

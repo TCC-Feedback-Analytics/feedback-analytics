@@ -303,9 +303,7 @@ O diagrama de entidades (crow's-foot, com as relações que têm FK e as que sã
 | `id` | uuid PK | Sim | — | **Alto** — gravado opcionalmente em `feedback.tracked_device_id` |
 | `enterprise_id` | uuid FK | Sim | → `enterprise.id` ON DELETE CASCADE | **Crítico** — isolamento multi-tenant |
 | `customer_id` | uuid | Não | Cliente associado quando ele se identifica (sem FK) | **Baixo** — enriquece o registro do dispositivo com dados do cliente; não impacta o fluxo anti-spam |
-| `device_fingerprint` | text | Não | Hash MD5 `(user_agent \| ip)`, sem o dia, calculado no Gateway | **Crítico** — chave de busca do dispositivo no envio; sem ele não há controle de spam |
-| `user_agent` | text | Não | User-Agent do navegador | **Médio** — um dos dois componentes do fingerprint; armazenado para auditoria e identificação do dispositivo. Não sai para o painel |
-| `ip_address` | inet | Não | IP do cliente | **Médio** — um dos dois componentes do fingerprint; armazenado para auditoria. Não sai para o painel |
+| `device_fingerprint` | text | Não | HMAC-SHA-256 do navegador e do IP, com um segredo do servidor, sem o dia, calculado no Gateway. O navegador e o IP não são gravados: as colunas `user_agent` e `ip_address` saíram na migration `0017` | **Crítico** — chave de busca do dispositivo no envio; sem ele não há controle de spam |
 | `is_blocked` | boolean | Não | Bloqueio manual (default `false`); sem tela nem rota, só direto no banco | **Crítico** — conferido pelo Gateway no envio; `true` recusa o feedback com `DEVICE_BLOCKED` |
 | `blocked_reason` | text | Não | Motivo do bloqueio | **Baixo** — informativo para o gestor; sem impacto funcional |
 | `blocked_at` | timestamptz | Não | Data do bloqueio | **Baixo** — auditoria do bloqueio |

@@ -3,15 +3,15 @@
 Este documento detalha a arquitetura, a estrutura e a especificação dos testes automatizados do serviço **API Gateway**. Os testes cobrem as rotas, os controladores (*controllers*), os serviços, os repositórios (o SQL que o Drizzle monta), a fila e o worker da IA, isolando o banco de dados e as chamadas externas por meio de mocks. As suítes que exigiam um **banco/ambiente real** (integração e e2e de *cutover*) foram removidas do CI e passaram a ser um [runbook manual](./manuais-api-gateway.md).
 
 !!! info "Conferido em 21/11/2026"
-    Inventário refeito contra o repositório: **59 arquivos** em `src/tests/*.test.ts`. A tabela antiga, de 8 arquivos e 77 testes, citava suítes que não existem mais (`auth.test.ts`) e um mock do Supabase que saiu com a migração para Better Auth e Drizzle. O número de testes muda a cada PR; o total atual sai no fim do `npm test` (526 em 21/11/2026, 2 deles pulados: a suíte contra Postgres real).
+    Inventário refeito contra o repositório: **60 arquivos** em `src/tests/*.test.ts`. A tabela antiga, de 8 arquivos e 77 testes, citava suítes que não existem mais (`auth.test.ts`) e um mock do Supabase que saiu com a migração para Better Auth e Drizzle. O número de testes muda a cada PR; o total atual sai no fim do `npm test` (529 em 21/11/2026, 2 deles pulados: a suíte contra Postgres real).
 
 ---
 
 ## Status da Cobertura
 
-Os testes do API Gateway utilizam o **Vitest** como motor de testes (`vitest.config.ts`: ambiente `node`, arquivos `src/tests/**/*.test.ts`) e o **Supertest** para simular requisições HTTP reais diretamente contra a aplicação Express (16 dos 59 arquivos). O banco não é consultado: os testes mockam o cliente Drizzle (`../db/client.js`), os repositórios, o middleware de autenticação e os providers do IA Analyze. Os testes de SQL usam `drizzle.mock()`, que monta a consulta sem conectar, e conferem o texto e os parâmetros gerados.
+Os testes do API Gateway utilizam o **Vitest** como motor de testes (`vitest.config.ts`: ambiente `node`, arquivos `src/tests/**/*.test.ts`) e o **Supertest** para simular requisições HTTP reais diretamente contra a aplicação Express (16 dos 60 arquivos). O banco não é consultado: os testes mockam o cliente Drizzle (`../db/client.js`), os repositórios, o middleware de autenticação e os providers do IA Analyze. Os testes de SQL usam `drizzle.mock()`, que monta a consulta sem conectar, e conferem o texto e os parâmetros gerados.
 
-> **Total: 59 arquivos de teste em `src/tests/`**
+> **Total: 60 arquivos de teste em `src/tests/`**
 
 !!! info "O que roda no CI (e o que virou manual)"
     Os arquivos abaixo são testes **unitários/de rota mockados** e **seguem automatizados no CI** (job `unit-tests` do `ci.yml`). Além deles, o CI mantém o **smoke de migrations** (`schema-migrations.yml`): sobe um Postgres efêmero no runner, **sem credenciais**, aplica as migrations e o seed e roda `drizzle-kit check` para validar o schema versus as migrations. Ele só roda quando o push ou o PR mexe nos arquivos do banco (`db/`, `drizzle/`, `docker-compose.yml`, `package.json`).
@@ -42,12 +42,12 @@ ONBOARDING_TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/feedb
 
 ## Testes Automatizados
 
-Abaixo, os 59 arquivos agrupados pelo que cobrem. Todos ficam em [`src/tests/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/src/tests).
+Abaixo, os 60 arquivos agrupados pelo que cobrem. Todos ficam em [`src/tests/`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-api-gateway/tree/main/src/tests).
 
 | Área | Arquivos de teste | O que cobre |
 | :--- | :--- | :--- |
 | **Conta e autenticação** | `registerPassword`, `googleSignup`, `authCallback`, `authRateLimit`, `securityConfig`, `requireAuthResetToken`, `accountDeletion`, `accountDeletionService`, `accountDeletionAccess`, `changeEmailApproval`, `email`, `onboarding`, `onboarding.database` | Força da senha no cadastro (zxcvbn), limite de tentativas do login, do cadastro e da nova senha, sessões encerradas na nova senha, a troca de senha pelo link com sessão aberta, as rotas nativas de e-mail e senha desligadas, origens e CORS sem localhost em produção e sem `X-Powered-By`, configuração do "Entrar com Google", a volta dos links do Better Auth (o link de nova senha vencido vai para `/forgot-password?error=INVALID_TOKEN`), a exclusão da conta (o pedido com a senha ou a entrada recente, o limite de pedidos, o link guardado só como hash, o que a rotina apaga no fim dos 15 dias, a confirmação e a desistência), a conta parada (403 nas rotas e o formulário público fechado), a troca de e-mail aprovada no endereço atual, envio de e-mail na Vercel e a API do guia de primeiros passos (esta última também contra Postgres real, opt-in). |
-| **Minimização de dados (LGPD)** | `dataMinimization` | Sessão e cookie sem CPF, documento ou telefone, conta do Google gravada sem os tokens, empresa sem campos de documento, formulário público e cadastro sem CPF e a migration `0015`, que apaga os tokens antigos. |
+| **Minimização de dados (LGPD)** | `dataMinimization`, `deviceMinimization` | Sessão e cookie sem CPF, documento ou telefone, conta do Google gravada sem os tokens, empresa sem campos de documento, formulário público e cadastro sem CPF a migration `0015`, que apaga os tokens antigos, e o aparelho do formulário guardado só como identificador, sem IP nem navegador (migration `0017`). |
 | **Isolamento multi-tenant** | `tenantScope` | O filtro por `enterprise_id` que a aplicação força em toda consulta. |
 | **Empresa e coleta (QR Code, link e NFC)** | `enterprise-controller`, `collection-points-qr-controller`, `qrcode-feedback`, `deviceFingerprint`, `commentField` | Controllers da empresa e dos pontos de coleta, a coleta pública de feedback (`POST /api/public/qrcode/feedback`, com o canal de chegada e o anti-spam por dispositivo), a identificação do aparelho por HMAC-SHA-256 e o campo de comentário por escopo. |
 | **Cabeçalhos e banco** | `securityHeaders`, `dbClientPooler` | Cabeçalhos de segurança em todas as respostas (CSP, `X-Frame-Options` e afins) e o cliente do banco com uma consulta por conexão no pooler do Supabase. |
