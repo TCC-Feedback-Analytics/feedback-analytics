@@ -29,7 +29,9 @@ O mapa foi revisto duas vezes em novembro de 2026. Na primeira revisão, em 16/1
 
 ![Ameaças do mapa por situação em cada revisão: 15 protegidas, 11 em parte e 2 abertas antes das correções da 1ª revisão, 20, 10 e 1 depois delas e 22, 9 e nenhuma aberta depois da 2ª revisão](../assets/grafico-ameacas-revisoes.png)
 
-Em 21/11/2026, a troca de e-mail e a exclusão da conta passaram a pedir confirmação pelo e-mail, o que limita o estrago de uma sessão roubada. A contagem não mudou.
+Em 21/11/2026, a troca de e-mail e a exclusão da conta passaram a pedir confirmação pelo e-mail, o que limita o estrago de uma sessão roubada. A contagem não mudou. O fluxo abaixo mostra onde cada passo da exclusão barra o ataque: o limite de pedidos e a senha no pedido, o link no e-mail na confirmação e os 15 dias de conta parada, que ainda deixam desistir.
+
+![Caminho da exclusão da conta: pedido com a senha e limite de 5 por hora, link de uso único no e-mail, confirmação no navegador logado, 15 dias de conta parada com a opção de desistir e a rotina diária que apaga tudo numa transação](../assets/fluxo-exclusao-conta.png)
 
 ## Visão geral do sistema
 

@@ -95,6 +95,8 @@ O gestor pode apagar a conta e todos os dados da empresa pelo **Perfil**, na se�
 - No fim do prazo, uma rotina diária apaga, numa transação, a empresa e tudo dela (feedbacks, análises, catálogo, perguntas, pontos de coleta, aparelhos, clientes, contexto da empresa, configuração de IA, jobs e diagnósticos) e o usuário, com as sessões e as credenciais.
 - Depois disso, não há volta.
 
+![Caminho da exclusão da conta: pedido com a senha e limite de 5 por hora, link de uso único no e-mail, confirmação no navegador logado, 15 dias de conta parada com a opção de desistir e a rotina diária que apaga tudo numa transação](../assets/fluxo-exclusao-conta.png)
+
 ---
 
 ## O Cliente Final
