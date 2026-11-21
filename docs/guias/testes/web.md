@@ -2,8 +2,8 @@
 
 Este documento detalha a arquitetura, estrutura e especificação dos testes na aplicação Web (Frontend). Nele, você encontrará a distribuição dos testes separados por sua granularidade: **Unidade**, **Integração** (ambos automatizados no CI via Vitest) e **Fim a Fim (E2E)** — esta última **não é mais automatizada**: a suíte Playwright foi removida em 08/08/2026 e virou o runbook manual [Testes manuais — Web](./manuais-web.md).
 
-!!! info "Conferido em 16/11/2026"
-    Inventário refeito contra o repositório: **117 arquivos** de teste (`*.test.ts`/`*.test.tsx`). A versão anterior listava 23 arquivos, vários deles já removidos (como os de formatação de CPF/CNPJ, que saíram com o documento da empresa). Em vez da lista arquivo por arquivo, que envelhece a cada PR, as tabelas abaixo agrupam os testes por pasta. O número de testes sai no fim do `npm run test -- run` (713 em 16/11/2026).
+!!! info "Conferido em 21/11/2026"
+    Inventário refeito contra o repositório: **120 arquivos** de teste (`*.test.ts`/`*.test.tsx`). A versão anterior listava 23 arquivos, vários deles já removidos (como os de formatação de CPF/CNPJ, que saíram com o documento da empresa). Em vez da lista arquivo por arquivo, que envelhece a cada PR, as tabelas abaixo agrupam os testes por pasta. O número de testes sai no fim do `npm run test -- run` (728 em 21/11/2026).
 
 ---
 
@@ -63,20 +63,20 @@ Os blocos `describe` usam o prefixo `[Unidade]` ou `[Integração]`, mas nem tod
 
 ## 1. Testes de Unidade (`Unit Tests`)
 
-> **Total: 112 arquivos**
+> **Total: 115 arquivos**
 >
 > Validam funções de utilidade pura, parsers, validadores locais, hooks, services e componentes de página e layout isolados (com seus componentes filhos e dados mockados).
 
 | Onde ficam | Arquivos | O que cobrem |
 | :--- | :---: | :--- |
-| `components/**/*.test.tsx` | 47 | Componentes, ao lado do arquivo testado: formulários públicos (login, cadastro, "Continuar com Google", reenvio da confirmação, formulário de feedback), páginas legais e navegação das páginas do produto, onboarding e guia de primeiros passos, layout do gestor (cabeçalho, menu com o botão "Mais", barra de insights), seções do dashboard (canais, movimento, pico, clientes que voltam, diagnóstico do escopo), comentários, relatório de insights, perfil (exclusão de conta, Configuração de IA), canais de coleta e etiqueta NFC, perguntas do formulário e componentes compartilhados. |
-| `pages/tests/` | 14 | Páginas: home, resultados (página do produto), login, cadastro, esqueci a senha (aviso do link vencido), dashboard, perfil, métricas de estrelas, clientes e canais, comparação de itens, histórico de diagnósticos, comentários, pergunta do formulário e volta do OpenRouter. Lista em [`pages/tests/README.md`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/README.md). |
+| `components/**/*.test.tsx` | 48 | Componentes, ao lado do arquivo testado: formulários públicos (login, cadastro, "Continuar com Google", reenvio da confirmação, formulário de feedback), páginas legais e navegação das páginas do produto, onboarding e guia de primeiros passos, layout do gestor (cabeçalho, menu com o botão "Mais", barra de insights), seções do dashboard (canais, movimento, pico, clientes que voltam, diagnóstico do escopo), comentários, relatório de insights, perfil (exclusão de conta, Configuração de IA), canais de coleta e etiqueta NFC, perguntas do formulário e componentes compartilhados. |
+| `pages/tests/` | 15 | Páginas: o link de confirmação da exclusão e a conta parada, home, resultados (página do produto), login, cadastro, esqueci a senha (aviso do link vencido), dashboard, perfil, métricas de estrelas, clientes e canais, comparação de itens, histórico de diagnósticos, comentários, pergunta do formulário e volta do OpenRouter. Lista em [`pages/tests/README.md`](https://github.com/TCC-Feedback-Analytics/feedback-analytics-web/blob/main/pages/tests/README.md). |
 | `layouts/tests/` | 2 | `layouts/public.tsx` e `layouts/user.tsx`. |
 | `src/lib/utils/*.test.ts` e `src/lib/utils/tests/` | 37 | Utilitários puros: formatação de telefone, truncamento, força da senha, validação e montagem do formulário público de feedback, mapeamento de erros da IA, períodos e comparação, pico de horários, precisão, rótulos de nota e de sentimento, cliente HTTP, entre outros. |
 | `src/lib/hooks/` e `src/lib/constants/menu.test.ts` | 5 | Hooks (operação de IA, geração das perguntas da empresa, link de feedback, marcos de feedbacks) e a definição do menu. |
 | `src/routes/loaders/` e `src/routes/load/loadFeedbacksAll.test.ts` | 3 | Loaders da conclusão do cadastro e da Configuração de IA e a leitura dos filtros da listagem de feedbacks. |
 | `src/routes/actions/actionIaSettings.test.ts` | 1 | Action da Configuração de IA. |
-| `src/services/` | 3 | Services de auth (reenvio da confirmação), de configuração de IA e do guia do sistema. |
+| `src/services/` | 4 | Services de auth (reenvio da confirmação), de configuração de IA, do guia do sistema e da exclusão da conta. |
 
 ---
 
